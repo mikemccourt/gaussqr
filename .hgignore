@@ -3,3 +3,5 @@ syntax: glob
 
 *.html
 *.css
+*.zip
+*.tar.gz
