@@ -1,0 +1,16 @@
+RBF-QR Matlab files v1.0
+
+Source code is kept in the source file
+Examples are kept in the examples file
+
+To run an example, you first boot up Matlab
+Then run the setup:
+>> rbfsetup
+This makes sure the necessary files are in the path
+
+Now you can run examples, including
+>> ex1
+This shows that RBF-QR works for a simple example
+You also can use
+>> ex2
+This shows that RBF-QRr is superior to RBF-QR in certain instances
