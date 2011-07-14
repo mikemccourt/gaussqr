@@ -66,20 +66,32 @@ if logopt==1
             n/2*(log(2*n)+1-2*omxos2nS) + ...
             log(abs(cos(costerm)));
 else
-    negLog = [];
+    negLog = zeros(size(x));
     Happx = sqrt(2)*(omxos2nS).^(-1/4).* ... 
             exp(n/2*(log(2*n)+1-2*omxos2nS)).* ...
             cos(n*(xos2n.*sqrt(omxos2nS)+t-pi/2)+t/2);
 end
 end
 
-function [Happx,negLog] = HermiteAppxOuter(n,x,logopt) % Only valid in abs(x)>sqrt(2n)
-negLog = [];
-t = asin(x/sqrt(2*n));
-Happx = sqrt(2./cos(t)).*exp(n/2*(log(2*n)-cos(2*t))).*cos(n*(sin(2*t)/2+t-pi/2)+t/2);
+% This has limited applicability for extremely large values of x
+% The asymptotic form is airy(x) -> exp(-2/3x^(3/2))/(2*sqrt(pi)*x^.25)
+% I haven't implemented it yet, but I may
+function [Happx,negLog] = HermiteAppxTrans(n,x,logopt) % Only valid near abs(x)=sqrt(2n)
+if logopt==1
+    airyterm = real(airy(sqrt(2)*n^(1/6)*(x-sqrt(2*n))));
+    negLog = airyterm<0;
+    Happx = 1/2*log(2*pi)+1/6*log(n)+n/2*log(2*n)-3/2*n + ...
+            sqrt(2*n)*x + ...
+            log(abs(airyterm));
+else
+    negLog = zeros(size(x));
+    Happx = sqrt(2*pi)*n^(1/6)*exp(n/2*log(2*n)-3/2*n) ...
+            exp(sqrt(2*n)*x).* ...
+            airy(sqrt(2)*n^(1/6)*(x-sqrt(2*n)));
+end
 end
 
-function [Happx,negLog] = HermiteAppxTrans(n,x,logopt) % Only valid near abs(x)=sqrt(2n)
+function [Happx,negLog] = HermiteAppxOuter(n,x,logopt) % Only valid in abs(x)>sqrt(2n)
 negLog = [];
 t = asin(x/sqrt(2*n));
 Happx = sqrt(2./cos(t)).*exp(n/2*(log(2*n)-cos(2*t))).*cos(n*(sin(2*t)/2+t-pi/2)+t/2);
