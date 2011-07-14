@@ -34,7 +34,7 @@ else
 end
 absx = abs(x);
 s2n = sqrt(2*n);
-transWidth = .1;
+transWidth = .1; % Maybe this should be a variable width
 innerInd = find(absx<s2n*(1-transWidth));
 outerInd = find(absx>s2n*(1+transWidth));
 transInd = setdiff(1:N,[innerInd,outerInd]);
@@ -51,10 +51,26 @@ end
 
 end
 
+% Note below that sqrt(2/cos(t)) = sqrt(2/sqrt(1-x^2/2n)) -> 1/2log(2)-1/4log(1-x^2/2n)
 function [Happx,negLog] = HermiteAppxInner(n,x,logopt) % Only valid in abs(x)<sqrt(2n)
-negLog = [];
-t = asin(x/sqrt(2*n));
-Happx = sqrt(2./cos(t)).*exp(n/2*(log(2*n)-cos(2*t))).*cos(n*(sin(2*t)/2+t-pi/2)+t/2);
+xos2n = x/sqrt(2*n);
+xos2nS = xos2n.^2;
+omxos2nS = 1 - xos2nS;
+t = asin(xos2n);
+if logopt==1
+    costerm = n*(xos2n.*sqrt(omxos2nS)+t-pi/2)+t/2;
+    modcosterm = mod(costerm-pi,2*pi);
+    negLog = (modcosterm<=-pi/2) + (modcosterm>=pi/2);
+    negLog = 1 - negLog;
+    Happx = 1/2*log(2)-1/4*log(omxos2nS) + ...
+            n/2*(log(2*n)+1-2*omxos2nS) + ...
+            log(abs(cos(costerm)));
+else
+    negLog = [];
+    Happx = sqrt(2)*(omxos2nS).^(-1/4).* ... 
+            exp(n/2*(log(2*n)+1-2*omxos2nS)).* ...
+            cos(n*(xos2n.*sqrt(omxos2nS)+t-pi/2)+t/2);
+end
 end
 
 function [Happx,negLog] = HermiteAppxOuter(n,x,logopt) % Only valid in abs(x)>sqrt(2n)
