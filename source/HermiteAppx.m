@@ -43,7 +43,7 @@ if length(innerInd>0)
     [innerAppx,innernegLog] = HermiteAppxInner(n,x(innerInd),logopt);
 end
 if length(outerInd>0)
-    [outerAppx,outernegLog] = HermiteAppxOuter(n,x(outerInd),logopt);
+    outerAppx = HermiteAppxOuter(n,x(outerInd),logopt);
 end
 if length(transInd>0)
     [transAppx,transnegLog] = HermiteAppxTrans(n,x(transInd),logopt);
@@ -76,6 +76,9 @@ end
 % This has limited applicability for extremely large values of x
 % The asymptotic form is airy(x) -> exp(-2/3x^(3/2))/(2*sqrt(pi)*x^.25)
 % I haven't implemented it yet, but I may
+%
+% Note: For real x<0, airy(x) may have a trivial complex component
+%       That value is disregarded as it should not exist
 function [Happx,negLog] = HermiteAppxTrans(n,x,logopt) % Only valid near abs(x)=sqrt(2n)
 if logopt==1
     airyterm = real(airy(sqrt(2)*n^(1/6)*(x-sqrt(2*n))));
@@ -85,14 +88,17 @@ if logopt==1
             log(abs(airyterm));
 else
     negLog = zeros(size(x));
-    Happx = sqrt(2*pi)*n^(1/6)*exp(n/2*log(2*n)-3/2*n) ...
+    Happx = sqrt(2*pi)*n^(1/6)*exp(n/2*log(2*n)-3/2*n)* ...
             exp(sqrt(2*n)*x).* ...
-            airy(sqrt(2)*n^(1/6)*(x-sqrt(2*n)));
+            real(airy(sqrt(2)*n^(1/6)*(x-sqrt(2*n))));
 end
 end
 
-function [Happx,negLog] = HermiteAppxOuter(n,x,logopt) % Only valid in abs(x)>sqrt(2n)
-negLog = [];
-t = asin(x/sqrt(2*n));
-Happx = sqrt(2./cos(t)).*exp(n/2*(log(2*n)-cos(2*t))).*cos(n*(sin(2*t)/2+t-pi/2)+t/2);
+function Happx = HermiteAppxOuter(n,x,logopt) % Only valid in abs(x)>sqrt(2n)
+s = sqrt(x.^2-2*n);
+if logopt==1
+    Happx = 1/2*(-log(2)+log(1+x./s)+(x.^2-s.*x-n)) + n*log(s+x);
+else
+    Happx = sqrt(1/2*(1+x./s)).*exp(1/2*(x.^2-s.*x-n)+n*log(s+x));
+end
 end
