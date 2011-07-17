@@ -18,35 +18,32 @@ if not(exist('logopt'))
 elseif not(logopt==0 || logopt==1)
     logopt=0;
 end
+Happx = zeros(size(x));
 
-t = asin(x/sqrt(2*n));
-Happx = sqrt(2./cos(t)).*exp(n/2*(log(2*n)-cos(2*t))).*cos(n*(sin(2*t)/2+t-pi/2)+t/2);
-cosTerm = cos(n*(sin(2*t)/2+t-pi/2)+t/2);
-negLog = find(cosTerm<0);
-logHappx = 1/2*log(2)-1/4*(log(1-x.^2/(2*n)))+log(abs(cosTerm))+n/2*(log(2*n)-cos(2*t));
-Happx = exp(logHappx);
-Happx(negLog)=-Happx(negLog);
-
-if mod(n,2)==1 % Odd power means odd polynomial
-    negInd = find(x<0);
-else
-    negInd = [];
-end
 absx = abs(x);
 s2n = sqrt(2*n);
-transWidth = .1; % Maybe this should be a variable width
-innerInd = find(absx<s2n*(1-transWidth));
-outerInd = find(absx>s2n*(1+transWidth));
+transWidth = .03; % Maybe this should be a variable width
+innerInd = find(absx<s2n*(1-transWidth))';
+outerInd = find(absx>s2n*(1+transWidth))';
 transInd = setdiff(1:N,[innerInd,outerInd]);
 
-if length(innerInd>0)
-    [innerAppx,innernegLog] = HermiteAppxInner(n,x(innerInd),logopt);
-end
-if length(outerInd>0)
-    outerAppx = HermiteAppxOuter(n,x(outerInd),logopt);
-end
-if length(transInd>0)
-    [transAppx,transnegLog] = HermiteAppxTrans(n,x(transInd),logopt);
+[innerAppx,innernegLog] = HermiteAppxInner(n,absx(innerInd),logopt);
+[transAppx,transnegLog] = HermiteAppxTrans(n,absx(transInd),logopt);
+outerAppx = HermiteAppxOuter(n,absx(outerInd),logopt);
+
+Happx([innerInd,transInd,outerInd]) = [innerAppx;transAppx;outerAppx];
+if (logopt==0)
+    if (mod(n,2)==1)
+        negInd = find(x<0);
+        Happx(negInd) = -Happx(negInd);
+    end
+else
+    if mod(n,2)==1 % Odd power means odd polynomial
+        negInd = x<0;
+    else
+        negInd = zeros(size(x));
+    end
+    negInd([innerInd,transInd]) = xor(negInd([innerInd,transInd]),[innernegLog;transnegLog]);
 end
 
 end
@@ -79,22 +76,30 @@ end
 %
 % Note: For real x<0, airy(x) may have a trivial complex component
 %       That value is disregarded as it should not exist
-function [Happx,negLog] = HermiteAppxTrans(n,x,logopt) % Only valid near abs(x)=sqrt(2n)
-if logopt==1
-    airyterm = real(airy(sqrt(2)*n^(1/6)*(x-sqrt(2*n))));
-    negLog = airyterm<0;
-    Happx = 1/2*log(2*pi)+1/6*log(n)+n/2*log(2*n)-3/2*n + ...
+%
+% Weird: The airy function acts differently on an empty matrix
+%        than exp does.  This is why there is that weird start
+function [Happx,negLog] = HermiteAppxTrans(n,x,logopt) % Only valid near x=sqrt(2n)
+if length(x)==0
+    Happx = [];
+    negLog = [];
+else
+    if logopt==1
+        airyterm = real(airy(sqrt(2)*n^(1/6)*(x-sqrt(2*n))));
+        negLog = airyterm<0;
+        Happx = 1/2*log(2*pi)+1/6*log(n)+n/2*log(2*n)-3/2*n + ...
             sqrt(2*n)*x + ...
             log(abs(airyterm));
-else
-    negLog = zeros(size(x));
-    Happx = sqrt(2*pi)*n^(1/6)*exp(n/2*log(2*n)-3/2*n)* ...
+    else
+        negLog = zeros(size(x));
+        Happx = sqrt(2*pi)*n^(1/6)*exp(n/2*log(2*n)-3/2*n)* ...
             exp(sqrt(2*n)*x).* ...
             real(airy(sqrt(2)*n^(1/6)*(x-sqrt(2*n))));
+    end
 end
 end
 
-function Happx = HermiteAppxOuter(n,x,logopt) % Only valid in abs(x)>sqrt(2n)
+function Happx = HermiteAppxOuter(n,x,logopt) % Only valid in x>sqrt(2n)
 s = sqrt(x.^2-2*n);
 if logopt==1
     Happx = 1/2*(-log(2)+log(1+x./s)+(x.^2-s.*x-n)) + n*log(s+x);
