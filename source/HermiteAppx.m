@@ -11,7 +11,7 @@ function [Happx,negInd] = HermiteAppx(n,x,logopt)
 
 [N,c] = size(x);
 if c~=1
-    error('Only a column vector can be passed to HermiteAppx')
+    error(sprintf('x must be a column vector: mr=%d, mc=%d',N,c))
 end
 if not(exist('logopt'))
     logopt=0;
@@ -32,6 +32,7 @@ transInd = setdiff(1:N,[innerInd,outerInd]);
 outerAppx = HermiteAppxOuter(n,absx(outerInd),logopt);
 
 Happx([innerInd,transInd,outerInd]) = [innerAppx;transAppx;outerAppx];
+negInd = zeros(size(x));
 if (logopt==0)
     if (mod(n,2)==1)
         negInd = find(x<0);
@@ -40,8 +41,6 @@ if (logopt==0)
 else
     if mod(n,2)==1 % Odd power means odd polynomial
         negInd = x<0;
-    else
-        negInd = zeros(size(x));
     end
     negInd([innerInd,transInd]) = xor(negInd([innerInd,transInd]),[innernegLog;transnegLog]);
 end
@@ -56,12 +55,10 @@ omxos2nS = 1 - xos2nS;
 t = asin(xos2n);
 if logopt==1
     costerm = n*(xos2n.*sqrt(omxos2nS)+t-pi/2)+t/2;
-    modcosterm = mod(costerm-pi,2*pi);
-    negLog = (modcosterm<=-pi/2) + (modcosterm>=pi/2);
-    negLog = 1 - negLog;
+    negLog = mod(costerm-pi/2,2*pi)<pi;
     Happx = 1/2*log(2)-1/4*log(omxos2nS) + ...
             n/2*(log(2*n)+1-2*omxos2nS) + ...
-            log(abs(cos(costerm)));
+            log(abs(cos(costerm))+eps);
 else
     negLog = zeros(size(x));
     Happx = sqrt(2)*(omxos2nS).^(-1/4).* ... 
@@ -89,7 +86,7 @@ else
         negLog = airyterm<0;
         Happx = 1/2*log(2*pi)+1/6*log(n)+n/2*log(2*n)-3/2*n + ...
             sqrt(2*n)*x + ...
-            log(abs(airyterm));
+            log(abs(airyterm)+eps);
     else
         negLog = zeros(size(x));
         Happx = sqrt(2*pi)*n^(1/6)*exp(n/2*log(2*n)-3/2*n)* ...
