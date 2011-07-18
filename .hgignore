@@ -7,3 +7,4 @@ syntax: glob
 *.tar.gz
 *.asv
 *.orig
+*.png
