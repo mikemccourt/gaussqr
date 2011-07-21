@@ -39,4 +39,10 @@ end
 % Set to 0 to turn off, 1 to turn on
 GAUSSQR_PARAMETERS.RBFPHI_WITH_LOGS = 1;
 
+% Tolerance for using asymptotic approximation of exponential within rbfphi
+% The term sqrt(1+(2ep/a)^2)-1 pops up, and you can get cancelation
+% This will cause the switch to sqrt(1+(2ep/a)^2)-1 = 2(ep/a)^2-2(ep/a)^4
+% The switch occurs when (1+(2ep/a)^2)^(1/4)-1<tol
+GAUSSQR_PARAMETERS.RBFPHI_EXP_TOL = 1e-4;
+
 end

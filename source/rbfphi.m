@@ -1,4 +1,4 @@
-% function p = rbfphi(Marr,x,ep,a,b,c,d,sx2)
+% function p = rbfphi(Marr,x,ep,a,b,c,sx2)
 % This function should in general be used in the following form
 %   function p = rbfphi(Marr,x,ep,a)
 % which lets you pass inputs to produce the needed eigenfunctions
@@ -10,7 +10,7 @@
 % x - vector of RBF centers
 % ep - traditional RBF shape parameter
 % a - RBFQR global scale parameter
-function p = rbfphi(Marr,x,ep,a,b,c,d,sx2)
+function p = rbfphi(Marr,x,ep,a,b,c,sx2)
 
 global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
@@ -18,28 +18,6 @@ if ~isstruct(GAUSSQR_PARAMETERS)
 end
 logoption = GAUSSQR_PARAMETERS.RBFPHI_WITH_LOGS;
 
-switch(nargin)
-    case {1,2}
-        error('Insufficient parameters passed')
-    case 3
-        d = 0;
-        a = .5;
-        b = ep^2;
-        c = sqrt(a^2+2*a*b);
-    case 4
-        d = 0;
-        b = ep^2;
-        c = sqrt(a^2+2*a*b);
-    case 5
-        d = 0;
-        c = sqrt(a^2+2*a*b);
-    case 6
-        d = 0;
-end
-if d>0 || d<0 % Right now you can't use derivatives
-    warning(sprintf('k=%d is an unacceptable derivative, reset to 0',d))
-    d = 0;
-end
 if min(min(Marr))<0
     error(sprintf('Marr=%d is an unacceptable value',min(Marr)))
 end
@@ -48,11 +26,26 @@ end
 if Mr~=xc
     error(sprintf('dimension mismatch: Mr=%d, xc=%d',Mr,xc))
 end
+
+switch(nargin)
+    case {1,2}
+        error('Insufficient parameters passed')
+    case 3
+        a = .5;
+        b = ep^2;
+        c = sqrt(a^2+2*a*b);
+    case 4
+        b = ep^2;
+        c = sqrt(a^2+2*a*b);
+    case 5
+        c = sqrt(a^2+2*a*b);
+end
+
 if Mc>1
     p = zeros(xr,Mc);
     sx2 = sum(x.^2,2);
     for k=1:Mc
-        p(:,k) = rbfphi(Marr(:,k),x,ep,a,b,c,d,sx2);
+        p(:,k) = rbfphi(Marr(:,k),x,ep,a,b,c,sx2);
     end
 else
     if ~exist('sx2') % in case a single n vector is passed
