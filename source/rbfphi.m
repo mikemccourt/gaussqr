@@ -11,6 +11,13 @@
 % ep - traditional RBF shape parameter
 % a - RBFQR global scale parameter
 function p = rbfphi(Marr,x,ep,a,b,c,d,sx2)
+
+global GAUSSQR_PARAMETERS
+if ~isstruct(GAUSSQR_PARAMETERS)
+    error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
+end
+logoption = GAUSSQR_PARAMETERS.RBFPHI_WITH_LOGS;
+
 switch(nargin)
     case {1,2}
         error('Insufficient parameters passed')
@@ -56,8 +63,11 @@ else
     else
       q = -.5*(sum(Marr)*log(2)+sum(gammaln(Marr+1))-.25*log(1+2*b/a))+sx2*(a-c);
     end
-    p = exp(q).*HermiteProd(Marr,sqrt(2*c)*x);
-%     Hx = HermiteProd(Marr,x,1); % This is complex in general since some values are negative
-%     p = exp(q+real(Hx)).*(1-2*(imag(Hx)>0));
+    [Hx,Hi] = HermiteProd(Marr,sqrt(2*c)*x,logoption);
+    if logoption
+        p = exp(q+Hx).*(-1).^Hi;
+    else
+        p = exp(q).*Hx;
+    end
 end
 end
