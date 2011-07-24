@@ -18,8 +18,8 @@
 % Derivatives are calculated using the relationship:
 %    d/dx(p_{n}(x)) = 2*delta*x*p_{n}(x)+sqrt(2n-2)*beta*alpha*p_{n-1}(x)
 %
-% Fix: Need to allow for M<1, and just return 0 in that case
-%      Should match with H_0=1, and anything less is 0
+% Note: minimum M value is 1, in accordance with new structure
+%       anything less than 1 will return 0
 function p = rbfphialpha(Marr,x,ep,alpha,deriv,beta,delta,sx2)
 
 global GAUSSQR_PARAMETERS
@@ -29,13 +29,14 @@ end
 logoption = GAUSSQR_PARAMETERS.RBFPHI_WITH_LOGS;
 asympttol = GAUSSQR_PARAMETERS.RBFPHI_EXP_TOL;
 
+% Here we define: n as the number of data points
+%                 s as the dimension of the data
 [Mr Mc] = size(Marr);
-[xr xc] = size(x);
+[n xc] = size(x);
 if Mr~=xc
     error(sprintf('dimension mismatch: Mr=%d, xc=%d',Mr,xc))
-end
-if min(min(Marr))<1
-    error(sprintf('Marr=%d is an unacceptable value',min(Marr)))
+else
+    s=xc;
 end
 
 switch nargin
@@ -43,19 +44,19 @@ switch nargin
         error('Insufficient parameters passed')
     case {4,5}
         if nargin==4
-            deriv = zeros(1,xc); % Default to no derivatives being used
+            deriv = zeros(1,s); % Default to no derivatives being used
         else
             [dr dc] = size(deriv);
-            if dc~=xc
-                error(sprintf('dimension mismatch: xc=%d, dc=%d',xc,dc))
+            if dc~=s
+                error(sprintf('dimension mismatch: s=%d, dc=%d',s,dc))
             elseif min(deriv)<0
                 error(sprintf('negative derivative requested, %d',min(deriv)))
             elseif dr~=1
                 error('d must be a row vector of derivatives')
             end
-            if sum(deriv>0 + deriv<2)>0 % Right now you only have 1st derivatives
+            if sum(deriv<0 + deriv>2)>0 % Right now you only have 2 derivatives
                 warning(sprintf('%d is an unacceptable derivative, reset to 0',deriv))
-                deriv = zeros(1,xc);
+                deriv = zeros(1,s);
             end
         end
         if alpha<=0 || ep<=0 || imag(alpha)~=0 || imag(ep)~=0
@@ -67,16 +68,20 @@ switch nargin
         else
             delta = 1/2*alpha^2*(1-beta^2);
         end
-        p = zeros(xr,Mc);
+        p = zeros(n,Mc);
         sx2 = sum(x.^2,2);
         for k=1:Mc
-            p(:,k) = rbfphialpha(Marr(:,k),x,ep,alpha,deriv,beta,delta,sx2);
+            if min(Marr(:,k))<1 % Since H_{-1}=0 by definition
+                p(:,k) = 0;
+            else
+                p(:,k) = rbfphialpha(Marr(:,k),x,ep,alpha,deriv,beta,delta,sx2);
+            end
         end
     case {6,7}
         error('Too many parameters passed, see comments')
     case 8
         if sum(deriv)==0 % No derivatives, easier to handle
-            q = -.5*(sum(Marr-1)*log(2)+sum(gammaln(Marr))-xc*log(beta))+delta*sx2;
+            q = -.5*(sum(Marr-1)*log(2)+sum(gammaln(Marr))-s*log(beta))+delta*sx2;
             [Hx,Hi] = HermiteProd(Marr-1,beta*alpha*x,logoption);
             if logoption
                 p = exp(q+Hx).*(-1).^Hi;
@@ -84,8 +89,8 @@ switch nargin
                 p = exp(q).*Hx;
             end
         else
-            p = ones(xr,1);
-            for k=1:dc
+            p = ones(n,1);
+            for k=1:s
                 m = Marr(k);
                 d = deriv(k);
                 xk = x(:,k);
@@ -94,14 +99,26 @@ switch nargin
                     case 0
                         p = p*pm;
                     case 1
-                        pm1 = rbfphialpha(m-1,xk,ep,alpha,0,beta,delta,sx2);
-                        p = p*(2*delta*x.*pm+sqrt(2*n-2)*beta*alpha*pm1);
+                        if m==1
+                            pm1 = zeros(size(p));
+                        else
+                            pm1 = rbfphialpha(m-1,xk,ep,alpha,0,beta,delta,sx2);
+                        end
+                        p = p.*(2*delta*x.*pm+sqrt(2*m-2)*beta*alpha*pm1);
                     case 2
-                        pm1 = rbfphialpha(m-1,xk,ep,alpha,0,beta,delta,sx2);
-                        pm2 = rbfphialpha(m-2,xk,ep,alpha,0,beta,delta,sx2);
-                        p = p*(2*delta*(1+2*delta*xk.^2).*p + ...
-                               4*delta*beta*alpha*sqrt(2*n-2)*xk.*pm1 + ...
-                               2*(beta*alpha)^2*sqrt((n-1)*(n-2))*pm2;
+                        if m==1
+                            pm1 = zeros(size(p));
+                            pm2 = zeros(size(p));
+                        elseif m==2
+                            pm1 = rbfphialpha(m-1,xk,ep,alpha,0,beta,delta,sx2);
+                            pm2 = zeros(size(p));
+                        else
+                            pm1 = rbfphialpha(m-1,xk,ep,alpha,0,beta,delta,sx2);
+                            pm2 = rbfphialpha(m-2,xk,ep,alpha,0,beta,delta,sx2);
+                        end
+                        p = p.*(2*delta*(1+2*delta*xk.^2).*pm + ...
+                               4*delta*beta*alpha*sqrt(2*m-2)*xk.*pm1 + ...
+                               2*(beta*alpha)^2*sqrt((m-1)*(m-2))*pm2);
                     otherwise
                         error(sprint('Unacceptable derivative %d in rbfphialpha',d))
                 end
