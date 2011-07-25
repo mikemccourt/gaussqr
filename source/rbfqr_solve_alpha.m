@@ -71,7 +71,7 @@ N = size(y,1);
 nu = (2*ep/alpha)^2;
 lam = nu/(2+nu+2*sqrt(1+nu));
 if Mextramax<0
-    Mextramax = (1-Mextramax)*N;
+    Mextramax = (1-Mextramax/100)*N;
 end
 
 if not(exist('M'))
