@@ -115,3 +115,14 @@ rbfqrOBJ.N     = N;
 rbfqrOBJ.coef  = coef;
 rbfqrOBJ.Rbar  = Rbar;
 rbfqrOBJ.Marr  = Marr;
+
+% Developer's note: I should throw something in about handling the
+% ill-conditioning.  Users should be alerted when things are bad.
+% Specifically it is possible to get some of the diagonal values of R
+% exactly equal to zero, which is obviously a problem to which the user
+% should be alerted.
+% Relevant warning codes include MATLAB:illConditionedMatrix
+%                                MATLAB:divideByZero
+%                                MATLAB:nearlySingularMatrix
+%                                MATLAB:singularMatrix
+% I'll need to use warning query to check along the way

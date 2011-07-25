@@ -31,7 +31,9 @@ for ep=epvec
     end
     
     K = exp(-ep^2*(repmat(x,1,N)-repmat(x',N,1)).^2);
+    warning off MATLAB:nearlySingularMatrix % We know it's bad
     beta = K\y;
+    warning on MATLAB:nearlySingularMatrix
     yp = exp(-ep^2*(repmat(x',NN,1)-repmat(xx,1,N)).^2)*beta;
     errvecd(ie) = norm((yy-yp)./(abs(yy)+eps));
 
@@ -71,7 +73,9 @@ colorbar
 
 figure
 
+warning off MATLAB:polyfit:RepeatedPointsOrRescale % We know it's bad
 yp = polyval(polyfit(x,y,N-1),xx);
+warning on MATLAB:polyfit:RepeatedPointsOrRescale
 errpoly = norm((yy-yp)./(abs(yy)+eps));
 
 [minerr,minloc] = min(errbounded,[],2);
