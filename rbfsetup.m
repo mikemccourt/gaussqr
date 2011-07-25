@@ -45,4 +45,18 @@ GAUSSQR_PARAMETERS.RBFPHI_WITH_LOGS = 1;
 % The switch occurs when (1+(2ep/a)^2)^(1/4)-1<tol
 GAUSSQR_PARAMETERS.RBFPHI_EXP_TOL = 1e-4;
 
+% Maximum additional eigenfunctions to add to try to reach optimal accuracy
+% Adding more should allow you to spread out the ill-conditioning to more
+% functions, but those functions can themselves become ill-conditioned so
+% there may be a trade off.
+% Choosing 0 means there is no upper bound.
+% If you choose a negative number, that is treated as a percentage of the
+% number of input points, ie. -50 would mean max M=1.5N
+GAUSSQR_PARAMETERS.MAX_EXTRA_EFUNC = 50;
+
+% This chooses a default global scale parameter
+% You should really set this as you go and not use the default
+% This is only here to get you going and will probably be removed
+GAUSSQR_PARAMETERS.ALPHA_DEFAULT = sqrt(2);
+
 end
