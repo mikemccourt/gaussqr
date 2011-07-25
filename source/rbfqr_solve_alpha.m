@@ -24,6 +24,7 @@ function rbfqrOBJ = rbfqr_solve(x,y,ep,alpha,M)
 % do RBF-QR.  It is packaged like this to make it easier for
 % you to call other rbfqr functions.
 
+% Import global parameters from rbfsetup
 global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
@@ -45,29 +46,55 @@ elseif length(alpha)==0
     alpha = alphaDefault;
 end
 
-a = abs(a);
-ep = abs(ep);
+% Checks to make sure that the ep and alpha values are acceptable
+if length(ep)>1
+    ep = abs(real(ep(1)));
+    warning(sprintf('Multiple epsilon values not allowed; using epsilon=%g',ep))
+end
+if length(alpha)>1
+    alpha = abs(real(alpha(1)));
+    warning(sprintf('Multiple alpha values not allowed; using alpha=%g',alpha))
+end
+if abs(real(ep))~=ep
+    ep = abs(real(ep));
+    warning(sprintf('Only real, positive epsilon allowed; using epsilon=%g',ep))
+end
+if abs(real(alpha))~=alpha
+    alpha = abs(real(alpha));
+    warning(sprintf('Only real, positive epsilon allowed; using epsilon=%g',alpha))
+end
+if ep==0 || alpha==0
+    error(sprintf('Parameters cannot be zero: epsilon=%g, alpha=%g',ep,alpha))
+end
 
 N = size(y,1);
 nu = (2*ep/alpha)^2;
 lam = nu/(2+nu+2*sqrt(1+nu));
+if Mextramax<0
+    Mextramax = (1-Mextramax)*N;
+end
 
 if not(exist('M'))
-    M = ceil(min(N+8/max(.1,-log10(ep)),N+30));
+    M = ceil(N+log(eps)/log(lam));
+    if Mextramax~=0
+        M = min(M,Mextramax);
+    end
 else
+    M = M(:);
     if length(M)==0
         error('Empty M passed')
+    elseif length(M)>1
+        error('Multiple M values passed; must pass a single integer')
     elseif M<N
-        warning(sprintf('Input length: %d<%d unacceptable',M,N))
-        M = ceil(min(N+8/max(.1,-log10(ep)),N+20));
+        error(sprintf('rbfqr_solve requires M>N, but M=%g, N=%d',M,N))
+    elseif ceil(M)~=M
+        warning(sprintf('Noninteger M passed as %g, reset to %d',M,ceil(M)))
+        M = ceil(M);
     end
 end
 
-b = ep^2;
-c = sqrt(a^2+2*a*b);
-
-Marr = rbfformMarr(M+1);
-phiMat = rbfphi(Marr,x,ep,a);
+Marr = rbfformMarr(M)+1;
+phiMat = rbfphialpha(Marr,x,ep,alpha);
 
 [Q,R] = qr(phiMat);
 R1 = R(:,1:N);
@@ -77,17 +104,14 @@ R1s = iRdiag*R1;
 opts.UT = true;
 Rhat = linsolve(R1s,iRdiag*R2,opts);
 
-lam = b/(a+b+c);
 D = lam.^(toeplitz(sum(Marr(N+1:end),1),sum(Marr(N+1:-1:2),1)));
 Rbar = D.*Rhat';
-beta = ranksolve(Rhat,Rbar,linsolve(R1s,iRdiag*(Q'*y),opts));
+coef = ranksolve(Rhat,Rbar,linsolve(R1s,iRdiag*(Q'*y),opts));
 
-rbfqrOBJ.reg  = false;
-rbfqrOBJ.ep   = ep;
-rbfqrOBJ.a    = a;
-rbfqrOBJ.b    = b;
-rbfqrOBJ.c    = c;
-rbfqrOBJ.N    = N;
-rbfqrOBJ.beta = beta;
-rbfqrOBJ.Rbar = Rbar;
-rbfqrOBJ.Marr = Marr;
+rbfqrOBJ.reg   = false;
+rbfqrOBJ.ep    = ep;
+rbfqrOBJ.alpha = alpha;
+rbfqrOBJ.N     = N;
+rbfqrOBJ.coef  = coef;
+rbfqrOBJ.Rbar  = Rbar;
+rbfqrOBJ.Marr  = Marr;

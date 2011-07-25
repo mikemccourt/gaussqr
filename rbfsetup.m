@@ -59,4 +59,12 @@ GAUSSQR_PARAMETERS.MAX_EXTRA_EFUNC = 50;
 % This is only here to get you going and will probably be removed
 GAUSSQR_PARAMETERS.ALPHA_DEFAULT = sqrt(2);
 
+% Pick a transition point for the ranksolve algorithm to switch between
+% directly forming the linear system or solving with the Sherman-Morrison
+% formula.
+% This value r must be between 0 and 1.
+% For M < r*N, Sherman-Morrison will be used
+% For M >= r*N, the low-rank portion will be explicitly computed
+GAUSSQR_PARAMETERS.RANKSOLVE_PROPORTION = .75;
+
 end
