@@ -31,10 +31,13 @@ if ~isstruct(GAUSSQR_PARAMETERS)
 end
 Mextramax = GAUSSQR_PARAMETERS.MAX_EXTRA_EFUNC;
 alphaDefault = GAUSSQR_PARAMETERS.ALPHA_DEFAULT;
+alertuser = GAUSSQR_PARAMETERS.WARNINGS_ON;
 
 if nargin<3
     error('Insufficient inputs')
 end
+rbfqrOBJ.warnid = '';
+rbfqrOBJ.warnmsg = '';
 
 if sum(size(x)~=size(y))
     error('Different sized x (input) and y (output) vectors')
@@ -99,14 +102,42 @@ phiMat = rbfphialpha(Marr,x,ep,alpha);
 [Q,R] = qr(phiMat);
 R1 = R(:,1:N);
 R2 = R(:,N+1:end);
+
+lastwarn('')
+warning off MATLAB:divideByZero
 iRdiag = diag(1./diag(R1));
+[warnmsg,msgid] = lastwarn;
+if strcmp(msgid,'MATLAB:divideByZero')
+    rbfqrOBJ.warnid = 'GAUSSQR:zeroQRDiagonal';
+    rbfqrOBJ.warnmsg = 'At least one value on the R diagonal was exactly 0';
+end
+warning on MATLAB:divideByZero
+
 R1s = iRdiag*R1;
 opts.UT = true;
-Rhat = linsolve(R1s,iRdiag*R2,opts);
+
+lastwarn('')
+warning off MATLAB:singularMatrix
+if strcmp(rbfqrOBJ.warnid,'GAUSSQR:zeroQRDiagonal')
+    Rhat = linsolve(R1s,iRdiag*R2,opts);
+else
+    Rhat = linsolve(R1s,iRdiag*R2,opts);
+    [warnmsg,msgid] = lastwarn;
+    if strcmp(msgid,'MATLAB:singularMatrix')
+        rbfqrOBJ.warnid = 'GAUSSQR:singularR1invR2';
+        rbfqrOBJ.warnmsg = 'Computing inv(R1)R2 ... R1 singular to working precision';
+    end
+end
 
 D = lam.^(toeplitz(sum(Marr(N+1:end),1),sum(Marr(N+1:-1:2),1)));
 Rbar = D.*Rhat';
-coef = ranksolve(Rhat,Rbar,linsolve(R1s,iRdiag*(Q'*y),opts));
+
+[coef,recipcond] = ranksolve(Rhat,Rbar,linsolve(R1s,iRdiag*(Q'*y),opts));
+if (R<eps || isnan(R)) && strcmp(rbfqrOBJ.warnid,'')
+    rbfqrOBJ.warnid = 'GAUSSQR:illConditionedRanksolve';
+    rbfqrOBJ.warnmsg = sprintf('ranksolve encountered an ill-conditioned system, rcond=%g',recipcond);
+end
+warning on MATLAB:singularMatrix
 
 rbfqrOBJ.reg   = false;
 rbfqrOBJ.ep    = ep;
@@ -115,6 +146,10 @@ rbfqrOBJ.N     = N;
 rbfqrOBJ.coef  = coef;
 rbfqrOBJ.Rbar  = Rbar;
 rbfqrOBJ.Marr  = Marr;
+
+if alertuser && ~strcmp(rbfqrOBJ.warnid,'')
+    warning(rbfqrOBJ.warnid,rbfqrOBJ.warnmsg)
+end
 
 % Developer's note: I should throw something in about handling the
 % ill-conditioning.  Users should be alerted when things are bad.

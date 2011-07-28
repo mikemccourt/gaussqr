@@ -67,4 +67,7 @@ GAUSSQR_PARAMETERS.ALPHA_DEFAULT = sqrt(2);
 % For M >= r*N, the low-rank portion will be explicitly computed
 GAUSSQR_PARAMETERS.RANKSOLVE_PROPORTION = .75;
 
+% Alert the user if there is an issue during computation
+GAUSSQR_PARAMETERS.WARNINGS_ON = false;
+
 end

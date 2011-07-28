@@ -1,4 +1,4 @@
-function X = ranksolve(U,VT,B)
+function [X,R] = ranksolve(U,VT,B)
 % This solves a system (eye(n)+U*VT)*X=B
 % where [n m]=size(U) and [m n]=size(VT)
 % using the identity inv(eye(n)+U*VT)=eye(n)-U*inv(eye(m)+VT*U)*VT
@@ -24,7 +24,8 @@ if n~=nV || m~=mV || n~=nB
 end
 
 if m>=r*n
-    X = (eye(n)+U*VT)\B;
+    [X,R] = linsolve(eye(n)+U*VT,B);
 else
-    X = B-U*((eye(m)+VT*U)\(VT*B));
+    [X,R] = linsolve(eye(m)+VT*U,VT*B);
+    X = B-U*X;
 end

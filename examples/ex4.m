@@ -16,6 +16,7 @@ xx = pickpoints(-3,3,NN);
 yy = yf(xx);
 errvec = zeros(length(epvec),length(alphavec));
 errvecd = zeros(size(epvec));
+condvec = zeros(length(epvec),length(alphavec));
 
 progressbar = 0;
 progressincrement = .1;
@@ -27,6 +28,7 @@ for ep=epvec
         rbfqrOBJ = rbfqr_solve_alpha(x,y,ep,alpha);
         yp = rbfqr_eval_alpha(rbfqrOBJ,xx);
         errvec(ie,ia) = norm((yy-yp)./(abs(yy)+eps));
+        condvec(ie,ia) = strcmp(rbfqrOBJ.warnid,'');
         ia = ia + 1;
     end
     
@@ -68,8 +70,15 @@ set(gca,'YScale','log')
 xlabel('\epsilon')
 ylabel('\alpha')
 zlabel('log_{10}(error)')
-title(strcat(fstr,ptsstr,spacestr))
+title('Log error contour plot, x means ill-conditioned')
 colorbar
+
+badpoints = find(1-condvec);
+hold on
+for k=goodpoints % .95 centers the x
+    text(.95*EE(badpoints),AA(badpoints),'x','FontSize',5)
+end
+hold off
 
 figure
 
