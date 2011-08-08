@@ -133,7 +133,7 @@ D = lam.^(toeplitz(sum(Marr(N+1:end),1),sum(Marr(N+1:-1:2),1)));
 Rbar = D.*Rhat';
 
 [coef,recipcond] = ranksolve(Rhat,Rbar,linsolve(R1s,iRdiag*(Q'*y),opts));
-if (R<eps || isnan(R)) && strcmp(rbfqrOBJ.warnid,'')
+if (recipcond<eps || isnan(recipcond)) && strcmp(rbfqrOBJ.warnid,'')
     rbfqrOBJ.warnid = 'GAUSSQR:illConditionedRanksolve';
     rbfqrOBJ.warnmsg = sprintf('ranksolve encountered an ill-conditioned system, rcond=%g',recipcond);
 end

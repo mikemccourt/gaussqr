@@ -74,11 +74,11 @@ title('Log error contour plot, x means ill-conditioned')
 colorbar
 
 badpoints = find(1-condvec);
-hold on
-for k=goodpoints % .95 centers the x
+%hold on
+%for k=badpoints % .95 centers the x
     text(.95*EE(badpoints),AA(badpoints),'x','FontSize',5)
-end
-hold off
+%end
+%hold off
 
 figure
 
