@@ -1,4 +1,4 @@
-% function p = rbfphialpha(Marr,x,ep,alpha,deriv,beta,gamma,delta,sx2)
+% function p = rbfphialpha(Marr,x,ep,alpha,deriv,beta,delta,sx2)
 % This function should in general be used in the following form
 %   function p = rbfphi(Marr,x,ep,alpha)
 % which lets you pass inputs to produce the needed eigenfunctions
@@ -11,7 +11,7 @@
 % ep - traditional RBF shape parameter
 % alpha - RBFQR global scale parameter
 % deriv - row vector of derivatives in each dimension
-% beta,gamma,delta,sx2 - DO NOT PASS, it is for private use
+% beta,delta,sx2 - DO NOT PASS, it is for private use
 %
 % Note: if you pass alpha<0 or ep<0 or m<1, this will error out
 %
@@ -97,7 +97,7 @@ switch nargin
                 pm = rbfphialpha(m,xk,ep,alpha,0,beta,delta,sx2);
                 switch d
                     case 0
-                        p = p*pm;
+                        p = p.*pm;
                     case 1
                         if m==1
                             pm1 = zeros(size(p));
@@ -129,6 +129,9 @@ end
 end
 
 % For Developers only
+% Warning: This code uses delta<0, as opposed to the analysis which uses
+%          delta>0.  I may change this at some point, or I may keep it the
+%          way it is and change the analysis.
 % Note: serious improvments may be possible using a recurrence relation -
 %       it will generally be the case that we are interested in computing
 %       all the eigenfucntions phi_m for 1<m<M, in which case we could

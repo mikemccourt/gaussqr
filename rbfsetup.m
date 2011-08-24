@@ -68,6 +68,7 @@ GAUSSQR_PARAMETERS.ALPHA_DEFAULT = sqrt(2);
 GAUSSQR_PARAMETERS.RANKSOLVE_PROPORTION = .75;
 
 % Alert the user if there is an issue during computation
+% Otherwise this info is stored in the rbfqrOBJ
 GAUSSQR_PARAMETERS.WARNINGS_ON = false;
 
 end
