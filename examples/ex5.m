@@ -37,7 +37,7 @@ for ep=epvec
     lam = nu/(2+nu+2*sqrt(1+nu));
     M = ceil(N+log(eps)/log(lam));
     if Mextramax~=0
-        M = min(M,Mextramax);
+        M = min(M,abs(Mextramax));
     end
     Marr = rbfformMarr(M)+1;
     phiMat = rbfphialpha(Marr,x,ep,alpha);
