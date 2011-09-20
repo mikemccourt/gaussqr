@@ -71,4 +71,12 @@ GAUSSQR_PARAMETERS.RANKSOLVE_PROPORTION = .75;
 % Otherwise this info is stored in the rbfqrOBJ
 GAUSSQR_PARAMETERS.WARNINGS_ON = false;
 
+% Default number of functions to use for regression
+% Adding more functions will help the quality of the regression but will
+% cost more than a lower r.
+% If you choose r>1, this value is the default number of functions to use,
+% which will work up to N
+% For 0<r<=1, this value M is a proportion of N
+GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .4;
+
 end
