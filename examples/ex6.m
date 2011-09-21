@@ -13,6 +13,7 @@ end
 Mextramax = GAUSSQR_PARAMETERS.MAX_EXTRA_EFUNC;
 
 Nrange = 10:10:500;
+NN = 1000;
 if not(exist('ep'))
     ep = 1e-1;
 end
@@ -29,14 +30,16 @@ for i=1:length(Mfrac)
         M = round(N*Mfrac(i));
         x = pickpoints(-3,3,N);
         y = yf(x);
-        xx = pickpoints(-3,3,1000);
+        xx = pickpoints(-3,3,NN);
         yy = yf(xx);
         RBFQR = rbfqrr_solve_alpha(x,y,ep,alpha,M);
         yp = rbfqr_eval_alpha(RBFQR,xx);
-        errs(i,j) = norm((yy-yp)./(abs(yp)+eps));
+        errs(i,j) = norm((yy-yp)./(abs(yp)+eps))/NN;
     end
 end
 
 semilogy(Nrange,errs)
 title(sprintf('\\alpha=%g, \\epsilon=%g',alpha,ep))
 legend('M=.1N','M=.2N','M=.3N','M=.4N','M=.5N','Location','NorthEast')
+xlabel('N')
+ylabel('Average error')
