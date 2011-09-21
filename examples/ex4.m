@@ -1,12 +1,12 @@
 % Tests different ep and alpha values for a sample problem
 
-epvec = logspace(-3,1,30);
-alphavec = logspace(-2,2,29);
-N = 30;
+epvec = logspace(-3,1,40);
+alphavec = logspace(-2,2,81);
+N = 55;
 NN = 200;
 
 spaceopt = 'cheb';
-fopt = 'sinh';
+fopt = 'exp';
 
 [yf,fstr] = pickfunc(fopt,1);
 
@@ -19,7 +19,7 @@ errvecd = zeros(size(epvec));
 condvec = zeros(length(epvec),length(alphavec));
 
 progressbar = 0;
-progressincrement = .1;
+progressincrement = .03;
 fprintf(' Progress: ')
 ie = 1;
 for ep=epvec
@@ -27,7 +27,7 @@ for ep=epvec
     for alpha=alphavec
         rbfqrOBJ = rbfqr_solve_alpha(x,y,ep,alpha);
         yp = rbfqr_eval_alpha(rbfqrOBJ,xx);
-        errvec(ie,ia) = norm((yy-yp)./(abs(yy)+eps));
+        errvec(ie,ia) = norm((yy-yp)./(abs(yy)+eps))/NN;
         condvec(ie,ia) = strcmp(rbfqrOBJ.warnid,'');
         ia = ia + 1;
     end
@@ -37,7 +37,7 @@ for ep=epvec
     beta = K\y;
     warning on MATLAB:nearlySingularMatrix
     yp = exp(-ep^2*(repmat(x',NN,1)-repmat(xx,1,N)).^2)*beta;
-    errvecd(ie) = norm((yy-yp)./(abs(yy)+eps));
+    errvecd(ie) = norm((yy-yp)./(abs(yy)+eps))/NN;
 
     if ie/length(epvec) > progressbar+progressincrement
         progressbar = progressbar + progressincrement;
@@ -69,37 +69,37 @@ set(gca,'YScale','log')
 
 xlabel('\epsilon')
 ylabel('\alpha')
-zlabel('log_{10}(error)')
-title('Log error contour plot, x means ill-conditioned')
-colorbar
+title(sprintf('N=%d, x means ill-conditioned',N))
+l = colorbar;
+set(get(l,'Ylabel'),'String','log_{10}(error)')
 
 badpoints = find(1-condvec);
-%hold on
-%for k=badpoints % .95 centers the x
-    text(.95*EE(badpoints),AA(badpoints),'x','FontSize',5)
-%end
-%hold off
+text(.95*EE(badpoints),AA(badpoints),'x','FontSize',5)
 
 figure
 
-warning off MATLAB:polyfit:RepeatedPointsOrRescale % We know it's bad
-yp = polyval(polyfit(x,y,N-1),xx);
-warning on MATLAB:polyfit:RepeatedPointsOrRescale
-errpoly = norm((yy-yp)./(abs(yy)+eps));
+warning off MATLAB:polyfit:RepeatedPoints % We know it's bad
+[ppoly,spoly,mupoly] = polyfit(x,y,N-1);
+yp = polyval(ppoly,xx,spoly,mupoly);
+warning on MATLAB:polyfit:RepeatedPoints
+errpoly = norm((yy-yp)./(abs(yy)+eps))/NN;
 
 [minerr,minloc] = min(errbounded,[],2);
 
-[AX,H1,H2] = plotyy(epvec,minerr,epvec,alphavec(minloc),'semilogx','loglog');
+[AX,H1,H4] = plotyy(epvec,minerr,epvec,alphavec(minloc),'semilogx','loglog');
 hold on
-plot(epvec,log10(errvecd),':xr');
-plot(epvec,log10(errpoly)*ones(size(epvec)),'--k')
+H2 = plot(epvec,log10(errvecd),':xr');
+H3 = plot(epvec,log10(errpoly)*ones(size(epvec)),'--k');W
 xlabel('\epsilon')
 set(get(AX(1),'Ylabel'),'String','minimum error')
-set(AX(1),'Ylim',[-13,2])
-set(AX(1),'YTick',[-10 -5 0])
+set(AX(1),'Ylim',[-17,0])
+set(AX(1),'YTick',[-15 -10 -5 0])
 set(get(AX(2),'Ylabel'),'String','minimizing \alpha')
-set(H2,'LineStyle','none')
-set(H2,'Marker','o')
-legend('QR','Direct','Polynomial','Location','SouthWest')
-title('RBF-QR with optimally chosen \alpha')
+set(AX(2),'Ylim',[.01,100])
+set(AX(2),'Ytick',[.01,1,100])
+set(AX(2),'YtickLabel',[.01,1,100])
+set(H4,'LineStyle','none')
+set(H4,'Marker','o')
+legend([H1,H2,H3,H4],'QR','Direct','Polynomial','\alpha','Location','SouthWest')
+title(sprintf('f(x)=10e^{-x^2}+x^2, N=%d',N))
 hold off

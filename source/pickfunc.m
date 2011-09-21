@@ -16,6 +16,9 @@ switch dim
             case 'sinh'
                 fstr = 'y(x)=sinh(x)/(1+cosh(x))';
                 yf = @(x) sinh(x)./(1+cosh(x));
+            case 'exp'
+                fstr = 'y(x)=10e^{-x^2}+x^2';
+                yf = @(x) 10*exp(-x.^2)+x.^2;
         end
     case 2
         switch lower(fopt)
