@@ -76,7 +76,6 @@ end
 % For now I'm doing Marr+1 to solve for an off-by-one issues in the paper
 % I'll work on fixing this eventually
 if not(exist('M'))
-    Marr = rbfformMarr(zeros(d,1),[],Mdefault)+1;
     M = zeros(d,1);
     Mlim = Mdefault;
 else

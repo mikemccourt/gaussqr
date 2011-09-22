@@ -1,5 +1,5 @@
-function rbfqrOBJ = rbfqr_solve(x,y,ep,alpha,M)
-% function rbfqrOBJ = rbfqr_solve(x,y,ep,alpha,M)
+function rbfqrOBJ = rbfqr_solve_alpha(x,y,ep,alpha,M)
+% function rbfqrOBJ = rbfqr_solve_alpha(x,y,ep,alpha,M)
 % This function accepts required inputs x, y and ep
 % x is a Nxd vector of input data points of the form
 %     x = [x1';x2';...;xN'], x1 is a column vector
@@ -39,8 +39,11 @@ end
 rbfqrOBJ.warnid = '';
 rbfqrOBJ.warnmsg = '';
 
-if sum(size(x)~=size(y))
-    error('Different sized x (input) and y (output) vectors')
+[N,d] = size(x);
+if sum(N~=size(y,1))
+    error('Different number of input and output points (x and y)')
+elseif size(y,2)~=1
+    error('You can only pass a 1D output vector y')
 end
 
 if not(exist('alpha'))
@@ -70,33 +73,34 @@ if ep==0 || alpha==0
     error(sprintf('Parameters cannot be zero: epsilon=%g, alpha=%g',ep,alpha))
 end
 
-N = size(y,1);
 nu = (2*ep/alpha)^2;
 lam = nu/(2+nu+2*sqrt(1+nu));
 if Mextramax<0
     Mextramax = (1-Mextramax/100)*N;
 end
+Mlim = ceil(N+log(eps)/log(lam));
+if Mextramax~=0
+    Mlim = min(Mlim,Mextramax);
+end
 
+% This needs to get better
+% Specifically it needs to handle people passing weird stuff
 if not(exist('M'))
-    M = ceil(N+log(eps)/log(lam));
-    if Mextramax~=0
-        M = min(M,Mextramax);
-    end
+    M = zeros(d,1);
 else
-    M = M(:);
-    if length(M)==0
-        error('Empty M passed')
-    elseif length(M)>1
-        error('Multiple M values passed; must pass a single integer')
+    %M = M(:);
+    [Mr Mc] = size(M);
+    if Mr~=d
+        error('Incorrect M size passed, size(M)=%dx%d d=%d',Mr,Mc,d)
     elseif M<N
-        error(sprintf('rbfqr_solve requires M>N, but M=%g, N=%d',M,N))
+        error('rbfqr_solve requires M>N, but M=%g, N=%d',M,N)
     elseif ceil(M)~=M
-        warning(sprintf('Noninteger M passed as %g, reset to %d',M,ceil(M)))
+        warning('Noninteger M passed as %g, reset to %d',M,ceil(M))
         M = ceil(M);
     end
 end
 
-Marr = rbfformMarr(M)+1;
+Marr = rbfformMarr(M,Mlim,Mextramax)+1;
 phiMat = rbfphialpha(Marr,x,ep,alpha);
 
 [Q,R] = qr(phiMat);
@@ -129,7 +133,7 @@ else
     end
 end
 
-D = lam.^(toeplitz(sum(Marr(N+1:end),1),sum(Marr(N+1:-1:2),1)));
+D = lam.^(toeplitz(sum(Marr(:,N+1:end),1),sum(Marr(:,N+1:-1:2),1)));
 Rbar = D.*Rhat';
 
 [coef,recipcond] = ranksolve(Rhat,Rbar,linsolve(R1s,iRdiag*(Q'*y),opts));
