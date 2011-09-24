@@ -83,7 +83,7 @@ GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .4;
 % to require orthogonality for when searching for an alpha value.
 % This value must be a positive integer
 % rbfalphasearch will try to choose the smallest alpha such that all 
-GAUSSQR_PARAMETERS.DEFAULT_ORTH_REQUESTED = 50;
+GAUSSQR_PARAMETERS.DEFAULT_ORTH_REQUESTED = 20;
 
 % This is the tolerance to which orthonormality is accepted
 % We consider functions orthonormal if
