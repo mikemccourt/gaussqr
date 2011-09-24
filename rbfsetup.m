@@ -52,7 +52,7 @@ GAUSSQR_PARAMETERS.RBFPHI_EXP_TOL = 1e-4;
 % Choosing 0 means there is no upper bound.
 % If you choose a negative number, that is treated as a percentage of the
 % number of input points, ie. -50 would mean max M=1.5N
-GAUSSQR_PARAMETERS.MAX_EXTRA_EFUNC = -800;
+GAUSSQR_PARAMETERS.MAX_EXTRA_EFUNC = 1000;
 
 % This chooses a default global scale parameter
 % You should really set this as you go and not use the default
@@ -78,5 +78,16 @@ GAUSSQR_PARAMETERS.WARNINGS_ON = false;
 % which will work up to N
 % For 0<r<=1, this value M is a proportion of N
 GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .4;
+
+% This is the default value for the number of eigenfunctions
+% to require orthogonality for when searching for an alpha value.
+% This value must be a positive integer
+% rbfalphasearch will try to choose the smallest alpha such that all 
+GAUSSQR_PARAMETERS.DEFAULT_ORTH_REQUESTED = 1;
+
+% This is the tolerance to which orthonormality is accepted
+% We consider functions orthonormal if
+%   abs(1-Integral_n)<tol
+GAUSSQR_PARAMETERS.DEFAULT_ORTH_TOLERANCE = 1e-8;
 
 end
