@@ -80,19 +80,22 @@ GAUSSQR_PARAMETERS.WARNINGS_ON = false;
 GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .4;
 
 % This is the default value for the number of eigenfunctions
-% to require orthogonality for when searching for an alpha value.
+% to require orthonormality for when searching for an alpha value.
 % This value must be a positive integer
 % rbfalphasearch will try to choose the smallest alpha such that all 
-GAUSSQR_PARAMETERS.DEFAULT_ORTH_REQUESTED = 20;
+GAUSSQR_PARAMETERS.ORTH_INDEX_REQUESTED = 50;
 
 % This is the tolerance to which orthonormality is accepted
 % We consider functions orthonormal if
 %   abs(1-Integral_n)<tol
-GAUSSQR_PARAMETERS.DEFAULT_ORTH_TOLERANCE = 1e-2;
+% In higher dimensions you will have to give more leeway because the
+% integrals are generally all smaller than 1 and their product may be
+% significantly less than one.
+GAUSSQR_PARAMETERS.DEFAULT_ORTH_TOLERANCE = 3e-2;
 
 % These are the bounds of the alpha search algorithm
 % If the acceptable alpha region is outside this, you likely won't find it
-% As a general guide, for higher dimensions, you'll need a smaller alpha
+% As a general guide, for higher dimensions, you'll need a larger alpha
 % on the same domain
 % The minimum value is the starting point for the alpha search, so if you
 % have a better value, use it.
@@ -102,6 +105,14 @@ GAUSSQR_PARAMETERS.ORTH_MAXIMUM_ALPHA = 1e3;
 % This determines how accurate the alpha parameter needs to be solved for
 % In general this doesn't need to be too accurate because there should be a
 % range of acceptable parameters
+% This value is passed directly to fminbnd as options.TolX
 GAUSSQR_PARAMETERS.ORTH_SEARCH_ACCURACY = 1e-1;
+
+% The accuracy required of quadl in the orthonormality test while computing
+% the integration.  The default value for quadl is 1e-6, but you might be
+% able to speed up the search by choosing a higher tolerance.  For right
+% now this is only used to get a starting point for the optimization
+% routine which uses the full 1e-6 tolerance.
+GAUSSQR_PARAMETERS.ORTH_INTEGRATION_TOL = 1e-4;
 
 end
