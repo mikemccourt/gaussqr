@@ -83,11 +83,25 @@ GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .4;
 % to require orthogonality for when searching for an alpha value.
 % This value must be a positive integer
 % rbfalphasearch will try to choose the smallest alpha such that all 
-GAUSSQR_PARAMETERS.DEFAULT_ORTH_REQUESTED = 1;
+GAUSSQR_PARAMETERS.DEFAULT_ORTH_REQUESTED = 50;
 
 % This is the tolerance to which orthonormality is accepted
 % We consider functions orthonormal if
 %   abs(1-Integral_n)<tol
-GAUSSQR_PARAMETERS.DEFAULT_ORTH_TOLERANCE = 1e-8;
+GAUSSQR_PARAMETERS.DEFAULT_ORTH_TOLERANCE = 1e-2;
+
+% These are the bounds of the alpha search algorithm
+% If the acceptable alpha region is outside this, you likely won't find it
+% As a general guide, for higher dimensions, you'll need a smaller alpha
+% on the same domain
+% The minimum value is the starting point for the alpha search, so if you
+% have a better value, use it.
+GAUSSQR_PARAMETERS.ORTH_MINIMUM_ALPHA = 1e-3;
+GAUSSQR_PARAMETERS.ORTH_MAXIMUM_ALPHA = 1e3;
+
+% This determines how accurate the alpha parameter needs to be solved for
+% In general this doesn't need to be too accurate because there should be a
+% range of acceptable parameters
+GAUSSQR_PARAMETERS.ORTH_SEARCH_ACCURACY = 1e-1;
 
 end
