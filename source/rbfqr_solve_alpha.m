@@ -79,8 +79,8 @@ if Mextramax<0
     Mextramax = (1-Mextramax/100)*N;
 end
 Mlim = ceil(N+log(eps)/log(lam));
-if Mextramax~=0
-    Mlim = min(Mlim,Mextramax);
+if Mextramax==0
+    Mextramax = inf; % Allow the array to go as long as it wants
 end
 
 % This needs to get better

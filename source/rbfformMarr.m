@@ -15,7 +15,11 @@ if sum(M)==0
         if not(exist('maxlength'))
             Mmax = 1;
         else
-            Mmax = maxlength;
+            if maxlength<inf
+                Mmax = maxlength;
+            else
+                error('Incompatible Mmax=%g and maxlength=%g values',Mmax,maxlength)
+            end
         end
     end
     M = ones(1,d)*Mmax;
