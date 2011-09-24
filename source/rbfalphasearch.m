@@ -36,13 +36,14 @@ if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
 end
 tol = GAUSSQR_PARAMETERS.DEFAULT_ORTH_TOLERANCE;
-if exist('quadgk')
-    quadgkEXISTS = true;
-end
 
 weight = @(a,x) a/sqrt(pi)*exp(-(a*x).^2);
-
-intappx = quadl(@(x)rbfphialpha(k,x',ep,alpha)'.^2.*weight(alpha,x),a,b);
+if exist('quadgk')
+%    quadgkEXISTS = true;
+    intappx = quadgk(@(x)rbfphialpha(k,x',ep,alpha)'.^2.*weight(alpha,x),a,b);
+else
+    intappx = quadl(@(x)rbfphialpha(k,x',ep,alpha)'.^2.*weight(alpha,x),a,b);
+end
 integral = (abs(1-intappx)<tol)*(1/alpha);
 
 end
