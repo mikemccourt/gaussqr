@@ -46,10 +46,18 @@ elseif size(y,2)~=1
     error('You can only pass a 1D output vector y')
 end
 
-if not(exist('alpha'))
-    alpha = alphaDefault;
+% If the user didn't pass alpha, or passed [], then we need to pick an
+% alpha from rbfalphasearch
+computealpha = 0;
+if nargin==3
+    computealpha = 1;
 elseif length(alpha)==0
-    alpha = alphaDefault;
+    computealpha = 1;
+end
+if computealpha==1
+    xminBound = min(x);
+    xmaxBound = max(x);
+    alpha = rbfalphasearch(ep,xminBound,xmaxBound);
 end
 
 % Checks to make sure that the ep and alpha values are acceptable
@@ -78,7 +86,9 @@ lam = nu/(2+nu+2*sqrt(1+nu));
 if Mextramax<0
     Mextramax = (1-Mextramax/100)*N;
 end
-Mlim = ceil(N+log(eps)/log(lam));
+MarrN = rbfformMarr(zeros(d,1),[],N);
+Mlim = ceil(size(MarrN,2)+log(eps)/log(lam));
+% Mlim = ceil(N+log(eps)/log(lam));
 if Mextramax==0
     Mextramax = inf; % Allow the array to go as long as it wants
 end
@@ -165,3 +175,9 @@ end
 %                                MATLAB:nearlySingularMatrix
 %                                MATLAB:singularMatrix
 % I'll need to use warning query to check along the way
+%
+% Eventually I'll need to find a way to allow users to simultaneously pick
+% M and alpha.  Right now I have them guess at M in the rbfsetup file and
+% then use that guess to come up with alpha, which then comes up with the
+% real M.  This works because there is an acceptable alpha range, but
+% there's a better way to do this, I just don't know it yet.

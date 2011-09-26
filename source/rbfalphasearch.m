@@ -74,18 +74,18 @@ else
     warning('Failed to find an acceptable alpha in [%g,%g]',alphamin,alphamax);
 end
 
-alphavec = logspace(-2,2,50);
-weight = @(a,x) a/sqrt(pi)*exp(-(a*x).^2);
-j = 1;
-erra = zeros(size(alphavec));
-erri = zeros(size(alphavec));
-for al=alphavec
-    erra(j) = quadl(@(x)rbfphialpha(k,x',ep,al)'.^2.*weight(al,x),a(1),b(1),inttol)^2;
-    erri(j) = rbforthintegral(k,ep,al,a,b,inttol);
-    j = j+1;
-end
-semilogx(alphavec,[erra;-erri])
-[alphavec;erra;erri]
+% alphavec = logspace(-2,2,50);
+% weight = @(a,x) a/sqrt(pi)*exp(-(a*x).^2);
+% j = 1;
+% erra = zeros(size(alphavec));
+% erri = zeros(size(alphavec));
+% for al=alphavec
+%     erra(j) = quadl(@(x)rbfphialpha(k,x',ep,al)'.^2.*weight(al,x),a(1),b(1),inttol)^2;
+%     erri(j) = rbforthintegral(k,ep,al,a,b,inttol);
+%     j = j+1;
+% end
+% semilogx(alphavec,[erra;-erri])
+% [alphavec;erra;erri]
 
 end
 

@@ -52,7 +52,7 @@ GAUSSQR_PARAMETERS.RBFPHI_EXP_TOL = 1e-4;
 % Choosing 0 means there is no upper bound.
 % If you choose a negative number, that is treated as a percentage of the
 % number of input points, ie. -50 would mean max M=1.5N
-GAUSSQR_PARAMETERS.MAX_EXTRA_EFUNC = 1000;
+GAUSSQR_PARAMETERS.MAX_EXTRA_EFUNC = 9999;
 
 % This chooses a default global scale parameter
 % You should really set this as you go and not use the default
@@ -83,7 +83,7 @@ GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .4;
 % to require orthonormality for when searching for an alpha value.
 % This value must be a positive integer
 % rbfalphasearch will try to choose the smallest alpha such that all 
-GAUSSQR_PARAMETERS.ORTH_INDEX_REQUESTED = 50;
+GAUSSQR_PARAMETERS.ORTH_INDEX_REQUESTED = 25;
 
 % This is the tolerance to which orthonormality is accepted
 % We consider functions orthonormal if
@@ -95,7 +95,7 @@ GAUSSQR_PARAMETERS.DEFAULT_ORTH_TOLERANCE = 3e-2;
 
 % These are the bounds of the alpha search algorithm
 % If the acceptable alpha region is outside this, you likely won't find it
-% As a general guide, for higher dimensions, you'll need a larger alpha
+% As a general guide, for higher dimensions, you'll need a smaller alpha
 % on the same domain
 % The minimum value is the starting point for the alpha search, so if you
 % have a better value, use it.
