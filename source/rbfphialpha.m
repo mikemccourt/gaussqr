@@ -95,7 +95,7 @@ switch nargin
                 d = deriv(k);
                 xk = x(:,k);
                 pm = rbfphialpha(m,xk,ep,alpha,0,beta,delta,sx2);
-                switch d
+                switch d % Check which derivative is being asked for
                     case 0
                         p = p.*pm;
                     case 1
@@ -130,8 +130,7 @@ end
 
 % For Developers only
 % Warning: This code uses delta<0, as opposed to the analysis which uses
-%          delta>0.  I may change this at some point, or I may keep it the
-%          way it is and change the analysis.
+%          delta2>0.  I will change this at some point
 % Note: serious improvments may be possible using a recurrence relation -
 %       it will generally be the case that we are interested in computing
 %       all the eigenfucntions phi_m for 1<m<M, in which case we could

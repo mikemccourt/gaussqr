@@ -19,6 +19,12 @@ switch dim
             case 'exp'
                 fstr = 'y(x)=10e^{-x^2}+x^2';
                 yf = @(x) 10*exp(-x.^2)+x.^2;
+            case 'cosexp'
+                fstr = 'y(x)=cos(x)+e^{-(x-1)^2}-e^{-(x+1)^2}';
+                yf = @(x) cos(x)+exp(-(x-1).^2)-exp(-(x+1).^2);
+            case 'log'
+                fstr = 'y(x)=xlog(1+x^2)';
+                yf = @(x) x.*log(1+x.^2);
         end
     case 2
         switch lower(fopt)

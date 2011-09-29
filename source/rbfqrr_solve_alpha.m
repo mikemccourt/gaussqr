@@ -31,17 +31,22 @@ end
 rbfqrOBJ.warnid = '';
 rbfqrOBJ.warnmsg = '';
 
-if sum(size(x)~=size(y))
-    error('Different sized x (input) and y (output) vectors')
-end
 if size(x,1)~=size(y,1)
     error('Different numbers of inputs and outputs')
+elseif sum(size(y,2)~=1)
+    error('Output vector y must have only one column')
 end
 
-if not(exist('alpha'))
-    alpha = alphaDefault;
+computealpha = 0;
+if nargin==3
+    computealpha = 1;
 elseif length(alpha)==0
-    alpha = alphaDefault;
+    computealpha = 1;
+end
+if computealpha==1
+    xminBound = min(x);
+    xmaxBound = max(x);
+    alpha = rbfalphasearch(ep,xminBound,xmaxBound);
 end
 
 % Checks to make sure that the ep and alpha values are acceptable
@@ -65,7 +70,7 @@ if ep==0 || alpha==0
     error(sprintf('Parameters cannot be zero: epsilon=%g, alpha=%g',ep,alpha))
 end
 
-[N,d] = size(y);
+[N,d] = size(x);
 if Mdefault<=1 % Only a percentage of N is considered
     Mdefault = floor(Mdefault*N);
 elseif Mdefault>N
@@ -104,7 +109,7 @@ else
     end
 end
 
-Marr = rbfformMarr(M,[],Mlim)+1;
+Marr = rbfformMarr(M,[],Mlim)+1; % +1 because of change in notation
 phiMat = rbfphialpha(Marr,x,ep,alpha);
 
 lastwarn('')
