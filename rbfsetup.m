@@ -77,13 +77,13 @@ GAUSSQR_PARAMETERS.WARNINGS_ON = false;
 % If you choose r>1, this value is the default number of functions to use,
 % which will work up to N
 % For 0<r<=1, this value M is a proportion of N
-GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .6;
+GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .5;
 
 % This is the default value for the number of eigenfunctions
 % to require orthonormality for when searching for an alpha value.
 % This value must be a positive integer
 % rbfalphasearch will try to choose the smallest alpha such that all 
-GAUSSQR_PARAMETERS.ORTH_INDEX_REQUESTED = 25;
+GAUSSQR_PARAMETERS.ORTH_INDEX_REQUESTED = 1;
 
 % This is the tolerance to which orthonormality is accepted
 % We consider functions orthonormal if

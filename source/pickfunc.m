@@ -39,7 +39,7 @@ switch dim
                 yf = @(x) 1./(1+(x(:,1).^2+x(:,2).^2));
             case 'tanh'
                 fstr = 'f(x,y)=tanh(x+y)';
-                yf = @(x) tanh(x(:,1)+x(:,2));
+                yf = @(x) tanh(x(:,1).^2+x(:,2).^2);
             case 'franke'
                 fstr = 'f(x,y) = Frankes function';
                 yf = @(x) franke(x(:,1)/1,x(:,2)/1);
