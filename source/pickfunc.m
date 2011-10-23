@@ -43,7 +43,47 @@ switch dim
             case 'franke'
                 fstr = 'f(x,y) = Frankes function';
                 yf = @(x) franke(x(:,1)/1,x(:,2)/1);
+            case 'kxy' % for [-5,5]^2
+                fstr = 'f(x,y) = KXY';
+                yf = @(x) kxy(x);
+            case 'ksa1' % for [-1,1]^2
+                fstr = 'f(x,y) = KSA1';
+                yf = @(x) ksa1(x);
+            case 'ksa2' % for disk with radius 20
+                fstr = 'f(x,y) = KSA2';
+                yf = @(x) ksa2(x);
         end
     otherwise
         error('Can only consider 1D and 2D functions')
+end
+end
+
+function y = kxy(x)
+% used on [-5,5]^2 in [Jester/Menke/Urban (2011)]
+    rx = -2.15e-1;
+    ry = 1.22e-1;
+    kx = -1;
+    ky = -1; 
+    xx = x(:,1);
+    yy = x(:,2);
+    y = (rx*xx.^2+ry*yy.^2)./(1+sqrt(1-(1+kx)*rx^2*xx.^2-(1+ky)*ry^2*yy.^2)) ...
+        - 4.05e-4*xx.^4 - 8.13e-4*xx.^2.*yy.^2 + 5.73e-4*yy.^4 ...
+        - 4.59e-6*xx.^6 + 1.14e-5*xx.^4.*yy.^2 + 9.64e-6*xx.^2.*yy.^4 + 4.45e-7*yy.^6 ...
+        - 2.69e-9*xx.^8 - 7.96e-8*xx.^6.*yy.^2 - 8.79e-8*xx.^4.*yy.^4 - 9.16e-8*xx.^2.*yy.^6 + 2.43e-8*yy.^8;
+end
+function y = ksa1(x)
+% used on [-1,1]^2 in [Jester/Menke/Urban (2011)]
+    r2 = x(:,1).^2+x(:,2).^2;
+    rho = 1;
+    kappa = -1;
+    y = rho*r2./(1+sqrt(1-(1+kappa)*rho^2*r2)) + 1.5*r2.^2 ...
+            - 7e-1*r2.^3 + 5e-1*r2.^4 - 5e-1*r2.^5;
+end
+function y = ksa2(x)
+% used on disk of radius 20 in [Jester/Menke/Urban (2011)]
+    r2 = x(:,1).^2+x(:,2).^2;
+    rho = -3.87e-2;
+    kappa = 0;
+    y = rho*r2./(1+sqrt(1-(1+kappa)*rho^2*r2)) - 4.17e-6*r2.^2 + 4.71e-9*r2.^3 ...
+        - 4.94e-12*r2.^4 - 5.42e-15*r2.^5 - 4.98e-18*r2.^6 - 1.22e-20*r2.^7;
 end

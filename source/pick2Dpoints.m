@@ -47,4 +47,9 @@ switch lower(spaceopt)
         xh = haltonseq(pN,2);
         x = (repmat(b,pN,1)-repmat(a,pN,1)).*xh+repmat(a,pN,1);
         spacestr=' Halton points';
+    case 'wam'
+        % Here, centered symmetric (actually Chebyshev points), but can be
+        % used more flexibly, i.e., arbitrary quadrilateral
+        x = wamquadrangle(N(1)-1,[a(1) a(2); b(1) a(2); b(1) b(2); a(1) b(2)]);
+        spacestr = ' WAM quadrilateral';
 end

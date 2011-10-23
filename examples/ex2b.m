@@ -1,6 +1,6 @@
 % ex2
 % This example compares RBF-Direct to RBF-QR and RBF-QRr
-rbfsetup
+%rbfsetup
 
 epvecd = logspace(-1,1,20);
 epvecr = logspace(-1,1,20);
