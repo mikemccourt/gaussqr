@@ -58,8 +58,8 @@ for N=Nvec
     y = yf(x);
     k = 1;
     for ep=epvecr
-        rbfqrOBJ = rbfqrr_solve_alpha(x,y,ep);
-        yp = rbfqr_eval_alpha(rbfqrOBJ,xx);
+        rbfqrOBJ = rbfqrr_solve(x,y,ep);
+        yp = rbfqr_eval(rbfqrOBJ,xx);
         errvecr(j,k) = norm((yy-yp)./(abs(yy)+eps))/sqrt(prod(NN));  % normalized RMS error
         fprintf(' %g ',rbfqrOBJ.alpha)
         %     fprintf(' %d ',k)

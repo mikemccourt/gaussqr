@@ -141,11 +141,11 @@ else
     warning off MATLAB:quadl:ImproperFcnValue
     if exist('quadgk')
         for j=1:length(a)
-            intappx = intappx*quadgk(@(x)rbfphialpha(k,x',ep,alpha)'.^2.*weight(alpha,x),a(j),b(j),'RelTol',inttol);
+            intappx = intappx*quadgk(@(x)rbfphi(k,x',ep,alpha)'.^2.*weight(alpha,x),a(j),b(j),'RelTol',inttol);
         end
     else
         for j=1:length(a)
-            intappx = intappx*quadl(@(x)rbfphialpha(k,x',ep,alpha)'.^2.*weight(alpha,x),a(j),b(j),inttol);
+            intappx = intappx*quadl(@(x)rbfphi(k,x',ep,alpha)'.^2.*weight(alpha,x),a(j),b(j),inttol);
         end
     end
     warning on MATLAB:quadl:ImproperFcnValue

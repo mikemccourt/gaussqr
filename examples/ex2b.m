@@ -1,6 +1,9 @@
 % ex2
 % This example compares RBF-Direct to RBF-QR and RBF-QRr
-%rbfsetup
+rbfsetup
+global GAUSSQR_PARAMETERS
+GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .5;
+GAUSSQR_PARAMETERS.ORTH_INDEX_REQUESTED = 4;
 
 epvecd = logspace(-1,1,20);
 epvecr = logspace(-1,1,20);
@@ -26,8 +29,8 @@ for N=Nvec
     y = yf(x);
     k = 1;
     for ep=epvecr
-        rbfqrOBJ = rbfqrr_solve_alpha(x,y,ep);
-        yp = rbfqr_eval_alpha(rbfqrOBJ,xx);
+        rbfqrOBJ = rbfqrr_solve(x,y,ep);
+        yp = rbfqr_eval(rbfqrOBJ,xx);
         errvecr(j,k) = norm((yy-yp)./(abs(yy)+eps))/prod(NN);
         fprintf(' %g ',rbfqrOBJ.alpha)
         %     fprintf(' %d ',k)
@@ -68,6 +71,7 @@ loglog(epvecr,errvecr,'LineWidth',3)
 hold off
 xlabel('\epsilon')
 ylabel('average error')
+ylim([1e-16,1])
 ptsstr=strcat(', x\in[',num2str(aa),',',num2str(bb),'],');
 title(strcat(fstr,ptsstr,spacestr))
 legend('N=11^2 (Direct)','N=15^2 (Direct)','N=19^2 (Direct)','N=11^2 (QR)','N=15^2 (QR)','N=19^2 (QR)','Location','SouthEast')

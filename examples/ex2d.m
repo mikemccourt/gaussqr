@@ -3,6 +3,7 @@
 rbfsetup
 global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .5;
+GAUSSQR_PARAMETERS.ORTH_INDEX_REQUESTED = 1;
 
 epvecd = logspace(-2,1,20);
 epvecr = logspace(-2,1,20);
@@ -37,8 +38,8 @@ for N=Nvec
     y = yf(x);
     k = 1;
     for ep=epvecr
-        rbfqrOBJ = rbfqrr_solve_alpha(x,y,ep,alphavals(k));
-        yp = rbfqr_eval_alpha(rbfqrOBJ,xx);
+        rbfqrOBJ = rbfqrr_solve(x,y,ep,alphavals(k));
+        yp = rbfqr_eval(rbfqrOBJ,xx);
         errvecr(j,k) = norm((yy-yp)./(abs(yy)+eps))/(NN-N);
         fprintf(' %g ',rbfqrOBJ.alpha)
 %         fprintf(' %d ',k)

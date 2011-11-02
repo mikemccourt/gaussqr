@@ -1,6 +1,9 @@
 % ex2
 % This example compares RBF-Direct to RBF-QR and RBF-QRr
 rbfsetup
+global GAUSSQR_PARAMETERS;
+GAUSSQR_PARAMETERS.ORTH_INDEX_REQUESTED = 30;
+GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = 90;
 
 epvecd = logspace(-2,1,35);
 epvecr = logspace(-2,1,35);
@@ -14,7 +17,7 @@ fopt = 'runge';
 [yf,fstr] = pickfunc(fopt,1);
 
 aa = -4;bb = 4;
-xx = linspace(aa,bb,NN)';
+xx = pickpoints(aa,bb,NN);
 yy = yf(xx);
 errvec = zeros(size(epvec));
 errvecr = zeros(size(epvec));
@@ -25,26 +28,26 @@ k = 1;
 for ep=epvecr
     [x,spacestr] = pickpoints(aa,bb,N,spaceopt,ep);
     y = yf(x);
-    rbfqrOBJ = rbfqrr_solve_alpha(x,y,ep);
-    yp = rbfqr_eval_alpha(rbfqrOBJ,xx);
+    rbfqrOBJ = rbfqrr_solve(x,y,ep);
+    yp = rbfqr_eval(rbfqrOBJ,xx);
     errvecr(k) = norm((yy-yp)./(abs(yy)+eps))/NN;
     fprintf(' %d ',k)
     k = k+1;
 end
 
-status = '\nPerforming RBF-QR'
+status = 'Performing RBF-QR'
 k = 1;
 for ep=epvec
     [x,spacestr] = pickpoints(aa,bb,N,spaceopt,ep);
     y = yf(x);
-    rbfqrOBJ = rbfqr_solve_alpha(x,y,ep);
-    yp = rbfqr_eval_alpha(rbfqrOBJ,xx);
+    rbfqrOBJ = rbfqr_solve(x,y,ep);
+    yp = rbfqr_eval(rbfqrOBJ,xx);
     errvec(k) = norm((yy-yp)./(abs(yy)+eps))/NN;
     fprintf(' %d ',k)
     k = k+1;
 end
 
-status = '\nPerforming RBF-Direct'
+status = 'Performing RBF-Direct'
 k = 1;
 for ep=epvecd
     K = exp(-ep^2*(repmat(x,1,N)-repmat(x',N,1)).^2);
@@ -57,7 +60,7 @@ for ep=epvecd
     k = k+1;
 end
 
-status = '\nPolynomial computation'
+status = 'Polynomial computation'
 [x,spacestr] = pickpoints(aa,bb,N,spaceopt);
 y = yf(x);
 warning off
@@ -74,7 +77,7 @@ loglog(epvecd,errpoly*ones(size(epvecd)))
 hold off
 xlabel('\epsilon')
 ylabel('average error')
-ylim([10^-16 1])
+ylim([10^-16 10])
 ptsstr=strcat(', x\in[',num2str(aa),',',num2str(bb),'],');
 title(strcat(fstr,ptsstr,spacestr))
 legend('Direct','QR','Regression','polyfit(90)','Location','SouthWest')

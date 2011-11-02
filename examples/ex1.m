@@ -3,29 +3,29 @@
 rbfsetup
 
 epvecd = logspace(-2,1,40);
-epvec = logspace(-2,0.3,60);
-Nvec = [11,31,51];
+epvec = logspace(-2,0.3,100);
+Nvec = [10,20,30];
 NN = 100;
 
 spaceopt = 'cheb';
-fopt = 'exp';
+fopt = 'sin';
 
 [yf,fstr] = pickfunc(fopt,1);
 
-aa = -3;bb = 3;
+aa = -4;bb = 4;
 xx = linspace(aa,bb,NN)';
 yy = yf(xx);
 errvec = zeros(length(Nvec),length(epvec));
 errvecd = zeros(length(Nvec),length(epvecd));
-alpha = 3;
+alpha = .65;
 
 n = 1;
 for N=Nvec
     k = 1;
     for ep=epvec
         [x,spacestr] = pickpoints(aa,bb,N,spaceopt,ep);
-        rbfqrOBJ = rbfqr_solve_alpha(x,yf(x),ep,alpha);
-        yp = rbfqr_eval_alpha(rbfqrOBJ,xx);
+        rbfqrOBJ = rbfqr_solve(x,yf(x),ep,alpha);
+        yp = rbfqr_eval(rbfqrOBJ,xx);
         errvec(n,k) = norm((yy-yp)./(abs(yy)+eps));
         k = k+1;
     end
@@ -35,7 +35,9 @@ for N=Nvec
         [x,spacestr] = pickpoints(aa,bb,N,spaceopt,ep);
         y = yf(x);
         K = exp(-ep^2*(repmat(x,1,N)-repmat(x',N,1)).^2);
+        warning off % We know it's bad
         beta = K\y;
+        warning on
         yp = exp(-ep^2*(repmat(x',NN,1)-repmat(xx,1,N)).^2)*beta;
         errvecd(n,k) = norm((yy-yp)./(abs(yy)+eps));
         k = k+1;
@@ -45,17 +47,26 @@ end
 
 [x,spacestr] = pickpoints(aa,bb,Nvec(1),spaceopt);
 y = yf(x);
-yp = polyval(polyfit(x,y,Nvec(1)-1),xx);
+warning off
+[p,S,mu] = polyfit(x,y,Nvec(1)-1);
+warning on
+yp = polyval(p,xx,S,mu);
 errpoly1 = norm((yy-yp)./(abs(yy)+eps))/NN;
 
 [x,spacestr] = pickpoints(aa,bb,Nvec(2),spaceopt);
 y = yf(x);
-yp = polyval(polyfit(x,y,Nvec(2)-1),xx);
+warning off
+[p,S,mu] = polyfit(x,y,Nvec(2)-1);
+warning on
+yp = polyval(p,xx,S,mu);
 errpoly2 = norm((yy-yp)./(abs(yy)+eps))/NN;
 
 [x,spacestr] = pickpoints(aa,bb,Nvec(3),spaceopt);
 y = yf(x);
-yp = polyval(polyfit(x,y,Nvec(3)-1),xx);
+warning off
+[p,S,mu] = polyfit(x,y,Nvec(3)-1);
+warning on
+yp = polyval(p,xx,S,mu);
 errpoly3 = norm((yy-yp)./(abs(yy)+eps))/NN;
 
 loglog(epvecd,errvecd(1,:)/NN,'-bx')
@@ -71,7 +82,7 @@ loglog(epvecd,errpoly3*ones(size(epvecd)),'--r')
 hold off
 xlabel('\epsilon')
 ylabel('average error')
-ylim([10^-17 1])
+ylim([10^-15 10])
 ptsstr=strcat(', x\in[',num2str(aa),',',num2str(bb),'],');
 title(strcat(fstr,ptsstr,spacestr))
-legend('N=11 (Direct)','N=31 (Direct)','N=51 (Direct)','N=11 (QR)','N=31 (QR)','N=51 (QR)','Location','SouthEast')
+legend('N=10 (Direct)','N=20 (Direct)','N=30 (Direct)','N=10 (QR)','N=20 (QR)','N=30 (QR)','Location','SouthEast')
