@@ -14,6 +14,7 @@ if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
 end
 Mextramax = GAUSSQR_PARAMETERS.MAX_EXTRA_EFUNC;
+Mfactor = GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC;
 
 epvec = logspace(-1,1,50);
 N = 25;
@@ -28,6 +29,7 @@ xx = pickpoints(0,1,NN);
 yy = truesol(xx);
 
 errvec = zeros(size(epvec));
+errvecREG = zeros(size(epvec));
 errvecINT = zeros(size(epvec));
 alpha = 2;
 
@@ -70,16 +72,33 @@ for ep=epvec
     yp = rbfqr_eval_alpha(rbfqrOBJ,xx);
     errvec(ie) = norm((yy-yp)./(abs(yy)+eps));
     
-    rbfqrOBJ = rbfqr_solve_alpha(x,y,ep,alpha);
+    M = Mfactor*N;
+    Marr = rbfformMarr(M)+1;
+    phiMat = rbfphialpha(Marr,x,ep,alpha);
+    phiMatD2 = rbfphialpha(Marr,x(2:end-1),ep,alpha,2); % Only interior derivatives needed
+    
+    A = [phiMat(1,:);phiMatD2;phiMat(end,:)];
+    rhs = [1;cosh(x(2:end-1));cosh(1)];
+    warning off MATLAB:nearlySingularMatrix
+    coef = A\rhs;
+    warning on MATLAB:nearlySingularMatrix
+    
+    rbfqrOBJ.reg   = true;
+    rbfqrOBJ.ep    = ep;
+    rbfqrOBJ.alpha = alpha;
+    rbfqrOBJ.N     = N;
+    rbfqrOBJ.coef  = coef;
+    rbfqrOBJ.Marr  = Marr;
+    
     yp = rbfqr_eval_alpha(rbfqrOBJ,xx);
-    errvecINT(ie) = norm((yy-yp)./(abs(yy)+eps));
+    errvecREG(ie) = norm((yy-yp)./(abs(yy)+eps));
     
     ie = ie + 1;
 end
 
 clf reset
-loglog(epvec,[errvec;errvecINT])
-title(sprintf('u_{xx}=cosh(x), Dirichlet BC, N=%d, alpha=%g',N,alpha))
-ylabel('Error: ||(y-yans)/yans||')
+loglog(epvec,[errvec;errvecREG])
+title(sprintf('Collocation for u_{xx}=cosh(x), Dirichlet BC, N=%d',N))
+ylabel('RMS Relative Error')
 xlabel('\epsilon')
-legend('Collocation','Interpolation','Location','NorthWest')
+legend('RBF-QR','RBF-QRr','Location','NorthWest')

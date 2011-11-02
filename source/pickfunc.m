@@ -32,7 +32,7 @@ switch dim
                 fstr = 'f(x,y)=x+y/2+xy/4';
                 yf = @(x) x(:,1)/1+x(:,2)/2 + x(:,1).*x(:,2)/4;
             case 'sin'
-                fstr = 'f(x,y)=cos((x^2+y^2))';
+                fstr = 'f(x,y)=cos((x+y))';
                 yf = @(x) cos((x(:,1)+x(:,2)));
             case 'runge'
                 fstr = 'f(x,y)=1/(1+x^2+y^2)';
