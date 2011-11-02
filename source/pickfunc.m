@@ -42,7 +42,7 @@ switch dim
                 yf = @(x) tanh(x(:,1).^2+x(:,2).^2);
             case 'franke'
                 fstr = 'f(x,y) = Frankes function';
-                yf = @(x) franke(x(:,1)/1,x(:,2)/1);
+                yf = @(x) franke(x(:,1),x(:,2));
             case 'kxy' % for [-5,5]^2
                 fstr = 'f(x,y) = KXY';
                 yf = @(x) kxy(x);
@@ -86,4 +86,12 @@ function y = ksa2(x)
     kappa = 0;
     y = rho*r2./(1+sqrt(1-(1+kappa)*rho^2*r2)) - 4.17e-6*r2.^2 + 4.71e-9*r2.^3 ...
         - 4.94e-12*r2.^4 - 5.42e-15*r2.^5 - 4.98e-18*r2.^6 - 1.22e-20*r2.^7;
+end
+
+function f = franke(x,y)
+
+f = .75*exp(-.25*((9*x-2).^2+(9*y-2).^2))+ ...
+                     .75*exp(-1/49*(9*x+1).^2-.1*(9*y+1).^2)+ ...
+                     .5*exp(-.25*((9*x-7).^2+(9*y-3).^2))- ...
+                     .2*exp(-(9*x-4).^2-(9*y-7).^2);
 end
