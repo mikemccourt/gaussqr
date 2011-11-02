@@ -1,68 +1,79 @@
-% Tests RBF-QR for a 2D example
+% This example will help determine what the cost of the RBF-QR computation
+% is from a time perspective
+%
+% In order to get useful times, this example may take a long time to run
+
+clear all
 rbfsetup
 
-epvecd = logspace(-2,1,20);
-epvec = logspace(-2,0.3,30);
-Nvec = [3,7;3,7];
-NN = [30;30];
+Nvec = [20 40 80 160 320 640 1280 2560 5120 10240];
+epvec = [.005 .02 .08 .32 1.28];
+times1d = zeros(length(Nvec),length(epvec));
+teval1d = zeros(length(Nvec),length(epvec));
+Msize1d = zeros(length(Nvec),length(epvec));
 
-spaceopt = 'cheb';
-fopt = 'sin';
-rbf = @(ep,x) exp(-(ep*x).^2);
+yf = @(x) 1+tanh(x); % Irrelevant
+aa = -4;bb = 4;
 
-[yf,fstr] = pickfunc(fopt,2);
-
-aa = [-3 -3];bb = [3 3];
-xx = pick2Dpoints(aa,bb,NN);
-yy = yf(xx);
-errvec = zeros(length(Nvec),length(epvec));
-errvecd = zeros(length(Nvec),length(epvecd));
-alpha = 2;
-
-n = 1;
+i = 1;
 for N=Nvec
-    k = 1;
+    x = pickpoints(aa,bb,N);
+    y = yf(x);
+    NN = 10*N;
+    xx = pickpoints(aa,bb,NN);
+    yy = yf(xx);
+    j = 1;
     for ep=epvec
-        [x,spacestr] = pick2Dpoints(aa,bb,N,spaceopt,ep);
-        y = yf(x);
+        clear rbfqrOBJ yp
+        rbfsetup
+        alpha = rbfalphasearch(ep,aa,bb);
+        tic
         rbfqrOBJ = rbfqr_solve_alpha(x,y,ep,alpha);
+        times1d(i,j) = toc;
+        tic
         yp = rbfqr_eval_alpha(rbfqrOBJ,xx);
-        errvec(n,k) = norm((yy-yp)./(abs(yy)+eps))/prod(NN);
-        k = k+1;
-        fprintf(' %d ',k-1)
+        teval1d(i,j) = toc;
+        Msize1d(i,j) = size(rbfqrOBJ.Marr,2);
+        j = j+1;
+        fprintf(' %d ',j)
     end
-
-    k = 1;
-    for ep=epvecd
-        [x,spacestr] = pick2Dpoints(aa,bb,N,spaceopt,ep);
-        y = yf(x);
-        DM_data = DistanceMatrix(x,x);
-        IM = rbf(ep,DM_data);
-        warning off
-        beta = IM\y;
-        warning on
-        DM_eval = DistanceMatrix(xx,x);
-        EM = rbf(ep,DM_eval);
-        yp = EM*beta;
-        errvecd(n,k) = norm((yy-yp)./(abs(yy)+eps))/prod(NN);
-        k = k+1;
-    end
-    n = n+1;
-    fprintf(' %d \n',n-1)
+    i = i+1;
+    fprintf(' %d \n',i)
 end
 
-figure
-loglog(epvecd,errvecd(1,:)/prod(NN),'-bx'), hold on
-loglog(epvecd,errvecd(2,:)/prod(NN),'-g+')
-%loglog(epvecd,errvecd(3,:)/prod(NN),'-r^')
-loglog(epvec,errvec(1,:)/prod(NN),'b','LineWidth',3)
-loglog(epvec,errvec(2,:)/prod(NN),'g','LineWidth',3)
-%loglog(epvec,errvec(3,:)/prod(NN),'r','LineWidth',3)
-hold off
-xlabel('\epsilon')
-ylabel('average error')
-ylim([10^-17 1])
-ptsstr=', x\in[-3,3]^2,';
-%title(strcat(fstr,ptsstr,spacestr))
-title(sprintf('alpha=%g',alpha))
-legend('N=7x7 (Direct)','N=11x11 (Direct)','N=15x15 (Direct)','N=7x7 (QR)','N=11x11 (QR)','N=15x15 (QR)','Location','SouthEast')
+Nvec = [3,5,7,9,11,13;3,5,7,9,11,13];
+epvec = [.005 .01 .02 .04 .08 .16 .32];
+times2d = zeros(size(Nvec,2),length(epvec));
+teval2d = zeros(size(Nvec,2),length(epvec));
+Msize2d = zeros(size(Nvec,2),length(epvec));
+
+yf = @(x) 1+tanh(x(:,1)+x(:,2));
+aa = [-4,-4];bb = [4,4];
+
+i = 1;
+for N=Nvec
+    x = pick2Dpoints(aa,bb,N);
+    y = yf(x);
+    NN = 3*N;
+    xx = pick2Dpoints(aa,bb,NN);
+    yy = yf(xx);
+    j = 1;
+    for ep=epvec
+        clear rbfqrOBJ yp
+        rbfsetup
+        alpha = rbfalphasearch(ep,aa,bb);
+        tic
+        rbfqrOBJ = rbfqr_solve_alpha(x,y,ep,alpha);
+        times2d(i,j) = toc;
+        tic
+        yp = rbfqr_eval_alpha(rbfqrOBJ,xx);
+        teval2d(i,j) = toc;
+        Msize2d(i,j) = size(rbfqrOBJ.Marr,2);
+        j = j+1;
+        fprintf(' %d ',j)
+    end
+    i = i+1;
+    fprintf(' %d \n',i)
+end
+
+save timeruns.mat times1d Msize1d teval1d times2d teval2d Msize2d
