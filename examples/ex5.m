@@ -42,8 +42,8 @@ for ep=epvec
         M = min(M,abs(Mextramax));
     end
     Marr = rbfformMarr(M)+1;
-    phiMat = rbfphialpha(Marr,x,ep,alpha);
-    phiMatD2 = rbfphialpha(Marr,x(2:end-1),ep,alpha,2); % Only interior derivatives needed
+    phiMat = rbfphi(Marr,x,ep,alpha);
+    phiMatD2 = rbfphi(Marr,x(2:end-1),ep,alpha,2); % Only interior derivatives needed
 
     [Q,R] = qr(phiMat);
     R1 = R(:,1:N);
@@ -69,13 +69,13 @@ for ep=epvec
     rbfqrOBJ.Rbar  = Rbar;
     rbfqrOBJ.Marr  = Marr;
     
-    yp = rbfqr_eval_alpha(rbfqrOBJ,xx);
+    yp = rbfqr_eval(rbfqrOBJ,xx);
     errvec(ie) = norm((yy-yp)./(abs(yy)+eps));
     
     M = Mfactor*N;
     Marr = rbfformMarr(M)+1;
-    phiMat = rbfphialpha(Marr,x,ep,alpha);
-    phiMatD2 = rbfphialpha(Marr,x(2:end-1),ep,alpha,2); % Only interior derivatives needed
+    phiMat = rbfphi(Marr,x,ep,alpha);
+    phiMatD2 = rbfphi(Marr,x(2:end-1),ep,alpha,2); % Only interior derivatives needed
     
     A = [phiMat(1,:);phiMatD2;phiMat(end,:)];
     rhs = [1;cosh(x(2:end-1));cosh(1)];
@@ -90,7 +90,7 @@ for ep=epvec
     rbfqrOBJ.coef  = coef;
     rbfqrOBJ.Marr  = Marr;
     
-    yp = rbfqr_eval_alpha(rbfqrOBJ,xx);
+    yp = rbfqr_eval(rbfqrOBJ,xx);
     errvecREG(ie) = norm((yy-yp)./(abs(yy)+eps));
     
     ie = ie + 1;
@@ -99,6 +99,6 @@ end
 clf reset
 loglog(epvec,[errvec;errvecREG])
 title(sprintf('Collocation for u_{xx}=cosh(x), Dirichlet BC, N=%d',N))
-ylabel('RMS Relative Error')
+ylabel('Relative Error')
 xlabel('\epsilon')
 legend('RBF-QR','RBF-QRr','Location','NorthWest')

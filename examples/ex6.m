@@ -14,12 +14,8 @@ Mextramax = GAUSSQR_PARAMETERS.MAX_EXTRA_EFUNC;
 
 Nrange = 10:10:500;
 NN = 1000;
-if not(exist('ep'))
-    ep = 1e-1;
-end
-if not(exist('alpha'))
-    alpha = 1;
-end
+ep = 1;
+alpha = 1;
 yf = @(x) cos(x)+exp(-(x-1).^2)+exp(-(x+1).^2);
 Mfrac = .1:.1:.5;
 errs = zeros(length(Mfrac),length(Nrange));
@@ -32,8 +28,8 @@ for i=1:length(Mfrac)
         y = yf(x);
         xx = pickpoints(-3,3,NN);
         yy = yf(xx);
-        RBFQR = rbfqrr_solve_alpha(x,y,ep,alpha,M);
-        yp = rbfqr_eval_alpha(RBFQR,xx);
+        RBFQR = rbfqrr_solve(x,y,ep,alpha,M);
+        yp = rbfqr_eval(RBFQR,xx);
         errs(i,j) = norm((yy-yp)./(abs(yp)+eps))/NN;
     end
 end
@@ -43,3 +39,4 @@ title(sprintf('\\alpha=%g, \\epsilon=%g',alpha,ep))
 legend('M=.1N','M=.2N','M=.3N','M=.4N','M=.5N','Location','NorthEast')
 xlabel('N')
 ylabel('Average error')
+ylim([1e-16 1])

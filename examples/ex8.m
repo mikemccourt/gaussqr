@@ -16,7 +16,7 @@ for N=Nvec
             a = 1;
             for alpha=alphavec
                 Marr = rbfformMarr(M) + 1;
-                phi = rbfphialpha(Marr,x,ep,alpha);
+                phi = rbfphi(Marr,x,ep,alpha);
                 errs(a,m) = cond(phi);
                 a = a+1;
             end

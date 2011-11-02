@@ -18,8 +18,8 @@ i = 1;
 for ep=epvec
     j = 1;
     for M=Mvec
-        RBF = rbfqrr_solve_alpha(x,y,ep,alpha,M);
-        yp = rbfqr_eval_alpha(RBF,xx);
+        RBF = rbfqrr_solve(x,y,ep,alpha,M);
+        yp = rbfqr_eval(RBF,xx);
         errs(i,j) = norm((yy-yp)./(abs(yp)+eps))/NN;
         j = j+1;
     end

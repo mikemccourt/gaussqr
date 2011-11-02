@@ -1,7 +1,7 @@
 % Tests different ep and alpha values for a sample problem
 
 epvec = logspace(-3,1,40);
-alphavec = logspace(-2,2,81);
+alphavec = logspace(-2,2,39);
 N = 55;
 NN = 200;
 
@@ -25,8 +25,8 @@ ie = 1;
 for ep=epvec
     ia = 1;
     for alpha=alphavec
-        rbfqrOBJ = rbfqr_solve_alpha(x,y,ep,alpha);
-        yp = rbfqr_eval_alpha(rbfqrOBJ,xx);
+        rbfqrOBJ = rbfqr_solve(x,y,ep,alpha);
+        yp = rbfqr_eval(rbfqrOBJ,xx);
         errvec(ie,ia) = norm((yy-yp)./(abs(yy)+eps))/NN;
         condvec(ie,ia) = strcmp(rbfqrOBJ.warnid,'');
         ia = ia + 1;

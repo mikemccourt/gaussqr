@@ -28,10 +28,10 @@ for N=Nvec
         rbfsetup
         alpha = rbfalphasearch(ep,aa,bb);
         tic
-        rbfqrOBJ = rbfqr_solve_alpha(x,y,ep,alpha);
+        rbfqrOBJ = rbfqr_solve(x,y,ep,alpha);
         times1d(i,j) = toc;
         tic
-        yp = rbfqr_eval_alpha(rbfqrOBJ,xx);
+        yp = rbfqr_eval(rbfqrOBJ,xx);
         teval1d(i,j) = toc;
         Msize1d(i,j) = size(rbfqrOBJ.Marr,2);
         j = j+1;
@@ -63,10 +63,10 @@ for N=Nvec
         rbfsetup
         alpha = rbfalphasearch(ep,aa,bb);
         tic
-        rbfqrOBJ = rbfqr_solve_alpha(x,y,ep,alpha);
+        rbfqrOBJ = rbfqr_solve(x,y,ep,alpha);
         times2d(i,j) = toc;
         tic
-        yp = rbfqr_eval_alpha(rbfqrOBJ,xx);
+        yp = rbfqr_eval(rbfqrOBJ,xx);
         teval2d(i,j) = toc;
         Msize2d(i,j) = size(rbfqrOBJ.Marr,2);
         j = j+1;
