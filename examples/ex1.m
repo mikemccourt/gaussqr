@@ -4,11 +4,11 @@ rbfsetup
 
 epvecd = logspace(-2,1,40);
 epvec = logspace(-2,0.3,60);
-Nvec = [10,20,30];
+Nvec = [11,31,51];
 NN = 100;
 
 spaceopt = 'cheb';
-fopt = 'sinh';
+fopt = 'exp';
 
 [yf,fstr] = pickfunc(fopt,1);
 
@@ -17,15 +17,15 @@ xx = linspace(aa,bb,NN)';
 yy = yf(xx);
 errvec = zeros(length(Nvec),length(epvec));
 errvecd = zeros(length(Nvec),length(epvecd));
+alpha = 3;
 
 n = 1;
 for N=Nvec
     k = 1;
     for ep=epvec
-        a = 1;
         [x,spacestr] = pickpoints(aa,bb,N,spaceopt,ep);
-        rbfqrOBJ = rbfqr_solve(x,yf(x),ep,a);
-        yp = rbfqr_eval(rbfqrOBJ,xx);
+        rbfqrOBJ = rbfqr_solve_alpha(x,yf(x),ep,alpha);
+        yp = rbfqr_eval_alpha(rbfqrOBJ,xx);
         errvec(n,k) = norm((yy-yp)./(abs(yy)+eps));
         k = k+1;
     end
@@ -71,7 +71,7 @@ loglog(epvecd,errpoly3*ones(size(epvecd)),'--r')
 hold off
 xlabel('\epsilon')
 ylabel('average error')
-ylim([10^-15 10])
+ylim([10^-17 1])
 ptsstr=strcat(', x\in[',num2str(aa),',',num2str(bb),'],');
 title(strcat(fstr,ptsstr,spacestr))
-legend('N=10 (Direct)','N=20 (Direct)','N=30 (Direct)','N=10 (QR)','N=20 (QR)','N=30 (QR)','Location','SouthEast')
+legend('N=11 (Direct)','N=31 (Direct)','N=51 (Direct)','N=11 (QR)','N=31 (QR)','N=51 (QR)','Location','SouthEast')
