@@ -110,7 +110,7 @@ else
     end
 end
 
-Marr = rbfformMarr(M,Mlim,Mextramax)+1;
+Marr = rbfformMarr(M,Mlim,Mextramax);
 phiMat = rbfphi(Marr,x,ep,alpha);
 
 [Q,R] = qr(phiMat);

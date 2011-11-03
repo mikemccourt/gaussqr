@@ -1,4 +1,7 @@
 % Tests different ep and alpha values for a sample problem
+rbfsetup
+global GAUSSQR_PARAMETERS
+GAUSSQR_PARAMETERS.MAX_EXTRA_EFUNC = 999;
 
 epvec = logspace(-3,1,40);
 alphavec = logspace(-2,2,39);
@@ -17,6 +20,8 @@ yy = yf(xx);
 errvec = zeros(length(epvec),length(alphavec));
 errvecd = zeros(size(epvec));
 condvec = zeros(length(epvec),length(alphavec));
+
+fprintf(' This could take more than 1 hour to run with M too large \n')
 
 progressbar = 0;
 progressincrement = .03;
@@ -89,7 +94,7 @@ errpoly = norm((yy-yp)./(abs(yy)+eps))/NN;
 [AX,H1,H4] = plotyy(epvec,minerr,epvec,alphavec(minloc),'semilogx','loglog');
 hold on
 H2 = plot(epvec,log10(errvecd),':xr');
-H3 = plot(epvec,log10(errpoly)*ones(size(epvec)),'--k');W
+H3 = plot(epvec,log10(errpoly)*ones(size(epvec)),'--k');
 xlabel('\epsilon')
 set(get(AX(1),'Ylabel'),'String','minimum error')
 set(AX(1),'Ylim',[-17,0])

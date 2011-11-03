@@ -49,3 +49,4 @@ end
 if size(Marr,2)>maxlength
     Marr = Marr(:,1:maxlength);
 end
+Marr = Marr + 1; % For the off-by-one to be corrected

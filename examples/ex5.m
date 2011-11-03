@@ -9,6 +9,7 @@
 % Eventually I'll try to encapsulate some of this into functions, but at
 % the moment I don't have a smart way to work with general linear
 % operators.  I'll think on it.
+rbfsetup
 global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
@@ -16,7 +17,7 @@ end
 Mextramax = GAUSSQR_PARAMETERS.MAX_EXTRA_EFUNC;
 Mfactor = GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC;
 
-epvec = logspace(-1,1,50);
+epvec = logspace(-1,1,30);
 N = 25;
 NN = 200;
 
@@ -41,7 +42,7 @@ for ep=epvec
     if Mextramax~=0
         M = min(M,abs(Mextramax));
     end
-    Marr = rbfformMarr(M)+1;
+    Marr = rbfformMarr(M);
     phiMat = rbfphi(Marr,x,ep,alpha);
     phiMatD2 = rbfphi(Marr,x(2:end-1),ep,alpha,2); % Only interior derivatives needed
 
@@ -73,7 +74,7 @@ for ep=epvec
     errvec(ie) = norm((yy-yp)./(abs(yy)+eps));
     
     M = Mfactor*N;
-    Marr = rbfformMarr(M)+1;
+    Marr = rbfformMarr(M);
     phiMat = rbfphi(Marr,x,ep,alpha);
     phiMatD2 = rbfphi(Marr,x(2:end-1),ep,alpha,2); % Only interior derivatives needed
     

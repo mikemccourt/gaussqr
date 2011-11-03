@@ -109,7 +109,7 @@ else
     end
 end
 
-Marr = rbfformMarr(M,[],Mlim)+1; % +1 because of change in notation
+Marr = rbfformMarr(M,[],Mlim);
 phiMat = rbfphi(Marr,x,ep,alpha);
 
 lastwarn('')
