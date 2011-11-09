@@ -1,4 +1,4 @@
-% function p = rbfphi(Marr,x,ep,alpha,deriv,beta,delta,sx2)
+% function p = rbfphi(Marr,x,ep,alpha,deriv,beta,delta2,sx2)
 % This function should in general be used in the following form
 %   function p = rbfphi(Marr,x,ep,alpha)
 % which lets you pass inputs to produce the needed eigenfunctions
@@ -11,16 +11,16 @@
 % ep - traditional RBF shape parameter
 % alpha - RBFQR global scale parameter
 % deriv - row vector of derivatives in each dimension
-% beta,delta,sx2 - DO NOT PASS, it is for private use
+% beta,delta2,sx2 - DO NOT PASS, it is for private use
 %
 % Note: if you pass alpha<0 or ep<0 or m<1, this will error out
 %
 % Derivatives are calculated using the relationship:
-%    d/dx(p_{n}(x)) = 2*delta*x*p_{n}(x)+sqrt(2n-2)*beta*alpha*p_{n-1}(x)
+%    d/dx(p_{n}(x)) = -2*delta2*x*p_{n}(x)+sqrt(2n-2)*beta*alpha*p_{n-1}(x)
 %
 % Note: minimum M value is 1, in accordance with new structure
 %       anything less than 1 will return 0
-function p = rbfphi(Marr,x,ep,alpha,deriv,beta,delta,sx2)
+function p = rbfphi(Marr,x,ep,alpha,deriv,beta,delta2,sx2)
 
 global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
@@ -64,9 +64,9 @@ switch nargin
         end
         beta = (1+(2*ep/alpha)^2)^(1/4);
         if beta-1<asympttol % This triggers an asymptotic expansion
-            delta = -ep^2+ep^4/alpha^2-2*ep^6/alpha^4;
+            delta2 = ep^2-ep^4/alpha^2+2*ep^6/alpha^4;
         else
-            delta = 1/2*alpha^2*(1-beta^2);
+            delta2 = 1/2*alpha^2*(beta^2-1);
         end
         p = zeros(n,Mc);
         sx2 = sum(x.^2,2);
@@ -74,14 +74,14 @@ switch nargin
             if min(Marr(:,k))<1 % Since H_{-1}=0 by definition
                 p(:,k) = 0;
             else
-                p(:,k) = rbfphi(Marr(:,k),x,ep,alpha,deriv,beta,delta,sx2);
+                p(:,k) = rbfphi(Marr(:,k),x,ep,alpha,deriv,beta,delta2,sx2);
             end
         end
     case {6,7}
         error('Too many parameters passed, see comments')
     case 8
         if sum(deriv)==0 % No derivatives, easier to handle
-            q = -.5*(sum(Marr-1)*log(2)+sum(gammaln(Marr))-s*log(beta))+delta*sx2;
+            q = -.5*(sum(Marr-1)*log(2)+sum(gammaln(Marr))-s*log(beta))-delta2*sx2;
             [Hx,Hi] = HermiteProd(Marr-1,beta*alpha*x,logoption);
             if logoption
                 p = exp(q+Hx).*(-1).^Hi;
@@ -94,7 +94,7 @@ switch nargin
                 m = Marr(k);
                 d = deriv(k);
                 xk = x(:,k);
-                pm = rbfphi(m,xk,ep,alpha,0,beta,delta,sx2);
+                pm = rbfphi(m,xk,ep,alpha,0,beta,delta2,sx2);
                 switch d % Check which derivative is being asked for
                     case 0
                         p = p.*pm;
@@ -102,22 +102,22 @@ switch nargin
                         if m==1
                             pm1 = zeros(size(p));
                         else
-                            pm1 = rbfphi(m-1,xk,ep,alpha,0,beta,delta,sx2);
+                            pm1 = rbfphi(m-1,xk,ep,alpha,0,beta,delta2,sx2);
                         end
-                        p = p.*(2*delta*x.*pm+sqrt(2*m-2)*beta*alpha*pm1);
+                        p = p.*(-2*delta2*x.*pm+sqrt(2*m-2)*beta*alpha*pm1);
                     case 2
                         if m==1
                             pm1 = zeros(size(p));
                             pm2 = zeros(size(p));
                         elseif m==2
-                            pm1 = rbfphi(m-1,xk,ep,alpha,0,beta,delta,sx2);
+                            pm1 = rbfphi(m-1,xk,ep,alpha,0,beta,delta2,sx2);
                             pm2 = zeros(size(p));
                         else
-                            pm1 = rbfphi(m-1,xk,ep,alpha,0,beta,delta,sx2);
-                            pm2 = rbfphi(m-2,xk,ep,alpha,0,beta,delta,sx2);
+                            pm1 = rbfphi(m-1,xk,ep,alpha,0,beta,delta2,sx2);
+                            pm2 = rbfphi(m-2,xk,ep,alpha,0,beta,delta2,sx2);
                         end
-                        p = p.*(2*delta*(1+2*delta*xk.^2).*pm + ...
-                               4*delta*beta*alpha*sqrt(2*m-2)*xk.*pm1 + ...
+                        p = p.*(2*delta2*(2*delta2*xk.^2-1).*pm + ...
+                               -4*delta2*beta*alpha*sqrt(2*m-2)*xk.*pm1 + ...
                                2*(beta*alpha)^2*sqrt((m-1)*(m-2))*pm2);
                     otherwise
                         error(sprint('Unacceptable derivative %d in rbfphialpha',d))
@@ -129,8 +129,6 @@ end
 end
 
 % For Developers only
-% Warning: This code uses delta<0, as opposed to the analysis which uses
-%          delta2>0.  I will change this at some point
 % Note: serious improvments may be possible using a recurrence relation -
 %       it will generally be the case that we are interested in computing
 %       all the eigenfucntions phi_m for 1<m<M, in which case we could
