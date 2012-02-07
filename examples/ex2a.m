@@ -20,7 +20,7 @@ aa = -4;bb = 4;
 xx = pickpoints(aa,bb,NN);
 yy = yf(xx);
 errvec = zeros(size(epvec));
-errvecr = zeros(size(epvec));
+errvecr = zeros(size(epvecr));
 errvecd = zeros(size(epvecd));
 
 status = 'Performing RBF-QRr'
@@ -30,8 +30,7 @@ for ep=epvecr
     y = yf(x);
     rbfqrOBJ = rbfqrr_solve(x,y,ep);
     yp = rbfqr_eval(rbfqrOBJ,xx);
-    errvecr(k) = norm((yy-yp)./(abs(yy)+eps))/NN;
-    fprintf(' %d ',k)
+    errvecr(k) = errcompute(yp,yy);
     k = k+1;
 end
 
@@ -42,8 +41,7 @@ for ep=epvec
     y = yf(x);
     rbfqrOBJ = rbfqr_solve(x,y,ep);
     yp = rbfqr_eval(rbfqrOBJ,xx);
-    errvec(k) = norm((yy-yp)./(abs(yy)+eps))/NN;
-    fprintf(' %d ',k)
+    errvec(k) = errcompute(yp,yy);
     k = k+1;
 end
 
@@ -55,8 +53,7 @@ for ep=epvecd
     beta = K\y;
     warning on
     yp = exp(-ep^2*(repmat(x',NN,1)-repmat(xx,1,N)).^2)*beta;
-    errvecd(k) = norm((yy-yp)./(abs(yy)+eps))/NN;
-    fprintf(' %d ',k)
+    errvecd(k) = errcompute(yp,yy);
     k = k+1;
 end
 
@@ -67,7 +64,7 @@ warning off
 [ppoly,spoly,mupoly] = polyfit(x,y,90);
 yp = polyval(ppoly,xx,spoly,mupoly);
 warning on
-errpoly = norm((yy-yp)./(abs(yy)+eps))/NN;
+errpoly = errcompute(yp,yy);
 
 loglog(epvecd,errvecd,'--')
 hold on

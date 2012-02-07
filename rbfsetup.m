@@ -33,6 +33,17 @@ for k=1:GAUSSQR_PARAMETERS.HERMITE_ASYMPTOTIC_MIN_INDEX
     GAUSSQR_PARAMETERS.HERMITE_COEFFICIENTS{k} = HermitePoly(k-1);
 end
 
+% Parameters which determine how the difference between two
+% vectors is computed.
+% errstyle : 1 - relative RMS error <default>
+%            2 - absolute error
+%            3 - relative error
+% normtype : 1 - sum absolute values
+%            2 - sqrt of sum of squares <default>
+%            inf - largest absolute value
+GAUSSQR_PARAMETERS.ERROR_STYLE = 1;
+GAUSSQR_PARAMETERS.NORM_TYPE = 2;
+
 % Use logarithms when computing rbfphi
 % Shouldn't be an issue unless you have M>200 or x>20
 % In general, you should use logs

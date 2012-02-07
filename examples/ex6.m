@@ -30,7 +30,7 @@ for i=1:length(Mfrac)
         yy = yf(xx);
         RBFQR = rbfqrr_solve(x,y,ep,alpha,M);
         yp = rbfqr_eval(RBFQR,xx);
-        errs(i,j) = norm((yy-yp)./(abs(yp)+eps))/NN;
+        errs(i,j) = errcompute(yp,yy);
     end
 end
 

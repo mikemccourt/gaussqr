@@ -26,7 +26,7 @@ for N=Nvec
         [x,spacestr] = pickpoints(aa,bb,N,spaceopt,ep);
         rbfqrOBJ = rbfqr_solve(x,yf(x),ep,alpha);
         yp = rbfqr_eval(rbfqrOBJ,xx);
-        errvec(n,k) = norm((yy-yp)./(abs(yy)+eps));
+        errvec(n,k) = errcompute(yp,yy);
         k = k+1;
     end
 
@@ -39,7 +39,7 @@ for N=Nvec
         beta = K\y;
         warning on
         yp = exp(-ep^2*(repmat(x',NN,1)-repmat(xx,1,N)).^2)*beta;
-        errvecd(n,k) = norm((yy-yp)./(abs(yy)+eps));
+        errvecd(n,k) = errcompute(yp,yy);
         k = k+1;
     end
     n = n+1;
@@ -51,7 +51,7 @@ warning off
 [p,S,mu] = polyfit(x,y,Nvec(1)-1);
 warning on
 yp = polyval(p,xx,S,mu);
-errpoly1 = norm((yy-yp)./(abs(yy)+eps))/NN;
+errpoly1 = errcompute(yp,yy);
 
 [x,spacestr] = pickpoints(aa,bb,Nvec(2),spaceopt);
 y = yf(x);
@@ -59,7 +59,7 @@ warning off
 [p,S,mu] = polyfit(x,y,Nvec(2)-1);
 warning on
 yp = polyval(p,xx,S,mu);
-errpoly2 = norm((yy-yp)./(abs(yy)+eps))/NN;
+errpoly2 = errcompute(yp,yy);
 
 [x,spacestr] = pickpoints(aa,bb,Nvec(3),spaceopt);
 y = yf(x);
@@ -67,7 +67,7 @@ warning off
 [p,S,mu] = polyfit(x,y,Nvec(3)-1);
 warning on
 yp = polyval(p,xx,S,mu);
-errpoly3 = norm((yy-yp)./(abs(yy)+eps))/NN;
+errpoly3 = errcompute(yp,yy);
 
 loglog(epvecd,errvecd(1,:)/NN,'-bx')
 hold on

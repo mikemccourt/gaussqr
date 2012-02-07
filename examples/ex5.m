@@ -71,7 +71,7 @@ for ep=epvec
     rbfqrOBJ.Marr  = Marr;
     
     yp = rbfqr_eval(rbfqrOBJ,xx);
-    errvec(ie) = norm((yy-yp)./(abs(yy)+eps));
+    errvec(ie) = errcompute(yp,yy);
     
     M = Mfactor*N;
     Marr = rbfformMarr(M);
@@ -92,7 +92,7 @@ for ep=epvec
     rbfqrOBJ.Marr  = Marr;
     
     yp = rbfqr_eval(rbfqrOBJ,xx);
-    errvecREG(ie) = norm((yy-yp)./(abs(yy)+eps));
+    errvecREG(ie) = errcompute(yp,yy);
     
     ie = ie + 1;
 end

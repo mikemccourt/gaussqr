@@ -20,7 +20,7 @@ for ep=epvec
     for M=Mvec
         RBF = rbfqrr_solve(x,y,ep,alpha,M);
         yp = rbfqr_eval(RBF,xx);
-        errs(i,j) = norm((yy-yp)./(abs(yp)+eps))/NN;
+        errs(i,j) = errcompute(yp,yy);
         j = j+1;
     end
     fprintf('%d ',i)

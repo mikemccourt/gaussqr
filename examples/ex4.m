@@ -32,7 +32,7 @@ for ep=epvec
     for alpha=alphavec
         rbfqrOBJ = rbfqr_solve(x,y,ep,alpha);
         yp = rbfqr_eval(rbfqrOBJ,xx);
-        errvec(ie,ia) = norm((yy-yp)./(abs(yy)+eps))/NN;
+        errvec(ie,ia) = errcompute(yp,yy);
         condvec(ie,ia) = strcmp(rbfqrOBJ.warnid,'');
         ia = ia + 1;
     end
@@ -42,7 +42,7 @@ for ep=epvec
     beta = K\y;
     warning on MATLAB:nearlySingularMatrix
     yp = exp(-ep^2*(repmat(x',NN,1)-repmat(xx,1,N)).^2)*beta;
-    errvecd(ie) = norm((yy-yp)./(abs(yy)+eps))/NN;
+    errvecd(ie) = errcompute(yp,yy);
 
     if ie/length(epvec) > progressbar+progressincrement
         progressbar = progressbar + progressincrement;

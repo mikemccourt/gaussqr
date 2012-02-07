@@ -40,7 +40,7 @@ for N=Nvec
     for ep=epvecr
         rbfqrOBJ = rbfqrr_solve(x,y,ep,alphavals(k));
         yp = rbfqr_eval(rbfqrOBJ,xx);
-        errvecr(j,k) = norm((yy-yp)./(abs(yy)+eps))/(NN-N);
+        errvecr(j,k) = errcompute(yp,yy,NN-N);
         fprintf(' %g ',rbfqrOBJ.alpha)
 %         fprintf(' %d ',k)
         k = k+1;
@@ -66,7 +66,7 @@ for N=Nvec
         DM_EVAL = DistanceMatrix(xx,x);
         EM = rbf(ep,DM_EVAL);
         yp = EM*beta;
-        errvecd(j,k) = norm((yy-yp)./(abs(yy)+eps))/(NN-N);
+        errvecd(j,k) = errcompute(yp,yy,NN-N);
         fprintf(' %d ',k)
         k = k+1;
     end
