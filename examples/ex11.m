@@ -6,24 +6,28 @@ GAUSSQR_PARAMETERS.ERROR_STYLE = 2; % Absolute error
 
 epvecd = logspace(-1,1,20);
 epvecr = logspace(-1,1,20);
-AN = [4,8,12,16,20];
-BN = [4,8,12,16,20];
+AN = [4,8,16,32,64,128];
+BN = [4,8,16,32,64,128];
 
 rbf = @(ep,x) exp(-(ep*x).^2);
 ep = 1;
 
+if not(exist('ind')) % Consider the first index (looping only)
+  ind = 1;
+end
+
+if not(exist('count')) % Work with the basic time step
+  count = 1;
+end
+
 dt = .01/(2^(count-1));
-nsteps = 10*(2^(count-1));[dt,nsteps];
+nsteps = 2*(2^(count-1));
 stencil9 = [1/6 2/3 1/6  2/3 -10/3 2/3  1/6 2/3 1/6];
 errt = zeros(1,nsteps);
 couplebuffer = .1/(2^(ind-1));
 
 yf = @(x,t) exp(-t)*(1-.5*(x(:,1).^2+x(:,2).^2));
 ff = @(x,t) exp(-t)*(1+.5*(x(:,1).^2+x(:,2).^2));
-
-if not(exist('ind')) % Consider the first index (looping only)
-  ind = 1;
-end
 
 Ald = [-1 0];Aud = [0 1];
 Bld = [0 0];Bud = [1 1];
@@ -100,13 +104,15 @@ Bsten = Bsten(order,:);
 % Set the initial conditions, provided by the true solution
 Aunew = yf(Ax,0);
 Bunew = yf(Bx,0);
+Aerrt = zeros(1,nsteps);
+Berrt = zeros(1,nsteps);
 
 % Step through time
 for tn=1:nsteps
   t = tn*dt;
 
   % Initialize the values of the matrix and RHS
-  Amat = 1/dt*eye(AMM);
+  Amat = 1/dt*speye(AMM);
   Arhs = zeros(AMM,1);
   
   % This is the source term evaluated on the grid
@@ -135,7 +141,7 @@ for tn=1:nsteps
 
 
   % Do the same thing with the B system
-  Bmat = 1/dt*eye(BMM);
+  Bmat = 1/dt*speye(BMM);
   Brhs = zeros(BMM,1);
   Brf = ff(Bx,t);
   Bubc = yf(Bx,t);
@@ -155,7 +161,6 @@ for tn=1:nsteps
   Bunew = Bmat\Brhs;
   Berrt(tn) = errcompute(Bunew,Bubc);
 end
-
 
 % Now that we've considered the result of solving the systems individually,
 % we want to determine what effect is caused by solving them with a
@@ -182,6 +187,7 @@ FBifa = k+1:k+length(Bifapts);
 
 % The simplest coupling style just matches values and derivatives
 Fcstyle = 1;
+Ferrt = zeros(1,nsteps);
 
 Fx = [Ax;Bx];
 Fx = Fx(Fshuffle,:);
@@ -193,7 +199,7 @@ for tn=1:nsteps
     t = tn*dt;
     Fsol  = yf(Fx,t);
 
-    Amat = 1/dt*eye(AMM);
+    Amat = 1/dt*speye(AMM);
     Arhs = zeros(AMM,1);
     Arf = ff(Ax,t);
     Aubc = yf(Ax,t);
@@ -209,7 +215,7 @@ for tn=1:nsteps
         Arhs(k) = Aubc(k);
     end
 
-    Bmat = 1/dt*eye(BMM);
+    Bmat = 1/dt*speye(BMM);
     Brhs = zeros(BMM,1);
     Brf = ff(Bx,t);
     Bubc = yf(Bx,t);
