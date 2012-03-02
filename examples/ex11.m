@@ -8,9 +8,8 @@ epvecd = logspace(-1,1,20);
 epvecr = logspace(-1,1,20);
 AN = [4,8,16,32,64,128];
 BN = [4,8,16,32,64,128];
-
 rbf = @(ep,x) exp(-(ep*x).^2);
-ep = 1;
+ep = 1.0;
 
 if not(exist('ind')) % Consider the first index (looping only)
   ind = 1;
@@ -20,14 +19,15 @@ if not(exist('count')) % Work with the basic time step
   count = 1;
 end
 
-dt = .01/(2^(count-1));
+dt = 0.01/(2^(count-1));
 nsteps = 2*(2^(count-1));
 stencil9 = [1/6 2/3 1/6  2/3 -10/3 2/3  1/6 2/3 1/6];
 errt = zeros(1,nsteps);
-couplebuffer = .1/(2^(ind-1));
+couplebuffer = 0.1/(2^(ind-1)); % accounts for fuzzy math
+couplewidth = 2; % How many points included in coupling
 
-yf = @(x,t) exp(-t)*(1-.5*(x(:,1).^2+x(:,2).^2));
-ff = @(x,t) exp(-t)*(1+.5*(x(:,1).^2+x(:,2).^2));
+yf = @(x,t) exp(-t)*(1-0.5*(x(:,1).^2+x(:,2).^2));
+ff = @(x,t) exp(-t)*(1+0.5*(x(:,1).^2+x(:,2).^2));
 
 Ald = [-1 0];Aud = [0 1];
 Bld = [0 0];Bud = [1 1];
@@ -46,7 +46,7 @@ Bdeltax = 1/(BM-1);
 % We also store the interior points, which are the points governed by the
 % PDE so that we can map the stencil over
 Aifapts = find(abs(Ax(:,1)-0)<couplebuffer)';
-Acoupts = setdiff(find(abs(Ax(:,1)-0)<=Adeltax*(1+couplebuffer)),Aifapts);
+Acoupts = setdiff(find(abs(Ax(:,1)-0)<=Adeltax*(couplewidth+couplebuffer)),Aifapts);
 Aonlpts = setdiff(1:AMM,[Aifapts,Acoupts]);
 Aintpts = find(1-any((Ax==1)+(Ax==0)+(Ax==-1),2))';
 
@@ -66,7 +66,7 @@ end
 % Refind the sets of points, and make sure they are sorted
 % The sorting will automatically occur because of the find function
 Aifapts = find(abs(Ax(:,1)-0)<couplebuffer)';
-Acoupts = setdiff(find(abs(Ax(:,1)-0)<=Adeltax*(1+couplebuffer)),Aifapts);
+Acoupts = setdiff(find(abs(Ax(:,1)-0)<=Adeltax*(couplewidth+couplebuffer)),Aifapts);
 Aonlpts = setdiff(1:AMM,[Aifapts,Acoupts]);
 Aintpts = find(1-any((Ax==1)+(Ax==0)+(Ax==-1),2))';
 Aboupts = setdiff(1:AMM,Aintpts);
@@ -79,7 +79,7 @@ Asten = Asten(order,:);
 
 % Do all that same stuff for the B model
 Bifapts = find(abs(Bx(:,1)-0)<couplebuffer)';
-Bcoupts = setdiff(find(abs(Bx(:,1)-0)<=Bdeltax*(1+couplebuffer)),Bifapts);
+Bcoupts = setdiff(find(abs(Bx(:,1)-0)<=Bdeltax*(couplewidth+couplebuffer)),Bifapts);
 Bonlpts = setdiff(1:BMM,[Bifapts,Bcoupts]);
 Bintpts = find(1-any((Bx==1)+(Bx==0)+(Bx==-1),2))';
 
@@ -93,7 +93,7 @@ for k=1:length(Bintpts)
 end
 
 Bifapts = find(abs(Bx(:,1)-0)<couplebuffer)';
-Bcoupts = setdiff(find(abs(Bx(:,1)-0)<=Bdeltax*(1+couplebuffer)),Bifapts);
+Bcoupts = setdiff(find(abs(Bx(:,1)-0)<=Bdeltax*(couplewidth+couplebuffer)),Bifapts);
 Bonlpts = setdiff(1:BMM,[Bifapts,Bcoupts]);
 Bintpts = find(1-any((Bx==1)+(Bx==0)+(Bx==-1),2))';
 Bboupts = setdiff(1:BMM,Bintpts);
@@ -199,7 +199,7 @@ for tn=1:nsteps
     t = tn*dt;
     Fsol  = yf(Fx,t);
 
-    Amat = 1/dt*speye(AMM);
+    Amat = 1.0/dt*speye(AMM);
     Arhs = zeros(AMM,1);
     Arf = ff(Ax,t);
     Aubc = yf(Ax,t);
