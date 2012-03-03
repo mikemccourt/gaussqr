@@ -21,7 +21,11 @@ f = @(x,y) exp(-10*((y-1).^2+(x-.5).^2));
 % Solution below is u = (1-y^2)sin(pi*x)cosh(x+y)
 % f = @(x,y) (1-y.^2).*(sin(pi*x).*cosh(x+y)*(1-pi^2) + 2*pi*cos(pi*x).*sinh(x+y)) - sin(pi*x)*((1+y.^2).*cosh(x+y)+4*y.*sinh(x+y)) + k^2*(1-y.^2)*sin(pi*x).*cosh(x+y);
 rbf = @(e,r) exp(-(e*r).^2);
+drbf = @(e,r,dx) -2*e^2*dx.*exp(-(e*r).^2);
 d2rbf = @(e,r) 2*e^2*(2*(e*r).^2-1).*exp(-(e*r).^2);
+
+% These are the functions needed for the Laplacian
+%d2Lrbf = @(e,r) 2*e^2*(2*(e*dx).^2-1).*exp(-(e*r).^2);
 Lrbf = @(e,r) 4*e^2*((e*r).^2-1).*exp(-(e*r).^2);
 
 epvec = logspace(-1,1,20);
@@ -46,12 +50,65 @@ val_Trefethen = uu(N/2+1,N/2+1);
 
 % Kansa unsymmetric collocation
 r = DistanceMatrix(x,x);
+ep = 10;
 % for ep=epvec
 %     A = rbf(ep,r);
 %     D2A = d2rbf(ep,r);
 % end
 pts = [xx,yy];
 r = DistanceMatrix(pts,pts);
-Amat = rbf(1,r);
-Lmat = Lrbf(1,r);
-Dmat = Lmat/Amat;
+Amat = rbf(ep,r);
+Xmat = 2*ep^2*diag(2*ep^2*xx.^2-1)*Amat;
+Ymat = 2*ep^2*diag(2*ep^2*yy.^2-1)*Amat;
+Lmat = (Xmat+Ymat)/Amat;
+f = ones(size(xx));
+Lf = (Xmat+Ymat)*(Amat\f);
+
+epvec = logspace(-1,1,40);
+r = DistanceMatrix(x,x);
+rdx = DifferenceMatrix(x,x);
+f = sinh(x);
+errvec = [];
+k = 1;
+for ep=epvec
+Amat = rbf(ep,r);
+b = Amat\f;
+Dmat = drbf(ep,r,rdx);
+errvec(k) = norm(cosh(x)-Dmat*b);
+k = k + 1;
+end
+loglog(epvec,errvec)
+pause
+
+rp = DistanceMatrix(pts,pts);
+r = DistanceMatrix(x,x);
+f = sinh(xx).*cosh(yy);
+errvec = [];
+errvecP = [];
+k = 1;
+for ep=epvec
+Amat = rbf(ep,rp);
+b = Amat\f;
+Lmat = Lrbf(ep,rp);
+errvec(k) = norm(2*f-Lmat*b);
+A = rbf(ep,r);
+d2A = d2rbf(ep,r);
+I = eye(size(r));
+D = d2A/A;
+L = kron(I,D) + kron(D,I);
+errvecP(k) = norm(2*f-L*f);
+k = k + 1;
+end
+loglog(epvec,[errvec;errvecP])
+
+ep = 1;
+Amat = rbf(ep,rp);
+b = Amat\f;
+Lmat = Lrbf(ep,rp);
+
+A = rbf(ep,r);
+d2A = d2rbf(ep,r);
+I = eye(size(r));
+D = d2A/A;
+L = kron(I,D) + kron(D,I);
+
