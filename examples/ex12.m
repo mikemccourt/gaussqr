@@ -33,7 +33,7 @@ y = x;
 [xx,yy] = meshgrid(x,y);
 xx = xx(:); yy = yy(:);
 u = ufunc(xx,yy);
-Lfu = ufunc(xx,yy);
+Lfu = Lf(xx,yy);
 D2 = D^2;
 I = eye(N+1);
 L = kron(I,D2) + kron(D2,I);
@@ -43,20 +43,20 @@ epvec = logspace(-1,1,40);
 pts = [xx,yy];
 rp = DistanceMatrix(pts,pts);
 r = DistanceMatrix(x,x);
-errvec1D = [];
-errvec2D = [];
+errvec1d = [];
+errvec2d = [];
 k = 1;
 for ep=epvec
   Amat = rbf(ep,rp);
   b = Amat\u;
   Lmat = Lrbf(ep,rp);
-  errvec2D(k) = errcompute(Lmat*b,Lfu);
+  errvec2d(k) = errcompute(Lmat*b,Lfu);
   A = rbf(ep,r);
   d2A = d2rbf(ep,r);
   I = eye(size(r));
   D = d2A/A;
   L = kron(I,D) + kron(D,I);
-  errvec1D(k) = errcompute(L*u,Lfu);
+  errvec1d(k) = errcompute(L*u,Lfu);
   k = k + 1;
 end
 
@@ -104,10 +104,10 @@ for ep=epvec
   k = k + 1;
 end
 
-loglog(epvec,errvec1D,':b','LineWidth',2),hold on
-loglog(epvec,errvec2D,':g','LineWidth',2)
-loglog(epvec,errvecR1D,'--b','LineWidth',2)
-loglog(epvec,errvecR2D,'--g','LineWidth',2)
-loglog(epvec,errvecQ1D,'--r','LineWidth',2)
+loglog(epvec,errvec1d,':b','LineWidth',2),hold on
+loglog(epvec,errvec2d,':g','LineWidth',2)
+loglog(epvec,errvecR1d,'--b','LineWidth',2)
+loglog(epvec,errvecR2d,'--g','LineWidth',2)
+loglog(epvec,errvecQ1d,'--r','LineWidth',2)
 loglog(epvec,err_Trefethen*ones(size(epvec)),'--k','LineWidth',2),hold off
 legend('kron Collocation','2D Collocation','kron Regression','kron QRsolve','2D Regression','Trefethen')
