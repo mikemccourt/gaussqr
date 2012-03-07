@@ -69,13 +69,13 @@ warning on
 yp = polyval(p,xx,S,mu);
 errpoly3 = errcompute(yp,yy);
 
-loglog(epvecd,errvecd(1,:)/NN,'-bx')
+loglog(epvecd,errvecd(1,:),'-bx')
 hold on
-loglog(epvecd,errvecd(2,:)/NN,'-g+')
-loglog(epvecd,errvecd(3,:)/NN,'-r^')
-loglog(epvec,errvec(1,:)/NN,'b','LineWidth',3)
-loglog(epvec,errvec(2,:)/NN,'g','LineWidth',3)
-loglog(epvec,errvec(3,:)/NN,'r','LineWidth',3)
+loglog(epvecd,errvecd(2,:),'-g+')
+loglog(epvecd,errvecd(3,:),'-r^')
+loglog(epvec,errvec(1,:),'b','LineWidth',3)
+loglog(epvec,errvec(2,:),'g','LineWidth',3)
+loglog(epvec,errvec(3,:),'r','LineWidth',3)
 loglog(epvecd,errpoly1*ones(size(epvecd)),'--b')
 loglog(epvecd,errpoly2*ones(size(epvecd)),'--g')
 loglog(epvecd,errpoly3*ones(size(epvecd)),'--r')

@@ -48,30 +48,57 @@ for ep=epvec
   Amat = rbf(ep,rp);
   b = Amat\u;
   Lmat = Lrbf(ep,rp);
-  errvec2D(k) = norm(2*u-Lmat*b);
+  errvec2D(k) = errcompute(Lmat*b,2*u);
   A = rbf(ep,r);
   d2A = d2rbf(ep,r);
   I = eye(size(r));
   D = d2A/A;
   L = kron(I,D) + kron(D,I);
-  errvec1D(k) = norm(2*u-L*u);
+  errvec1D(k) = errcompute(L*u,2*u);
   k = k + 1;
 end
 
+N = size(x,1);
 epvec = logspace(-8,0,25);
-err_GQR_interp = [];
-err_GQR_deriv = [];
 alpha = 1;
+errvecR2d = [];
 errvecQ2d = [];
+errvecR1d = [];
+errvecQ1d = [];
 k = 1;
 for ep=epvec
   GQR = rbfqrr_solve(pts,u,ep,alpha);
   Lu = rbfqr_eval(GQR,pts,[2,0]) + rbfqr_eval(GQR,pts,[0,2]);
-  errvecQ2d(k) = norm(2*u-Lu);
-%  uqr = rbfqr_eval(GQR,pts);
-%  err_GQR_interp(k) = errcompute(uqr,u);
-%  udqr = rbfqr_eval(GQR,pts,[1,1]);
-%  err_GQR_deriv(k) = errcompute(udqr,cosh(xx).*sinh(yy));
+  errvecR2d(k) = errcompute(Lu,2*u);
+  
+  GQR = rbfqr_solve(pts,u,ep,alpha);
+  Lu = rbfqr_eval(GQR,pts,[2,0]) + rbfqr_eval(GQR,pts,[0,2]);
+  errvecQ2d(k) = errcompute(Lu,2*u);
+  
+  [ep,alpha,Marr,lam] = rbfsolveprep(0,x,ep,alpha);
+  phiMat = rbfphi(Marr,x,ep,alpha);
+  phiMat2d = rbfphi(Marr,x,ep,alpha,2);
+  [Q,R] = qr(phiMat);
+  R1 = R(:,1:N);
+  R2 = R(:,N+1:end);
+  iRdiag = diag(1./diag(R1));
+  R1s = iRdiag*R1;
+  opts.UT = true;
+  Rhat = linsolve(R1s,iRdiag*R2,opts);
+  Ml = size(Marr,2);
+  D = lam.^(repmat(sum(Marr(:,N+1:end),1)',1,N)-repmat(sum(Marr(:,1:N),1),Ml-N,1));
+  Rbar = D.*Rhat';
+  D2 = phiMat2d*(I;Rbar)/(phiMat*(I;Rbar));
+  L = kron(I,D2) + kron(D2,I);
+  errvecQ1d(k) = errcompute(L*u,2*u);
+  
+  [ep,alpha,Marr] = rbfsolveprep(1,x,ep,alpha);
+  phiMat = rbfphi(Marr,x,ep,alpha);
+  phiMat2d = rbfphi(Marr,x,ep,alpha,2);
+  D2 = phiMat2d/phiMat;
+  L = kron(I,D2) + kron(D2,I);
+  errvecR1d(k) = errcompute(L*u,2*u);
+  
   k = k + 1;
 end
 
