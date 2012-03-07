@@ -22,6 +22,11 @@ GAUSSQR_PARAMETERS.ERROR_STYLE = 2; % Use absolute error
 ufunc = @(x,y) sinh(x).*cosh(y);
 N = 24;
 
+rbf = @(e,r) exp(-(e*r).^2);
+drbf = @(e,r,dx) -2*e^2*dx.*exp(-(e*r).^2);
+d2rbf = @(e,r) 2*e^2*(2*(e*r).^2-1).*exp(-(e*r).^2);
+Lrbf = @(e,r) 4*e^2*((e*r).^2-1).*exp(-(e*r).^2);
+
 [D,x] = cheb(N);
 y = x;
 [xx,yy] = meshgrid(x,y);
@@ -53,9 +58,24 @@ for ep=epvec
   k = k + 1;
 end
 
+epvec = logspace(-8,0,25);
+err_GQR_interp = [];
+err_GQR_deriv = [];
+alpha = 1;
+errvecQ2d = [];
+k = 1;
+for ep=epvec
+  GQR = rbfqrr_solve(pts,u,ep,alpha);
+  Lu = rbfqr_eval(GQR,pts,[2,0]) + rbfqr_eval(GQR,pts,[0,2]);
+  errvecQ2d(k) = norm(2*u-Lu);
+%  uqr = rbfqr_eval(GQR,pts);
+%  err_GQR_interp(k) = errcompute(uqr,u);
+%  udqr = rbfqr_eval(GQR,pts,[1,1]);
+%  err_GQR_deriv(k) = errcompute(udqr,cosh(xx).*sinh(yy));
+  k = k + 1;
+end
 
-
-loglog(epvec,errvec1D,'b','LineWidth',3),hold on
-loglog(epvec,errvec2D,'g','LineWidth',3)
-loglog(epvec,err_Trefethen*ones(size(epvec)),'--k','LineWidth',2),hold off
-legend('kron Collocation','2D Collocation','Trefethen')
+% loglog(epvec,errvec1D,'b','LineWidth',3),hold on
+% loglog(epvec,errvec2D,'g','LineWidth',3)
+% loglog(epvec,err_Trefethen*ones(size(epvec)),'--k','LineWidth',2),hold off
+% legend('kron Collocation','2D Collocation','Trefethen')

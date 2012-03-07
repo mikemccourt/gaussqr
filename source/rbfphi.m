@@ -48,19 +48,19 @@ switch nargin
         else
             [dr dc] = size(deriv);
             if dc~=s
-                error(sprintf('dimension mismatch: s=%d, dc=%d',s,dc))
+                error('dimension mismatch: s=%d, dc=%d',s,dc)
             elseif min(deriv)<0
-                error(sprintf('negative derivative requested, %d',min(deriv)))
+                error('negative derivative requested, %d',min(deriv))
             elseif dr~=1
                 error('d must be a row vector of derivatives')
             end
             if sum(deriv<0 + deriv>2)>0 % Right now you only have 2 derivatives
-                warning(sprintf('%d is an unacceptable derivative, reset to 0',deriv))
+                warning('%d is an unacceptable derivative, reset to 0',deriv)
                 deriv = zeros(1,s);
             end
         end
         if alpha<=0 || ep<=0 || imag(alpha)~=0 || imag(ep)~=0
-            error(sprintf('alpha=%g or ep=%g unacceptable; must be real and positive',alpha,ep))
+            error('alpha=%g or ep=%g unacceptable; must be real and positive',alpha,ep)
         end
         beta = (1+(2*ep/alpha)^2)^(1/4);
         if beta-1<asympttol % This triggers an asymptotic expansion
@@ -104,7 +104,7 @@ switch nargin
                         else
                             pm1 = rbfphi(m-1,xk,ep,alpha,0,beta,delta2,sx2);
                         end
-                        p = p.*(-2*delta2*x.*pm+sqrt(2*m-2)*beta*alpha*pm1);
+                        p = p.*(-2*delta2*xk.*pm+sqrt(2*m-2)*beta*alpha*pm1);
                     case 2
                         if m==1
                             pm1 = zeros(size(p));
@@ -120,7 +120,7 @@ switch nargin
                                -4*delta2*beta*alpha*sqrt(2*m-2)*xk.*pm1 + ...
                                2*(beta*alpha)^2*sqrt((m-1)*(m-2))*pm2);
                     otherwise
-                        error(sprint('Unacceptable derivative %d in rbfphialpha',d))
+                        error('Unacceptable derivative %d in rbfphialpha',d)
                 end
             end
         end

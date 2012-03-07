@@ -15,7 +15,7 @@ N     = rbfqrOBJ.N;
 reg   = rbfqrOBJ.reg;
 
 if nargin==2
-    deriv = [0,0];
+    deriv = zeros(1,size(Marr,1));
 end
 
 if reg

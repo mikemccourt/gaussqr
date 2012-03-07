@@ -245,8 +245,15 @@ for tn=1:nsteps
             Frhs(FAifa(k)) = 0;
         end
         Fmat(FBifa,:) = zeros(size(Fmat(FBifa,:)));
+        Z = length(FBifa);
         for k=1:length(FBifa)
-            Fmat(FBifa(k),[FAcou(k),FAifa(k),FBcou(k),FBifa(k)]) = [[-1 1]/Adeltax [-1 1]/Bdeltax];
+            if couplewidth==1
+                Fmat(FBifa(k),[FAcou(k),FAifa(k),FBcou(k),FBifa(k)]) = [[-1 1]/Adeltax [-1 1]/Bdeltax];
+            elseif couplewidth==2
+                Fmat(FBifa(k),[FAcou(2*k-[1,0]),FAifa(k),FBcou(2*k-[0,1]),FBifa(k)]) = [[-1 4 -3]/(2*Adeltax) [-1 4 -3]/(2*Bdeltax)];
+            else
+                error('couplewidth should be 1 or 2')
+            end
             Frhs(FBifa(k)) = 0;
         end
     end
