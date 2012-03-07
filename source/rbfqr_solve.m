@@ -29,8 +29,6 @@ global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
 end
-Mextramax = GAUSSQR_PARAMETERS.MAX_EXTRA_EFUNC;
-alphaDefault = GAUSSQR_PARAMETERS.ALPHA_DEFAULT;
 alertuser = GAUSSQR_PARAMETERS.WARNINGS_ON;
 
 if nargin<3
@@ -46,71 +44,13 @@ elseif size(y,2)~=1
     error('You can only pass a 1D output vector y')
 end
 
-% If the user didn't pass alpha, or passed [], then we need to pick an
-% alpha from rbfalphasearch
-computealpha = 0;
 if nargin==3
-    computealpha = 1;
-elseif length(alpha)==0
-    computealpha = 1;
-end
-if computealpha==1
-    xminBound = min(x);
-    xmaxBound = max(x);
-    alpha = rbfalphasearch(ep,xminBound,xmaxBound);
-end
-
-% Checks to make sure that the ep and alpha values are acceptable
-if length(ep)>1
-    ep = abs(real(ep(1)));
-    warning(sprintf('Multiple epsilon values not allowed; using epsilon=%g',ep))
-end
-if length(alpha)>1
-    alpha = abs(real(alpha(1)));
-    warning(sprintf('Multiple alpha values not allowed; using alpha=%g',alpha))
-end
-if abs(real(ep))~=ep
-    ep = abs(real(ep));
-    warning(sprintf('Only real, positive epsilon allowed; using epsilon=%g',ep))
-end
-if abs(real(alpha))~=alpha
-    alpha = abs(real(alpha));
-    warning(sprintf('Only real, positive alpha allowed; using alpha=%g',alpha))
-end
-if ep==0 || alpha==0
-    error(sprintf('Parameters cannot be zero: epsilon=%g, alpha=%g',ep,alpha))
-end
-
-nu = (2*ep/alpha)^2;
-lam = nu/(2+nu+2*sqrt(1+nu));
-if Mextramax<0
-    Mextramax = (1-Mextramax/100)*N;
-end
-MarrN = rbfformMarr(zeros(d,1),[],N);
-Mlim = ceil(size(MarrN,2)+log(eps)/log(lam));
-% Mlim = ceil(N+log(eps)/log(lam));
-if Mextramax==0
-    Mextramax = inf; % Allow the array to go as long as it wants
-end
-
-% This needs to get better
-% Specifically it needs to handle people passing weird stuff
-if not(exist('M'))
-    M = zeros(d,1);
+    [ep,alpha,Marr,lam] = rbfsolveprep(0,x,ep);
+elseif nargin==4
+    [ep,alpha,Marr,lam] = rbfsolveprep(0,x,ep,alpha);
 else
-    %M = M(:);
-    [Mr Mc] = size(M);
-    if Mr~=d
-        error('Incorrect M size passed, size(M)=%dx%d d=%d',Mr,Mc,d)
-    elseif M<N
-        error('rbfqr_solve requires M>N, but M=%g, N=%d',M,N)
-    elseif ceil(M)~=M
-        warning('Noninteger M passed as %g, reset to %d',M,ceil(M))
-        M = ceil(M);
-    end
+    [ep,alpha,Marr,lam] = rbfsolveprep(0,x,ep,alpha,M);
 end
-
-Marr = rbfformMarr(M,Mlim,Mextramax);
 phiMat = rbfphi(Marr,x,ep,alpha);
 
 [Q,R] = qr(phiMat);
@@ -143,7 +83,11 @@ else
     end
 end
 
-D = lam.^(toeplitz(sum(Marr(:,N+1:end),1),sum(Marr(:,N+1:-1:2),1)));
+% Here we apply the eigenvalue matrices
+% Note that the -d term in the power goes away because it
+% appears in both Lambda_2 and Lambda_1^{-1}
+Ml = size(Marr,2);
+D = lam.^(repmat(sum(Marr(:,N+1:end),1)',1,N)-repmat(sum(Marr(:,1:N),1),Ml-N,1));
 Rbar = D.*Rhat';
 
 [coef,recipcond] = ranksolve(Rhat,Rbar,linsolve(R1s,iRdiag*(Q'*y),opts));

@@ -21,8 +21,6 @@ global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
 end
-Mdefault = GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC;
-alphaDefault = GAUSSQR_PARAMETERS.ALPHA_DEFAULT;
 alertuser = GAUSSQR_PARAMETERS.WARNINGS_ON;
 
 if nargin<3
@@ -31,85 +29,20 @@ end
 rbfqrOBJ.warnid = '';
 rbfqrOBJ.warnmsg = '';
 
-if size(x,1)~=size(y,1)
+[N,d] = size(x);
+if N~=size(y,1)
     error('Different numbers of inputs and outputs')
 elseif sum(size(y,2)~=1)
     error('Output vector y must have only one column')
 end
 
-computealpha = 0;
 if nargin==3
-    computealpha = 1;
-elseif length(alpha)==0
-    computealpha = 1;
-end
-if computealpha==1
-    xminBound = min(x);
-    xmaxBound = max(x);
-    alpha = rbfalphasearch(ep,xminBound,xmaxBound);
-end
-
-% Checks to make sure that the ep and alpha values are acceptable
-if length(ep)>1
-    ep = abs(real(ep(1)));
-    warning(sprintf('Multiple epsilon values not allowed; using epsilon=%g',ep))
-end
-if length(alpha)>1
-    alpha = abs(real(alpha(1)));
-    warning(sprintf('Multiple alpha values not allowed; using alpha=%g',alpha))
-end
-if abs(real(ep))~=ep
-    ep = abs(real(ep));
-    warning(sprintf('Only real, positive epsilon allowed; using epsilon=%g',ep))
-end
-if abs(real(alpha))~=alpha
-    alpha = abs(real(alpha));
-    warning(sprintf('Only real, positive alpha allowed; using alpha=%g',alpha))
-end
-if ep==0 || alpha==0
-    error(sprintf('Parameters cannot be zero: epsilon=%g, alpha=%g',ep,alpha))
-end
-
-[N,d] = size(x);
-if Mdefault<=1 % Only a percentage of N is considered
-    Mdefault = floor(Mdefault*N);
-elseif Mdefault>N
-    Mdefault = N;
-end
-
-% All this figures out what an acceptable Marr is
-% For now I'm doing Marr+1 to solve for an off-by-one issues in the paper
-% I'll work on fixing this eventually
-if not(exist('M'))
-    M = zeros(d,1);
-    Mlim = Mdefault;
+    [ep,alpha,Marr] = rbfsolveprep(1,x,ep);
+elseif nargin==4
+    [ep,alpha,Marr] = rbfsolveprep(1,x,ep,alpha);
 else
-    % Need to check to make sure passed M is reasonable
-    if any(M>N)
-        warning('M value %d>%d unacceptable, reset to %d',M,N,Mdefault)
-        Mlim = Mdefault;
-        M = zeros(d,1);
-    elseif any(M<0)
-        warning('Negative M value passed, setting max Marr length to %d',Mdefault)
-        Mlim = Mdefault;
-        M = zeros(d,1);
-    end
-    [Md,Mc] = size(M);
-    if Md~=d
-        if Md==1 % The user only passed a max length for Marr
-            Mlim = M;
-            M = zeros(d,1);
-        else
-            error('M of length %d passed, but data has dimension %d',Md,d)
-        end
-    elseif Mc~=1
-        error('Multiple columns in M detected, but only 1 is allowed')
-    else % This is the everything was passed correctly case
-        Mlim = N;
-    end
+    [ep,alpha,Marr] = rbfsolveprep(1,x,ep,alpha,M);
 end
-
-Marr = rbfformMarr(M,[],Mlim);
 phiMat = rbfphi(Marr,x,ep,alpha);
 
 lastwarn('')

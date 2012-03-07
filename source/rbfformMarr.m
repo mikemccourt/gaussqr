@@ -1,11 +1,14 @@
 function Marr = rbfformMarr(M,Mmax,maxlength)
 % function Marr = rbfformMarr(M,Mmax,maxlength)
-% M should be a vector that tells the max length in each dimension.
-% Mmax is an optional input giving the max power that epsilon should see.
-%   This may be omitted by passing []
-% maxlength is optional, and limits size(Marr,2)<maxlength
 %
-% If you pass this M=[0;...;0] this will set each M to Mmax
+% Inputs:
+%   M - an integer vector that tells the max power in each dimension.
+%       If you pass M=[0;...;0] this will set each M to Mmax
+%   Mmax - an optional integer giving the max power that epsilon should see.
+%          This may be omitted by passing []
+%   maxlength - optional, and limits size(Marr,2)<maxlength
+%               This prevents Marr from being too long
+
 M = M(:)'; % Make it a row vector to make my life easier
 d = length(M);
 if sum(M)==0
