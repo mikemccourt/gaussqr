@@ -20,6 +20,7 @@ global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.ERROR_STYLE = 2; % Use absolute error
 
 ufunc = @(x,y) sinh(x).*cosh(y);
+Lf = @(x,y) 2*sinh(x).*cosh(y);
 N = 24;
 
 rbf = @(e,r) exp(-(e*r).^2);
@@ -32,10 +33,11 @@ y = x;
 [xx,yy] = meshgrid(x,y);
 xx = xx(:); yy = yy(:);
 u = ufunc(xx,yy);
+Lfu = ufunc(xx,yy);
 D2 = D^2;
 I = eye(N+1);
 L = kron(I,D2) + kron(D2,I);
-err_Trefethen = errcompute(L*u,2*u);
+err_Trefethen = errcompute(L*u,Lfu);
 
 epvec = logspace(-1,1,40);
 pts = [xx,yy];
@@ -48,34 +50,25 @@ for ep=epvec
   Amat = rbf(ep,rp);
   b = Amat\u;
   Lmat = Lrbf(ep,rp);
-  errvec2D(k) = errcompute(Lmat*b,2*u);
+  errvec2D(k) = errcompute(Lmat*b,Lfu);
   A = rbf(ep,r);
   d2A = d2rbf(ep,r);
   I = eye(size(r));
   D = d2A/A;
   L = kron(I,D) + kron(D,I);
-  errvec1D(k) = errcompute(L*u,2*u);
+  errvec1D(k) = errcompute(L*u,Lfu);
   k = k + 1;
 end
 
 N = size(x,1);
-epvec = logspace(-8,0,25);
-alpha = 1;
+epvec = logspace(-1,1,40);
 errvecR2d = [];
-errvecQ2d = [];
+% errvecQ2d = [];
 errvecR1d = [];
 errvecQ1d = [];
 k = 1;
 for ep=epvec
-  GQR = rbfqrr_solve(pts,u,ep,alpha);
-  Lu = rbfqr_eval(GQR,pts,[2,0]) + rbfqr_eval(GQR,pts,[0,2]);
-  errvecR2d(k) = errcompute(Lu,2*u);
-  
-  GQR = rbfqr_solve(pts,u,ep,alpha);
-  Lu = rbfqr_eval(GQR,pts,[2,0]) + rbfqr_eval(GQR,pts,[0,2]);
-  errvecQ2d(k) = errcompute(Lu,2*u);
-  
-  [ep,alpha,Marr,lam] = rbfsolveprep(0,x,ep,alpha);
+  [ep,alpha,Marr,lam] = rbfsolveprep(0,x,ep);
   phiMat = rbfphi(Marr,x,ep,alpha);
   phiMat2d = rbfphi(Marr,x,ep,alpha,2);
   [Q,R] = qr(phiMat);
@@ -88,21 +81,33 @@ for ep=epvec
   Ml = size(Marr,2);
   D = lam.^(repmat(sum(Marr(:,N+1:end),1)',1,N)-repmat(sum(Marr(:,1:N),1),Ml-N,1));
   Rbar = D.*Rhat';
-  D2 = phiMat2d*(I;Rbar)/(phiMat*(I;Rbar));
+  D2 = phiMat2d*[I;Rbar]/(phiMat*[I;Rbar]);
   L = kron(I,D2) + kron(D2,I);
-  errvecQ1d(k) = errcompute(L*u,2*u);
+  errvecQ1d(k) = errcompute(L*u,Lfu);
   
-  [ep,alpha,Marr] = rbfsolveprep(1,x,ep,alpha);
+  [ep,alpha,Marr] = rbfsolveprep(1,x,ep);
   phiMat = rbfphi(Marr,x,ep,alpha);
   phiMat2d = rbfphi(Marr,x,ep,alpha,2);
   D2 = phiMat2d/phiMat;
   L = kron(I,D2) + kron(D2,I);
-  errvecR1d(k) = errcompute(L*u,2*u);
+  errvecR1d(k) = errcompute(L*u,Lfu);
+  
+  % Note that alpha was defined earlier in rbfsolveprep
+  GQR = rbfqrr_solve(pts,u,ep,alpha);
+  Lu = rbfqr_eval(GQR,pts,[2,0]) + rbfqr_eval(GQR,pts,[0,2]);
+  errvecR2d(k) = errcompute(Lu,Lfu);
+  
+%   GQR = rbfqr_solve(pts,u,ep,alpha);
+%   Lu = rbfqr_eval(GQR,pts,[2,0]) + rbfqr_eval(GQR,pts,[0,2]);
+%   errvecQ2d(k) = errcompute(Lu,Lfu);
   
   k = k + 1;
 end
 
-% loglog(epvec,errvec1D,'b','LineWidth',3),hold on
-% loglog(epvec,errvec2D,'g','LineWidth',3)
-% loglog(epvec,err_Trefethen*ones(size(epvec)),'--k','LineWidth',2),hold off
-% legend('kron Collocation','2D Collocation','Trefethen')
+loglog(epvec,errvec1D,':b','LineWidth',2),hold on
+loglog(epvec,errvec2D,':g','LineWidth',2)
+loglog(epvec,errvecR1D,'--b','LineWidth',2)
+loglog(epvec,errvecR2D,'--g','LineWidth',2)
+loglog(epvec,errvecQ1D,'--r','LineWidth',2)
+loglog(epvec,err_Trefethen*ones(size(epvec)),'--k','LineWidth',2),hold off
+legend('kron Collocation','2D Collocation','kron Regression','kron QRsolve','2D Regression','Trefethen')
