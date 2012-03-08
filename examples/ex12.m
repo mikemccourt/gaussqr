@@ -19,9 +19,13 @@ rbfsetup
 global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.ERROR_STYLE = 2; % Use absolute error
 
+N = 24;
 ufunc = @(x,y) sinh(x).*cosh(y);
 Lf = @(x,y) 2*sinh(x).*cosh(y);
-N = 24;
+ufunc = @(x,y) sin(x+y)+exp(-((x-.5).^2+(y+.25).^2));
+Lf = @(x,y) -2*sin(x+y)+(-4+(1-2*x).^2+(.5+2*y).^2).*exp(-((x-.5).^2+(y+.25).^2));
+ufunc = @(x,y) 1./(1+x.^2+y.^2);
+Lf = @(x,y) 4*(-1+x.^2+y.^2)./(1+x.^2+y.^2).^3;
 
 rbf = @(e,r) exp(-(e*r).^2);
 drbf = @(e,r,dx) -2*e^2*dx.*exp(-(e*r).^2);
@@ -39,7 +43,7 @@ I = eye(N+1);
 L = kron(I,D2) + kron(D2,I);
 err_Trefethen = errcompute(L*u,Lfu);
 
-epvec = logspace(-1,1,40);
+epvec = logspace(-2,1,40);
 pts = [xx,yy];
 rp = DistanceMatrix(pts,pts);
 r = DistanceMatrix(x,x);
@@ -61,14 +65,14 @@ for ep=epvec
 end
 
 N = size(x,1);
-epvec = logspace(-1,1,40);
 errvecR2d = [];
 % errvecQ2d = [];
 errvecR1d = [];
 errvecQ1d = [];
 k = 1;
+alpha = 3;
 for ep=epvec
-  [ep,alpha,Marr,lam] = rbfsolveprep(0,x,ep);
+  [ep,alpha,Marr,lam] = rbfsolveprep(0,x,ep,alpha);
   phiMat = rbfphi(Marr,x,ep,alpha);
   phiMat2d = rbfphi(Marr,x,ep,alpha,2);
   [Q,R] = qr(phiMat);
@@ -85,7 +89,7 @@ for ep=epvec
   L = kron(I,D2) + kron(D2,I);
   errvecQ1d(k) = errcompute(L*u,Lfu);
   
-  [ep,alpha,Marr] = rbfsolveprep(1,x,ep);
+  [ep,alpha,Marr] = rbfsolveprep(1,x,ep,alpha);
   phiMat = rbfphi(Marr,x,ep,alpha);
   phiMat2d = rbfphi(Marr,x,ep,alpha,2);
   D2 = phiMat2d/phiMat;
@@ -104,10 +108,11 @@ for ep=epvec
   k = k + 1;
 end
 
-loglog(epvec,errvec1d,':b','LineWidth',2),hold on
-loglog(epvec,errvec2d,':g','LineWidth',2)
-loglog(epvec,errvecR1d,'--b','LineWidth',2)
-loglog(epvec,errvecR2d,'--g','LineWidth',2)
-loglog(epvec,errvecQ1d,'--r','LineWidth',2)
+loglog(epvec,errvecR1d,'b','LineWidth',3),hold on
+loglog(epvec,errvecR2d,'g','LineWidth',3)
+loglog(epvec,errvecQ1d,'r','LineWidth',3)
+loglog(epvec,errvec1d,'-.b','LineWidth',2)
+loglog(epvec,errvec2d,'-.g','LineWidth',2)
 loglog(epvec,err_Trefethen*ones(size(epvec)),'--k','LineWidth',2),hold off
-legend('kron Collocation','2D Collocation','kron Regression','kron QRsolve','2D Regression','Trefethen')
+legend('kron Regression','2D Regression','kron QRsolve','kron Collocation',...
+       '2D Collocation','Trefethen','Location','Northwest')
