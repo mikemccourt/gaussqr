@@ -9,13 +9,17 @@ thisDir = pwd;
 if(length(strfind(thisDir,'\'))>0) % We are in Windows
     sourceDir = strcat(thisDir,'\source');
     exampleDir = strcat(thisDir,'\examples');
+    otherDir = strcat(thisDir,'\fromothers');
 elseif(length(strfind(thisDir,'/'))>0) % We are in Unix
     sourceDir = strcat(thisDir,'/source');
     exampleDir = strcat(thisDir,'/examples');
+    otherDir = strcat(thisDir,'/fromothers');
 end
 path(P,sourceDir);
 P = path;
 path(P,exampleDir);
+P = path;
+path(P,otherDir);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Setup global constants and parameters
