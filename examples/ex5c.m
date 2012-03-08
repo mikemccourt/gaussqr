@@ -14,18 +14,27 @@ if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
 end
 GAUSSQR_PARAMETERS.ERROR_STYLE = 2; % Use absolute error
-Mextramax = GAUSSQR_PARAMETERS.MAX_EXTRA_EFUNC;
-Mfactor = GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC;
 
-f = @(x,y) exp(-10*((y-1).^2+(x-.5).^2));
+% f = @(x,y) exp(-10*((y-1).^2+(x-.5).^2));
 % Solution below is u = (1-y^2)sin(pi*x)cosh(x+y)
-% f = @(x,y) (1-y.^2).*(sin(pi*x).*cosh(x+y)*(1-pi^2) + 2*pi*cos(pi*x).*sinh(x+y)) - sin(pi*x)*((1+y.^2).*cosh(x+y)+4*y.*sinh(x+y)) + k^2*(1-y.^2)*sin(pi*x).*cosh(x+y);
+fsol = @(x,y) (1-y.^2).*sin(pi*x).*cosh(x+y);
+f = @(x,y) (1-y.^2).*(sin(pi*x).*cosh(x+y)*(1-pi^2) + 2*pi*cos(pi*x).*sinh(x+y)) - sin(pi*x).*((1+y.^2).*cosh(x+y)+4*y.*sinh(x+y)) + k^2*fsol(x,y);
+% fsol = @(x,y) (1-y.^2).*sin(pi*x).*(1-exp(-10*((x-.5).^2+(y-.5).^2)));
+% f = @(x,y) (y.^2-1).*sin(pi*x)*pi^2-2*sin(pi*x)+...
+%     exp(-10*((x-.5).^2+(y-.5).^2)).*...
+%     ((2*y.^2-2).*cos(pi*x)*pi.*(10-20*x)+...
+%      40*(1-y.^2).*sin(pi*x)+...
+%      (y.^2-1).*sin(pi*x).*(10-20*x).^2+...
+%      (1-y.^2).*sin(pi*x)*pi^2+2*sin(pi*x)+...
+%      4*y.*sin(pi*x).*(10-20*y)+...
+%      (y.^2-1).*sin(pi*x).*(10-20*y).^2)
+%     + k^2*fsol(x,y);
+
 rbf = @(e,r) exp(-(e*r).^2);
 drbf = @(e,r,dx) -2*e^2*dx.*exp(-(e*r).^2);
 d2rbf = @(e,r) 2*e^2*(2*(e*r).^2-1).*exp(-(e*r).^2);
 
 % These are the functions needed for the Laplacian
-%d2Lrbf = @(e,r) 2*e^2*(2*(e*dx).^2-1).*exp(-(e*r).^2);
 Lrbf = @(e,r) 4*e^2*((e*r).^2-1).*exp(-(e*r).^2);
 
 epvec = logspace(-1,1,20);
@@ -36,79 +45,109 @@ N = 24;
 y = x;
 [xx,yy] = meshgrid(x,y);
 xx = xx(:); yy = yy(:);
-rhs = f(xx,yy);
+usol = fsol(xx,yy);
+b = find(abs(xx)==1 | abs(yy)==1); % Identify boundaries
+
 D2 = D^2;
 I = eye(N+1);
-k = 9;
+k = 9; % Helmholtz parameter
 L = kron(I,D2) + kron(D2,I)+k^2*kron(I,I);
-b = find(abs(xx)==1 | abs(yy)==1);
+rhs = f(xx,yy);
+
 L(b,:) = zeros(4*N,(N+1)^2); L(b,b) = eye(4*N);
 rhs(b) = zeros(4*N,1);
 u = L\rhs;
-uu = reshape(u,N+1,N+1);
-val_Trefethen = uu(N/2+1,N/2+1);
+err_Trefethen = errcompute(u,usol);
 
-% Kansa unsymmetric collocation
+% Kansa unsymmetric collocation with 1D kronecker products
 r = DistanceMatrix(x,x);
-ep = 10;
-% for ep=epvec
-%     A = rbf(ep,r);
-%     D2A = d2rbf(ep,r);
-% end
+errvec1D = [];
+m = 1;
+for ep=epvec
+    A = rbf(ep,r);
+    D2A = d2rbf(ep,r);
+    D2 = D2A/A;
+    L = kron(I,D2) + kron(D2,I) + k^2*kron(I,I);
+    L(b,:) = zeros(4*N,(N+1)^2); L(b,b) = eye(4*N);
+    u = L\rhs;
+    errvec1D(m) = errcompute(u,usol);
+    m = m+1;
+end
+
 pts = [xx,yy];
 r = DistanceMatrix(pts,pts);
-Amat = rbf(ep,r);
-Xmat = 2*ep^2*diag(2*ep^2*xx.^2-1)*Amat;
-Ymat = 2*ep^2*diag(2*ep^2*yy.^2-1)*Amat;
-Lmat = (Xmat+Ymat)/Amat;
-f = ones(size(xx));
-Lf = (Xmat+Ymat)*(Amat\f);
-
-epvec = logspace(-1,1,40);
-r = DistanceMatrix(x,x);
-rdx = DifferenceMatrix(x,x);
-f = sinh(x);
-errvec = [];
-k = 1;
+errvec2D = [];
+m = 1;
 for ep=epvec
-Amat = rbf(ep,r);
-b = Amat\f;
-Dmat = drbf(ep,r,rdx);
-errvec(k) = norm(cosh(x)-Dmat*b);
-k = k + 1;
+    A = rbf(ep,r);
+%     L = Lrbf(ep,r) + k^2*kron(I,I);
+%     L(b,:) = A(b,:);
+%     u = A*(L\rhs);
+    LA = Lrbf(ep,r);
+    L = LA/A + k^2*kron(I,I);
+    L(b,:) = zeros(4*N,(N+1)^2); L(b,b) = eye(4*N);
+    errvec2D(m) = errcompute(L\rhs,usol);
+    m = m+1;
 end
-loglog(epvec,errvec)
-pause
 
-rp = DistanceMatrix(pts,pts);
-r = DistanceMatrix(x,x);
-f = sinh(xx).*cosh(yy);
-errvec = [];
-errvecP = [];
-k = 1;
+N = N+1;
+m = 1;
+errvecQ1D = [];
 for ep=epvec
-Amat = rbf(ep,rp);
-b = Amat\f;
-Lmat = Lrbf(ep,rp);
-errvec(k) = norm(2*f-Lmat*b);
-A = rbf(ep,r);
-d2A = d2rbf(ep,r);
-I = eye(size(r));
-D = d2A/A;
-L = kron(I,D) + kron(D,I);
-errvecP(k) = norm(2*f-L*f);
-k = k + 1;
+    [ep,alpha,Marr,lam] = rbfsolveprep(0,x,ep);
+    phiMat = rbfphi(Marr,x,ep,alpha);
+    phiMat2d = rbfphi(Marr,x,ep,alpha,2);
+    [Q,R] = qr(phiMat);
+    R1 = R(:,1:N);
+    R2 = R(:,N+1:end);
+    iRdiag = diag(1./diag(R1));
+    R1s = iRdiag*R1;
+    opts.UT = true;
+    Rhat = linsolve(R1s,iRdiag*R2,opts);
+    Ml = size(Marr,2);
+    D = lam.^(repmat(sum(Marr(:,N+1:end),1)',1,N)-repmat(sum(Marr(:,1:N),1),Ml-N,1));
+    Rbar = D.*Rhat';
+    D2 = phiMat2d*[I;Rbar]/(phiMat*[I;Rbar]);
+    L = kron(I,D2) + kron(D2,I) + k^2*kron(I,I);
+    L(b,:) = zeros(4*(N-1),N^2); L(b,b) = eye(4*(N-1));
+    errvecQ1D(m) = errcompute(L\rhs,usol);
+    m = m+1;
 end
-loglog(epvec,[errvec;errvecP])
 
-ep = 1;
-Amat = rbf(ep,rp);
-b = Amat\f;
-Lmat = Lrbf(ep,rp);
+GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .9;
+m = 1;
+errvecR1D = [];
+for ep=epvec
+    [ep,alpha,Marr] = rbfsolveprep(1,x,ep);
+    phiMat = rbfphi(Marr,x,ep,alpha);
+    phiMat2d = rbfphi(Marr,x,ep,alpha,2);
+    D2 = phiMat2d/phiMat;
+    L = kron(I,D2) + kron(D2,I) + k^2*kron(I,I);
+    L(b,:) = zeros(4*(N-1),N^2); L(b,b) = eye(4*(N-1));
+    errvecR1D(m) = errcompute(L\rhs,usol);
+    m = m+1;
+end
 
-A = rbf(ep,r);
-d2A = d2rbf(ep,r);
-I = eye(size(r));
-D = d2A/A;
-L = kron(I,D) + kron(D,I);
+GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .5;
+m = 1;
+errvecR2D = [];
+for ep=epvec
+    [ep,alpha,Marr] = rbfsolveprep(1,pts,ep);
+    phiMat = rbfphi(Marr,pts,ep,alpha);
+    phiMat2d = rbfphi(Marr,pts,ep,alpha,[2,0])+rbfphi(Marr,pts,ep,alpha,[0,2]);
+    L = phiMat2d/phiMat + k^2*kron(I,I);
+    L(b,:) = zeros(4*(N-1),N^2); L(b,b) = eye(4*(N-1));
+    errvecR2D(m) = errcompute(L\rhs,usol);
+    m = m+1;
+end
+
+loglog(epvec,errvec1D,'--b','Linewidth',2),hold on
+loglog(epvec,errvec2D,'--g','Linewidth',2)
+loglog(epvec,errvecR1D,'b','Linewidth',3)
+loglog(epvec,errvecR2D,'g','Linewidth',3)
+loglog(epvec,errvecQ1D,'r','Linewidth',3)
+loglog(epvec,err_Trefethen*ones(size(epvec)),'--k','Linewidth',2)
+legend('kron collocation','2D collocation','kron regression','2D regression','kron QRsolve','Trefethen'),hold off
+
+
 
