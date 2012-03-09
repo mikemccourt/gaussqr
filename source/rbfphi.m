@@ -9,8 +9,9 @@
 %        This should be produced by rbfformMarr
 % x - vector of RBF centers
 % ep - traditional RBF shape parameter
-% alpha - RBFQR global scale parameter
+% alpha - GaussQR global scale parameter
 % deriv - row vector of derivatives in each dimension
+%         only derivatives of up to 4th order are available
 % beta,delta2,sx2 - DO NOT PASS, it is for private use
 %
 % Note: if you pass alpha<0 or ep<0 or m<1, this will error out
@@ -54,7 +55,7 @@ switch nargin
             elseif dr~=1
                 error('d must be a row vector of derivatives')
             end
-            if sum(deriv<0 + deriv>2)>0 % Right now you only have 2 derivatives
+            if sum(deriv<0 + deriv>4)>0 % Right now you only have 4 derivatives
                 warning('%d is an unacceptable derivative, reset to 0',deriv)
                 deriv = zeros(1,s);
             end
@@ -119,6 +120,62 @@ switch nargin
                         p = p.*(2*delta2*(2*delta2*xk.^2-1).*pm + ...
                                -4*delta2*beta*alpha*sqrt(2*m-2)*xk.*pm1 + ...
                                2*(beta*alpha)^2*sqrt((m-1)*(m-2))*pm2);
+                    case 3
+                        switch m
+                            case 1
+                                pm1 = zeros(size(p));
+                                pm2 = zeros(size(p));
+                                pm3 = zeros(size(p));
+                            case 2
+                                pm1 = rbfphi(m-1,xk,ep,alpha,0,beta,delta2,sx2);
+                                pm2 = zeros(size(p));
+                                pm3 = zeros(size(p));
+                            case 3
+                                pm1 = rbfphi(m-1,xk,ep,alpha,0,beta,delta2,sx2);
+                                pm2 = rbfphi(m-2,xk,ep,alpha,0,beta,delta2,sx2);
+                                pm3 = zeros(size(p));
+                            otherwise
+                                pm1 = rbfphi(m-1,xk,ep,alpha,0,beta,delta2,sx2);
+                                pm2 = rbfphi(m-2,xk,ep,alpha,0,beta,delta2,sx2);
+                                pm3 = rbfphi(m-3,xk,ep,alpha,0,beta,delta2,sx2);
+                        end
+                        p = p.*(4*delta2^2*x.*(3-2*delta2*x.^2).*pm + ...
+                                6*sqrt(2)*delta2*beta*alpha*sqrt(m-1)*(2*delta2*x.^2-1).*pm1 + ...
+                                -12*delta2*(beta*alpha)^2*sqrt((m-1)*(m-2))*x.*pm2 + ...
+                                2*sqrt(2)*(beta*alpha)^3*sqrt((m-1)*(m-2)*(m-3))*pm3);
+                    case 4
+                        switch m
+                            case 1
+                                pm1 = zeros(size(p));
+                                pm2 = zeros(size(p));
+                                pm3 = zeros(size(p));
+                                pm4 = zeros(size(p));
+                            case 2
+                                pm1 = rbfphi(m-1,xk,ep,alpha,0,beta,delta2,sx2);
+                                pm2 = zeros(size(p));
+                                pm3 = zeros(size(p));
+                                pm4 = zeros(size(p));
+                            case 3
+                                pm1 = rbfphi(m-1,xk,ep,alpha,0,beta,delta2,sx2);
+                                pm2 = rbfphi(m-2,xk,ep,alpha,0,beta,delta2,sx2);
+                                pm3 = zeros(size(p));
+                                pm4 = zeros(size(p));
+                            case 4
+                                pm1 = rbfphi(m-1,xk,ep,alpha,0,beta,delta2,sx2);
+                                pm2 = rbfphi(m-2,xk,ep,alpha,0,beta,delta2,sx2);
+                                pm3 = rbfphi(m-3,xk,ep,alpha,0,beta,delta2,sx2);
+                                pm4 = zeros(size(p));
+                            otherwise
+                                pm1 = rbfphi(m-1,xk,ep,alpha,0,beta,delta2,sx2);
+                                pm2 = rbfphi(m-2,xk,ep,alpha,0,beta,delta2,sx2);
+                                pm3 = rbfphi(m-3,xk,ep,alpha,0,beta,delta2,sx2);
+                                pm4 = rbfphi(m-4,xk,ep,alpha,0,beta,delta2,sx2);
+                        end
+                        p = p.*(4*delta2^2*(4*delta2^2*x.^4-12*delta2*x.^2+3).*pm + ...
+                                -16*sqrt(2)*delta2^2*beta*alpha*sqrt(m-1)*x.*(2*delta2*x.^2-3).*pm1 + ...
+                                24*delta2*(beta*alpha)^2*sqrt((m-1)*(m-2))*(2*delta2*x.^2-1).*pm2 + ...
+                                -16*sqrt(2)*delta2*(beta*alpha)^3*sqrt((m-1)*(m-2)*(m-3))*x.*pm3 + ...
+                                4*(beta*alpha)^4*sqrt((m-1)*(m-2)*(m-3)*(m-4))*pm4};
                     otherwise
                         error('Unacceptable derivative %d in rbfphialpha',d)
                 end
@@ -150,6 +207,7 @@ end
 %       one now that we've switched to the alpha evaluation.  I could fix
 %       that in the rbfFormMarr function, but I need to think about this a
 %       little more.
+%           NOTE: I think I fixed this, but I need to confirm
 %
 %       Derivatives could potentially be handled combinatorially to allow
 %       for more efficient computation, but that would be really hard.  The
