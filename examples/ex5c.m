@@ -18,7 +18,8 @@ GAUSSQR_PARAMETERS.ERROR_STYLE = 2; % Use absolute error
 % f = @(x,y) exp(-10*((y-1).^2+(x-.5).^2));
 % Solution below is u = (1-y^2)sin(pi*x)cosh(x+y)
 fsol = @(x,y) (1-y.^2).*sin(pi*x).*cosh(x+y);
-f = @(x,y) (1-y.^2).*(sin(pi*x).*cosh(x+y)*(1-pi^2) + 2*pi*cos(pi*x).*sinh(x+y)) - sin(pi*x).*((1+y.^2).*cosh(x+y)+4*y.*sinh(x+y)) + k^2*fsol(x,y);
+f = @(x,y) cosh(x+y).*((2+k^2-pi^2)*(1-y.^2).*sin(pi*x)-2*sin(pi*x)) + ...
+           sinh(x+y).*(2*pi*(1-y.^2).*cos(pi*x)-4*y.*sin(pi*x));
 % fsol = @(x,y) (1-y.^2).*sin(pi*x).*(1-exp(-10*((x-.5).^2+(y-.5).^2)));
 % f = @(x,y) (y.^2-1).*sin(pi*x)*pi^2-2*sin(pi*x)+...
 %     exp(-10*((x-.5).^2+(y-.5).^2)).*...
