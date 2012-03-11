@@ -103,6 +103,17 @@ end
 %      -16*sqrt(2)*delta2*(beta*alpha)^3*sqrt((m-1)*(m-2)*(m-3))*xk.*pm3 + ...
 %      4*(beta*alpha)^4*sqrt((m-1)*(m-2)*(m-3)*(m-4))*pm4
 %
+% Recurrence Relations:
+%  2 : phi_{n-2}(x) = 1/sqrt(m-2) *
+%                     (sqrt(2)*beta*alpha*xk .*phi_{n-1}(x) - 
+%                      sqrt(m-1)*phi_n(x))
+%  3 : phi_{n-3}(x) = 1/(sqrt(m-2)*sqrt(m-3)) *
+%                     ((2*(beta*alpha)^2*xk.^2-(n-1)+1) .*phi_{n-1}(x) -
+%                      sqrt(2)*sqrt(m-1)*beta*alpha*xk*phi_n(x))
+%  4 : phi_{n-4}(x) = 1/(sqrt(m-2)*sqrt(m-3)*(m-4)) *
+%                     (sqrt(2)*beta*alpha*xk.*(2*(beta*alpha)^2*xk.^2-2*(m-1)+1) .*phi_{n-1}(x) - 
+%                      sqrt(m-1)*(2*(beta*alpha)^2*x.^2-(n-1)+2).*phi_n(x)
+%
 % The actual derivatives below are computed with a recursion to allow for
 % fewer computations of phi
 function p = rbfphi_EVAL(Marr,x,ep,a,deriv,b,d2,sx2)
@@ -134,9 +145,6 @@ else
     for k=1:s
         m = Marr(k);
         sm1 = sqrt(m-1);
-        sm2 = sqrt(m-2);
-        sm3 = sqrt(m-3);
-        sm4 = sqrt(m-4);
         xk = x(:,k);
         pm = rbfphi_EVAL(m,xk,ep,a,0,b,d2,sx2);
         if m>1
@@ -241,3 +249,19 @@ end
 %       there may be a safer way to compute the derivative.  Since the
 %       Hermite's have an asymptotic form, that could be differentiated
 %       directly rather than using the recurrence relation.
+%
+%       More work should be done to determine the error ramifications of
+%       computing derivatives directly (d+1 function evals for d
+%       derivatives) versus using recurrence relation
+%
+%       If logoption is activated, there should be only one step away from
+%       the log setting - right at the end.  Everything else should be
+%       handled in the log domain.  Right now, 0th derivative terms are
+%       computed in the log domain, exponentiated, and then logged again to
+%       bring them together in the derivative formulas.  I should make a
+%       way to keep the pieces separate and bring them together later.
+%
+%       Maybe the way to go is to create a function that computes the
+%       coefficients for any order derivative in the recurrence form and
+%       call that each time it is needed.  Then the eigenfunction and the
+%       coefficient computation are separated.
