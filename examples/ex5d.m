@@ -16,7 +16,8 @@ GAUSSQR_PARAMETERS.ERROR_STYLE = 3; % Use partial relative error
 
 fsol = @(x,y) exp(x).*cos(y);
 Lfs = @(r) -1/(2*pi)*log(r);
-NN = 20;
+NN = 25;
+GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .8;
 
 bvec = 6:20;
 errMFS = [];
@@ -26,7 +27,7 @@ for bN=bvec
     % We need both the collocation and the source points for MFS
     ptsMFScoll = [[linspace(0,1,bN)';linspace(0,1,bN)';zeros(bN,1);ones(bN,1)],...
         [zeros(bN,1);pi/2*ones(bN,1);linspace(0,pi/2,bN)';linspace(0,pi/2,bN)']];
-    ptsMFScoll = unique(ptsMFScoll,'rows');
+    ptsMFScoll = unique(1e-8*ceil(1e8*ptsMFScoll),'rows');
     ptsMFSsource = 2*[cos(linspace(-pi,pi,size(ptsMFScoll,1)))',sin(linspace(-pi,pi,size(ptsMFScoll,1)))'] + ones(size(ptsMFScoll,1),1)*[.5,pi/4];
     % Find some sample points to evaluate the error at
     ptsEVAL = pick2Dpoints([0 0],[1 pi/2],NN);
@@ -60,7 +61,6 @@ f = @(x,y) (1/4-pi^2/16)*fsol(x,y);
 ptsEVAL = pick2Dpoints([-1 -1],[1 1],NN);
 usol = fsol(ptsEVAL(:,1),ptsEVAL(:,2));
 
-GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .8;
 alpha = 1;
 ep = 1e-9;
 
@@ -68,7 +68,9 @@ m = 1;
 errvecR2D = [];
 Nvec = [];
 for N=5:10
-    x = unique([pick2Dpoints([-1 -1],[1 1],N,'cheb');pick2Dpoints([-1 -1],[1 1],N,'halton')],'rows');
+    % Choose some possible collocation points and eliminate duplicates
+    x = [pick2Dpoints([-1 -1],[1 1],N,'cheb');pick2Dpoints([-1 -1],[1 1],N,'halton')];
+    x = unique(1e-8*ceil(1e8*x),'rows');
     b = find(abs(x(:,1))==1 | abs(x(:,2))==1);
     bi = setdiff(1:size(x,1),b)';
     Nvec(m) = size(x,1);
@@ -114,7 +116,7 @@ pause
 fsol = @(x,y) exp(x).*cos(y);
 Lfs = @(r) -1/(2*pi)*log(r);
 
-bvec = 20:10:80;
+bvec = 14:6:50;
 bNvec = [];
 errMFS = [];
 
@@ -123,8 +125,8 @@ for bN=bvec
     % Choose the collocation points
     x = [pick2Dpoints([-1 -1],[1 1],bN);pick2Dpoints([0 0],[1 1],ceil(bN/2))];
     bx = find( x(:,1)==-1 | x(:,2)==-1 | (x(:,1)==1 & x(:,2)<=0) | (x(:,2)==1 & x(:,1)<=0) | (x(:,1)>=0 & x(:,2)==0) | (x(:,2)>=0 & x(:,1)==0) );
-    bNvec(m) = size(bx,1);
-    ptsMFScoll = unique(x(bx,:),'rows')*diag([.5 pi/4]) + ones(bNvec(m),1)*[.5 pi/4];
+    ptsMFScoll = unique(1e-8*ceil(1e8*x(bx,:)),'rows')*diag([.5 pi/4]) + ones(size(bx,1),1)*[.5 pi/4];
+    bNvec(m) = size(ptsMFScoll,1);
     
     ptsMFSsource = 3*[cos(linspace(-pi,pi,bNvec(m)))',sin(linspace(-pi,pi,bNvec(m)))'] + ones(bNvec(m),1)*[.5,pi/4];
     % Find some sample points to evaluate the error at
@@ -170,9 +172,11 @@ ep = 1e-9;
 m = 1;
 errvecR2D = [];
 Nvec = [];
-for N=5:10
+for N=5:12
     % Determine the collocation points for the L-shaped domain
-    x = unique([pick2Dpoints([-1 -1],[1 1],N,'cheb');pick2Dpoints([-1 -1],[1 1],N,'halton');pick2Dpoints([0 0],[1 1],ceil(N/2))],'rows');
+    possible_x = [pick2Dpoints([-1 -1],[1 1],N,'cheb');pick2Dpoints([-1 -1],[1 1],N,'halton');pick2Dpoints([0 0],[1 1],ceil(N/2))];
+    % Get rid of duplicate points, which can happen
+    x = unique(1e-8*ceil(1e8*possible_x),'rows');
     bx = find( x(:,1)<=0 | x(:,2)<=0 );
     x = x(bx,:);
     % Determine which points are boundary points, and which are interior
@@ -223,7 +227,7 @@ fdysol = @(x,y) -exp(x).*sin(y);
 Lfs = @(r) -1/(2*pi)*log(r);
 Ldyfs = @(x,y) -1./(2*pi*DistanceMatrix(x,y).^2).*abs(DifferenceMatrix(x(:,2),y(:,2)));
 
-bvec = 20:10:80;
+bvec = 20:10:90;
 bNvec = [];
 errMFS = [];
 
@@ -232,8 +236,8 @@ for bN=bvec
     % Choose the collocation points
     x = [pick2Dpoints([-1 -1],[1 1],bN);pick2Dpoints([0 0],[1 1],ceil(bN/2))];
     bx = find( x(:,1)==-1 | x(:,2)==-1 | (x(:,1)==1 & x(:,2)<=0) | (x(:,2)==1 & x(:,1)<=0) | (x(:,1)>=0 & x(:,2)==0) | (x(:,2)>=0 & x(:,1)==0) );
-    bNvec(m) = size(bx,1);
-    ptsMFScoll = unique(x(bx,:),'rows')*diag([.5 pi/4]) + ones(bNvec(m),1)*[.5 pi/4];
+    ptsMFScoll = unique(1e-8*ceil(1e8*x(bx,:)),'rows')*diag([.5 pi/4]) + ones(size(bx,1),1)*[.5 pi/4];
+    bNvec(m) = size(ptsMFScoll,1);
 
     % Find the points which are Neumann BC instead of Dirichlet
     b = find( ptsMFScoll(:,2)==0 );
@@ -290,20 +294,22 @@ ep = 1e-9;
 m = 1;
 errvecR2D = [];
 Nvec = [];
-for N=5:10
+for N=5:12
     % Determine the collocation points
-    x = unique([pick2Dpoints([-1 -1],[1 1],N,'cheb');pick2Dpoints([-1 -1],[1 1],N,'halton');pick2Dpoints([0 0],[1 1],ceil(N/2))],'rows');
+    x = [pick2Dpoints([-1 -1],[1 1],N,'cheb');pick2Dpoints([-1 -1],[1 1],N,'halton');pick2Dpoints([0 0],[1 1],ceil(N/2))];
+    x = unique(1e-8*ceil(1e8*x),'rows');
     bx = find( x(:,1)<=0 | x(:,2)<=0 );
     x = x(bx,:);
+    Nvec(m) = size(x,1);
+
     % Find out which points are on the Dirichlet boundary
     bD = find( abs(x(:,1))==1 | x(:,2)==1 | (x(:,1)==0 & x(:,2)>=0) | (x(:,1)>=0 & x(:,2)==0));
     % Find out which points are on the Neumann boundary
-    bN = find( x(:,2)==-1 );
+    bN = find( x(:,2)==-1 &  abs(x(:,1))~=1 );
     % Find out which points are on the interior
-    bi = setdiff(1:size(x,1),b)';
-    Nvec(m) = size(x,1);
+    bi = setdiff(1:Nvec(m),[bN;bD])';
 
-    % Get the preliminary RBF-QR stuff
+    % Get the preliminary RBF-QR stuff (namely Marr)
     [ep,alpha,Marr] = rbfsolveprep(1,x,ep,alpha);
     % Build the collocation matrix
     phiMat2d = rbfphi(Marr,x(bi,:),ep,alpha,[2,0])+rbfphi(Marr,x(bi,:),ep,alpha,[0,2]);
@@ -313,7 +319,7 @@ for N=5:10
     % Build the RHS
     rhs_interior = f(x(bi,1),x(bi,2));
     rhs_dirichlet = fsol(x(bD,1),x(bD,2));
-    rhs_neumann = fsol(x(bN,1),x(bN,2));
+    rhs_neumann = fdysol(x(bN,1),x(bN,2));
     rhs = [rhs_interior;rhs_dirichlet;rhs_neumann];
     coef = A\rhs;
 
