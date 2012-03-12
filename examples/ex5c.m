@@ -6,7 +6,7 @@
 
 % The problem we are interested in solving is the Helmholtz equation:
 %    Lap(u)+k^2 u = f
-%    (x,y)=[-1,1]^2     homogeneous Dirichlet BC
+%    (x,y)=[-1,1]^2     Dirichlet BC
 %    f = exp(-10*((yy-1).^2+(xx-.5).^2));
 
 global GAUSSQR_PARAMETERS
@@ -17,9 +17,9 @@ GAUSSQR_PARAMETERS.ERROR_STYLE = 2; % Use absolute error
 
 % f = @(x,y) exp(-10*((y-1).^2+(x-.5).^2));
 % Solution below is u = (1-y^2)sin(pi*x)cosh(x+y)
-fsol = @(x,y) (1-y.^2).*sin(pi*x).*cosh(x+y);
-f = @(x,y) cosh(x+y).*((2+k^2-pi^2)*(1-y.^2).*sin(pi*x)-2*sin(pi*x)) + ...
-           sinh(x+y).*(2*pi*(1-y.^2).*cos(pi*x)-4*y.*sin(pi*x));
+% fsol = @(x,y) (1-y.^2).*sin(pi*x).*cosh(x+y);
+% f = @(x,y) cosh(x+y).*((2+k^2-pi^2)*(1-y.^2).*sin(pi*x)-2*sin(pi*x)) + ...
+%            sinh(x+y).*(2*pi*(1-y.^2).*cos(pi*x)-4*y.*sin(pi*x));
 % fsol = @(x,y) (1-y.^2).*sin(pi*x).*(1-exp(-10*((x-.5).^2+(y-.5).^2)));
 % f = @(x,y) (y.^2-1).*sin(pi*x)*pi^2-2*sin(pi*x)+...
 %     exp(-10*((x-.5).^2+(y-.5).^2)).*...
@@ -30,6 +30,8 @@ f = @(x,y) cosh(x+y).*((2+k^2-pi^2)*(1-y.^2).*sin(pi*x)-2*sin(pi*x)) + ...
 %      4*y.*sin(pi*x).*(10-20*y)+...
 %      (y.^2-1).*sin(pi*x).*(10-20*y).^2)
 %     + k^2*fsol(x,y);
+fsol = @(x,y) 1./(1+x.^2+y.^2);
+f = @(x,y) 8*(x.^2+y.^2).*fsol(x,y).^3-4*fsol(x,y).^2+k^2*fsol(x,y);
 
 rbf = @(e,r) exp(-(e*r).^2);
 drbf = @(e,r,dx) -2*e^2*dx.*exp(-(e*r).^2);
@@ -56,7 +58,7 @@ L = kron(I,D2) + kron(D2,I)+k^2*kron(I,I);
 rhs = f(xx,yy);
 
 L(b,:) = zeros(4*N,(N+1)^2); L(b,b) = eye(4*N);
-rhs(b) = zeros(4*N,1);
+rhs(b) = zeros(4*N,1);rhs(b) = usol(b);
 u = L\rhs;
 err_Trefethen = errcompute(u,usol);
 
@@ -81,9 +83,6 @@ errvec2D = [];
 m = 1;
 for ep=epvec
     A = rbf(ep,r);
-%     L = Lrbf(ep,r) + k^2*kron(I,I);
-%     L(b,:) = A(b,:);
-%     u = A*(L\rhs);
     LA = Lrbf(ep,r);
     L = LA/A + k^2*kron(I,I);
     L(b,:) = zeros(4*N,(N+1)^2); L(b,b) = eye(4*N);
@@ -94,8 +93,9 @@ end
 N = N+1;
 m = 1;
 errvecQ1D = [];
+alpha = 6;
 for ep=epvec
-    [ep,alpha,Marr,lam] = rbfsolveprep(0,x,ep);
+    [ep,alpha,Marr,lam] = rbfsolveprep(0,x,ep,alpha);
     phiMat = rbfphi(Marr,x,ep,alpha);
     phiMat2d = rbfphi(Marr,x,ep,alpha,2);
     [Q,R] = qr(phiMat);
@@ -119,7 +119,7 @@ GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .9;
 m = 1;
 errvecR1D = [];
 for ep=epvec
-    [ep,alpha,Marr] = rbfsolveprep(1,x,ep);
+    [ep,alpha,Marr] = rbfsolveprep(1,x,ep,alpha);
     phiMat = rbfphi(Marr,x,ep,alpha);
     phiMat2d = rbfphi(Marr,x,ep,alpha,2);
     D2 = phiMat2d/phiMat;
@@ -133,7 +133,7 @@ GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .5;
 m = 1;
 errvecR2D = [];
 for ep=epvec
-    [ep,alpha,Marr] = rbfsolveprep(1,pts,ep);
+    [ep,alpha,Marr] = rbfsolveprep(1,pts,ep,alpha);
     phiMat = rbfphi(Marr,pts,ep,alpha);
     phiMat2d = rbfphi(Marr,pts,ep,alpha,[2,0])+rbfphi(Marr,pts,ep,alpha,[0,2]);
     L = phiMat2d/phiMat + k^2*kron(I,I);
@@ -149,6 +149,8 @@ loglog(epvec,errvecR2D,'g','Linewidth',3)
 loglog(epvec,errvecQ1D,'r','Linewidth',3)
 loglog(epvec,err_Trefethen*ones(size(epvec)),'--k','Linewidth',2)
 legend('kron collocation','2D collocation','kron regression','2D regression','kron QRsolve','Trefethen'),hold off
-
+xlabel('\epsilon')
+ylabel(sprintf('error(%d)',GAUSSQR_PARAMETERS.ERROR_STYLE))
+title(sprintf('\\alpha=%g',alpha))
 
 
