@@ -106,10 +106,11 @@ set(gca,'xtick',Nvec)
 pause
 
 
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Here now is the second example
 % This time we use the same function as before, but the domain
 % has the top quadrant missing, making it a nonconvex domain
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 fsol = @(x,y) exp(x).*cos(y);
 Lfs = @(r) -1/(2*pi)*log(r);
 
@@ -119,6 +120,7 @@ errMFS = [];
 
 m = 1;
 for bN=bvec
+    % Choose the collocation points
     x = [pick2Dpoints([-1 -1],[1 1],bN);pick2Dpoints([0 0],[1 1],ceil(bN/2))];
     bx = find( x(:,1)==-1 | x(:,2)==-1 | (x(:,1)==1 & x(:,2)<=0) | (x(:,2)==1 & x(:,1)<=0) | (x(:,1)>=0 & x(:,2)==0) | (x(:,2)>=0 & x(:,1)==0) );
     bNvec(m) = size(bx,1);
@@ -153,6 +155,7 @@ title('Solution via MFS')
 set(gca,'xtick',bNvec)
 xlim([min(bNvec),max(bNvec)])
 
+
 % GaussQR solution
 fsol = @(x,y) exp(.5*x+.5).*cos(pi/4*(y+1));
 f = @(x,y) (1/4-pi^2/16)*fsol(x,y);
@@ -168,10 +171,12 @@ m = 1;
 errvecR2D = [];
 Nvec = [];
 for N=5:10
+    % Determine the collocation points for the L-shaped domain
     x = unique([pick2Dpoints([-1 -1],[1 1],N,'cheb');pick2Dpoints([-1 -1],[1 1],N,'halton');pick2Dpoints([0 0],[1 1],ceil(N/2))],'rows');
     bx = find( x(:,1)<=0 | x(:,2)<=0 );
-    xx = x(bx,:);
-    b = find( abs(xx(:,1))==1 | abs(xx(:,2))==1 | (xx(:,1)==0 & xx(:,2)>=0) | (xx(:,1)>=0 & xx(:,2)==0));
+    x = x(bx,:);
+    % Determine which points are boundary points, and which are interior
+    b = find( abs(x(:,1))==1 | abs(x(:,2))==1 | (x(:,1)==0 & x(:,2)>=0) | (x(:,1)>=0 & x(:,2)==0));
     bi = setdiff(1:size(x,1),b)';
     Nvec(m) = size(x,1);
 
@@ -207,4 +212,127 @@ set(gca,'xtick',Nvec)
 
 
 
+pause
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Here now is the third example
+% This time we use the same function and domain as before,
+% but the BC are mixed Dirichlet and Neumann
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+fsol = @(x,y) exp(x).*cos(y);
+fdysol = @(x,y) -exp(x).*sin(y);
+Lfs = @(r) -1/(2*pi)*log(r);
+Ldyfs = @(x,y) -1./(2*pi*DistanceMatrix(x,y).^2).*abs(DifferenceMatrix(x(:,2),y(:,2)));
 
+bvec = 20:10:80;
+bNvec = [];
+errMFS = [];
+
+m = 1;
+for bN=bvec
+    % Choose the collocation points
+    x = [pick2Dpoints([-1 -1],[1 1],bN);pick2Dpoints([0 0],[1 1],ceil(bN/2))];
+    bx = find( x(:,1)==-1 | x(:,2)==-1 | (x(:,1)==1 & x(:,2)<=0) | (x(:,2)==1 & x(:,1)<=0) | (x(:,1)>=0 & x(:,2)==0) | (x(:,2)>=0 & x(:,1)==0) );
+    bNvec(m) = size(bx,1);
+    ptsMFScoll = unique(x(bx,:),'rows')*diag([.5 pi/4]) + ones(bNvec(m),1)*[.5 pi/4];
+
+    % Find the points which are Neumann BC instead of Dirichlet
+    b = find( ptsMFScoll(:,2)==0 );
+    
+    % Choose the source points, just the standard circle
+    ptsMFSsource = 2*[cos(linspace(-pi,pi,bNvec(m)))',sin(linspace(-pi,pi,bNvec(m)))'] + ones(bNvec(m),1)*[.5,pi/4];
+
+    % Find some sample points at which to evaluate the error
+    x = pick2Dpoints([-1 -1],[1 1],NN);
+    bx = find( x(:,1)<=0 | x(:,2)<=0 );
+    ptsEVAL = x(bx,:)*diag([.5 pi/4]) + ones(size(bx,1),1)*[.5 pi/4];
+    % Evaluate the true solution at the sample points
+    usol = fsol(ptsEVAL(:,1),ptsEVAL(:,2));
+
+    % Solve the system with MFS
+    DM_coll = DistanceMatrix(ptsMFScoll,ptsMFSsource);
+    % Handle the Dirichlet BC
+    A_coll = Lfs(DM_coll);
+    rhs = fsol(ptsMFScoll(:,1),ptsMFScoll(:,2));
+    % Handle the Neumann BC
+    A_coll(b,:) = Ldyfs(ptsMFScoll(b,:),ptsMFSsource);
+    rhs(b) = fdysol(ptsMFScoll(b,1),ptsMFScoll(b,2));
+
+    coefMFS = A_coll\rhs;
+    DM_eval = DistanceMatrix(ptsEVAL,ptsMFSsource);
+    A_eval = Lfs(DM_eval);
+    uMFS = A_eval*coefMFS;
+    errMFS(m) = errcompute(uMFS,usol);
+    m = m + 1;
+end
+
+% Plot of error with MFS
+subplot(1,2,1)
+loglog(bNvec,errMFS)
+ylabel('error')
+xlabel('Collocation points')
+title('Solution via MFS')
+set(gca,'xtick',bNvec)
+xlim([min(bNvec),max(bNvec)])
+
+
+% GaussQR solution
+fsol = @(x,y) exp(.5*x+.5).*cos(pi/4*(y+1));
+fdysol = @(x,y) -pi/4*exp(.5*x+.5).*sin(pi/4*(y+1));
+f = @(x,y) (1/4-pi^2/16)*fsol(x,y);
+
+ptsEVAL = pick2Dpoints([-1 -1],[1 1],NN);
+ptsEVAL = ptsEVAL(find( ptsEVAL(:,1)<=0 | ptsEVAL(:,2)<=0 ),:);
+usol = fsol(ptsEVAL(:,1),ptsEVAL(:,2));
+
+alpha = 1;
+ep = 1e-9;
+
+m = 1;
+errvecR2D = [];
+Nvec = [];
+for N=5:10
+    % Determine the collocation points
+    x = unique([pick2Dpoints([-1 -1],[1 1],N,'cheb');pick2Dpoints([-1 -1],[1 1],N,'halton');pick2Dpoints([0 0],[1 1],ceil(N/2))],'rows');
+    bx = find( x(:,1)<=0 | x(:,2)<=0 );
+    x = x(bx,:);
+    % Find out which points are on the Dirichlet boundary
+    bD = find( abs(x(:,1))==1 | x(:,2)==1 | (x(:,1)==0 & x(:,2)>=0) | (x(:,1)>=0 & x(:,2)==0));
+    % Find out which points are on the Neumann boundary
+    bN = find( x(:,2)==-1 );
+    % Find out which points are on the interior
+    bi = setdiff(1:size(x,1),b)';
+    Nvec(m) = size(x,1);
+
+    % Get the preliminary RBF-QR stuff
+    [ep,alpha,Marr] = rbfsolveprep(1,x,ep,alpha);
+    % Build the collocation matrix
+    phiMat2d = rbfphi(Marr,x(bi,:),ep,alpha,[2,0])+rbfphi(Marr,x(bi,:),ep,alpha,[0,2]);
+    phiMat = rbfphi(Marr,x(bD,:),ep,alpha);
+    phiMat1dy = rbfphi(Marr,x(bN,:),ep,alpha,[0,1]);
+    A = [phiMat2d;phiMat;phiMat1dy];
+    % Build the RHS
+    rhs_interior = f(x(bi,1),x(bi,2));
+    rhs_dirichlet = fsol(x(bD,1),x(bD,2));
+    rhs_neumann = fsol(x(bN,1),x(bN,2));
+    rhs = [rhs_interior;rhs_dirichlet;rhs_neumann];
+    coef = A\rhs;
+
+    GQR.reg = 1;
+    GQR.Marr = Marr;
+    GQR.alpha = alpha;
+    GQR.ep = ep;
+    GQR.N = Nvec(m);
+    GQR.coef = coef;
+
+    uGQR = rbfqr_eval(GQR,ptsEVAL);
+    errvecR2D(m) = errcompute(uGQR,usol);
+    m = m + 1;
+end
+
+subplot(1,2,2)
+loglog(Nvec,errvecR2D)
+ylabel('error')
+xlabel('Collocation points')
+title('Solution via GaussQR')
+xlim([min(Nvec),max(Nvec)])
+set(gca,'xtick',Nvec)
