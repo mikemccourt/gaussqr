@@ -17,6 +17,7 @@ GAUSSQR_PARAMETERS.ERROR_STYLE = 3; % Use absolute error
 fsol = @(x,y) exp(x).*cos(y);
 Lfs = @(r) -1/(2*pi)*log(r);
 NN = 20;
+
 bvec = 6:20;
 errMFS = [];
 
@@ -60,7 +61,7 @@ ptsEVAL = pick2Dpoints([-1 -1],[1 1],NN);
 usol = fsol(ptsEVAL(:,1),ptsEVAL(:,2));
 
 GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .8;
-alpha = 2;
+alpha = 1;
 ep = 1e-9;
 Marr = rbfformMarr([0;0],[],length(ptsRBF));
 
@@ -101,4 +102,105 @@ xlabel('Collocation points')
 title('Solution via GaussQR')
 xlim([min(Nvec),max(Nvec)])
 ylim([1e-16 1e-6])
+set(gca,'xtick',Nvec)
+
+pause
+
+
+
+% Here now is the second example
+% This time we use the same function as before, but the domain
+% has the top quadrant missing, making it a nonconvex domain
+fsol = @(x,y) exp(x).*cos(y);
+Lfs = @(r) -1/(2*pi)*log(r);
+
+bvec = 20:10:80;
+bNvec = [];
+errMFS = [];
+
+m = 1;
+for bN=bvec
+    x = [pick2Dpoints([-1 -1],[1 1],bN);pick2Dpoints([0 0],[1 1],ceil(bN/2))];
+    bx = find( x(:,1)==-1 | x(:,2)==-1 | (x(:,1)==1 & x(:,2)<=0) | (x(:,2)==1 & x(:,1)<=0) | (x(:,1)>=0 & x(:,2)==0) | (x(:,2)>=0 & x(:,1)==0) );
+    bNvec(m) = size(bx,1);
+    ptsMFScoll = unique(x(bx,:),'rows')*diag([.5 pi/4]) + ones(bNvec(m),1)*[.5 pi/4];
+    
+    ptsMFSsource = 3*[cos(linspace(-pi,pi,bNvec(m)))',sin(linspace(-pi,pi,bNvec(m)))'] + ones(bNvec(m),1)*[.5,pi/4];
+    % Find some sample points to evaluate the error at
+    x = pick2Dpoints([-1 -1],[1 1],NN);
+    bx = find( x(:,1)<=0 | x(:,2)<=0 );
+    ptsEVAL = x(bx,:)*diag([.5 pi/4]) + ones(size(bx,1),1)*[.5 pi/4];
+    % Evaluate the true solution at the sample points
+    usol = fsol(ptsEVAL(:,1),ptsEVAL(:,2));
+
+    % Solve the system first with MFS
+    rhs = fsol(ptsMFScoll(:,1),ptsMFScoll(:,2));
+    DM_coll = DistanceMatrix(ptsMFScoll,ptsMFSsource);
+    A_coll = Lfs(DM_coll);
+    coefMFS = A_coll\rhs;
+    DM_eval = DistanceMatrix(ptsEVAL,ptsMFSsource);
+    A_eval = Lfs(DM_eval);
+    uMFS = A_eval*coefMFS;
+    errMFS(m) = errcompute(uMFS,usol);
+    m = m + 1;
+end
+
+% Contour plot of error with MFS
+subplot(1,2,1)
+loglog(bNvec,errMFS)
+ylabel('error')
+xlabel('Collocation points')
+title('Solution via MFS')
+set(gca,'xtick',bNvec)
+xlim([min(bNvec),max(bNvec)])
+
+% GaussQR solution
+fsol = @(x,y) exp(.5*x+.5).*cos(pi/4*(y+1));
+f = @(x,y) (1/4-pi^2/16)*fsol(x,y);
+
+ptsEVAL = pick2Dpoints([-1 -1],[1 1],NN);
+ptsEVAL = ptsEVAL(find( ptsEVAL(:,1)<=0 | ptsEVAL(:,2)<=0 ),:);
+usol = fsol(ptsEVAL(:,1),ptsEVAL(:,2));
+
+alpha = 1;
+ep = 1e-9;
+
+m = 1;
+errvecR2D = [];
+Nvec = [];
+for N=5:10
+    x = unique([pick2Dpoints([-1 -1],[1 1],N,'cheb');pick2Dpoints([-1 -1],[1 1],N,'halton');pick2Dpoints([0 0],[1 1],ceil(N/2))],'rows');
+    bx = find( x(:,1)<=0 | x(:,2)<=0 );
+    xx = x(bx,:);
+    b = find( abs(xx(:,1))==1 | abs(xx(:,2))==1 | (xx(:,1)==0 & xx(:,2)>=0) | (xx(:,1)>=0 & xx(:,2)==0));
+    bi = setdiff(1:size(x,1),b)';
+    Nvec(m) = size(x,1);
+
+    [ep,alpha,Marr] = rbfsolveprep(1,x,ep,alpha);
+    phiMat = rbfphi(Marr,x(b,:),ep,alpha);
+    phiMat2d = rbfphi(Marr,x(bi,:),ep,alpha,[2,0])+rbfphi(Marr,x(bi,:),ep,alpha,[0,2]);
+    A = [phiMat2d;phiMat];
+    rhs = zeros(length(x),1);
+    rhs(1:length(bi)) = f(x(bi,1),x(bi,2));
+    rhs(1+length(bi):end) = fsol(x(b,1),x(b,2));
+    coef = A\rhs;
+
+    GQR.reg = 1;
+    GQR.Marr = Marr;
+    GQR.alpha = alpha;
+    GQR.ep = ep;
+    GQR.N = length(ptsRBF);
+    GQR.coef = coef;
+
+    uGQR = rbfqr_eval(GQR,ptsEVAL);
+    errvecR2D(m) = errcompute(uGQR,usol);
+    m = m + 1;
+end
+
+subplot(1,2,2)
+loglog(Nvec,errvecR2D)
+ylabel('error')
+xlabel('Collocation points')
+title('Solution via GaussQR')
+xlim([min(Nvec),max(Nvec)])
 set(gca,'xtick',Nvec)
