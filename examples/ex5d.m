@@ -12,7 +12,7 @@ global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
 end
-GAUSSQR_PARAMETERS.ERROR_STYLE = 3; % Use absolute error
+GAUSSQR_PARAMETERS.ERROR_STYLE = 3; % Use partial relative error
 
 fsol = @(x,y) exp(x).*cos(y);
 Lfs = @(r) -1/(2*pi)*log(r);
@@ -45,7 +45,7 @@ for bN=bvec
     m = m + 1;
 end
 
-% Contour plot of error with MFS
+% Plot of error with MFS
 subplot(1,2,1)
 loglog(4*(bvec-1),errMFS)
 ylabel('error')
@@ -53,7 +53,7 @@ xlabel('Collocation points')
 title('Solution via MFS')
 set(gca,'xtick',4*(bvec-1))
 
-% Solve the system with GaussQRr with full regression
+% Solve the system with GaussQRr with partial regression
 fsol = @(x,y) exp(.5*x+.5).*cos(pi/4*(y+1));
 f = @(x,y) (1/4-pi^2/16)*fsol(x,y);
 
@@ -63,7 +63,6 @@ usol = fsol(ptsEVAL(:,1),ptsEVAL(:,2));
 GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .8;
 alpha = 1;
 ep = 1e-9;
-Marr = rbfformMarr([0;0],[],length(ptsRBF));
 
 m = 1;
 errvecR2D = [];
@@ -87,7 +86,7 @@ for N=5:10
     GQR.Marr = Marr;
     GQR.alpha = alpha;
     GQR.ep = ep;
-    GQR.N = length(ptsRBF);
+    GQR.N = length(x);
     GQR.coef = coef;
     
     uGQR = rbfqr_eval(GQR,ptsEVAL);
@@ -145,7 +144,7 @@ for bN=bvec
     m = m + 1;
 end
 
-% Contour plot of error with MFS
+% Plot of error with MFS
 subplot(1,2,1)
 loglog(bNvec,errMFS)
 ylabel('error')
@@ -189,7 +188,7 @@ for N=5:10
     GQR.Marr = Marr;
     GQR.alpha = alpha;
     GQR.ep = ep;
-    GQR.N = length(ptsRBF);
+    GQR.N = Nvec(m);
     GQR.coef = coef;
 
     uGQR = rbfqr_eval(GQR,ptsEVAL);
@@ -204,3 +203,8 @@ xlabel('Collocation points')
 title('Solution via GaussQR')
 xlim([min(Nvec),max(Nvec)])
 set(gca,'xtick',Nvec)
+
+
+
+
+
