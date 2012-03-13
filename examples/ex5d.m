@@ -12,14 +12,15 @@ global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
 end
-GAUSSQR_PARAMETERS.ERROR_STYLE = 3; % Use partial relative error
+GAUSSQR_PARAMETERS.ERROR_STYLE = 2;
+GAUSSQR_PARAMETERS.NORM_TYPE = inf;
 
 fsol = @(x,y) exp(x).*cos(y);
 Lfs = @(r) -1/(2*pi)*log(r);
 NN = 25;
 GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .8;
 
-bvec = 6:20;
+bvec = 6:14;
 errMFS = [];
 
 m = 1;
@@ -116,7 +117,7 @@ pause
 fsol = @(x,y) exp(x).*cos(y);
 Lfs = @(r) -1/(2*pi)*log(r);
 
-bvec = 14:6:50;
+bvec = 8:6:50;
 bNvec = [];
 errMFS = [];
 
@@ -125,7 +126,8 @@ for bN=bvec
     % Choose the collocation points
     x = [pick2Dpoints([-1 -1],[1 1],bN);pick2Dpoints([0 0],[1 1],ceil(bN/2))];
     bx = find( x(:,1)==-1 | x(:,2)==-1 | (x(:,1)==1 & x(:,2)<=0) | (x(:,2)==1 & x(:,1)<=0) | (x(:,1)>=0 & x(:,2)==0) | (x(:,2)>=0 & x(:,1)==0) );
-    ptsMFScoll = unique(1e-8*ceil(1e8*x(bx,:)),'rows')*diag([.5 pi/4]) + ones(size(bx,1),1)*[.5 pi/4];
+    x = unique(1e-8*ceil(1e8*x(bx,:)),'rows');
+    ptsMFScoll = x*diag([.5 pi/4]) + ones(size(x,1),1)*[.5 pi/4];
     bNvec(m) = size(ptsMFScoll,1);
     
     ptsMFSsource = 3*[cos(linspace(-pi,pi,bNvec(m)))',sin(linspace(-pi,pi,bNvec(m)))'] + ones(bNvec(m),1)*[.5,pi/4];
@@ -225,9 +227,9 @@ pause
 fsol = @(x,y) exp(x).*cos(y);
 fdysol = @(x,y) -exp(x).*sin(y);
 Lfs = @(r) -1/(2*pi)*log(r);
-Ldyfs = @(x,y) -1./(2*pi*DistanceMatrix(x,y).^2).*abs(DifferenceMatrix(x(:,2),y(:,2)));
+Ldyfs = @(x,y) -1./(2*pi*DistanceMatrix(x,y).^2).*DifferenceMatrix(x(:,2),y(:,2));
 
-bvec = 20:10:90;
+bvec = 5:10:55;
 bNvec = [];
 errMFS = [];
 
@@ -236,7 +238,8 @@ for bN=bvec
     % Choose the collocation points
     x = [pick2Dpoints([-1 -1],[1 1],bN);pick2Dpoints([0 0],[1 1],ceil(bN/2))];
     bx = find( x(:,1)==-1 | x(:,2)==-1 | (x(:,1)==1 & x(:,2)<=0) | (x(:,2)==1 & x(:,1)<=0) | (x(:,1)>=0 & x(:,2)==0) | (x(:,2)>=0 & x(:,1)==0) );
-    ptsMFScoll = unique(1e-8*ceil(1e8*x(bx,:)),'rows')*diag([.5 pi/4]) + ones(size(bx,1),1)*[.5 pi/4];
+    x = unique(1e-8*ceil(1e8*x(bx,:)),'rows');
+    ptsMFScoll = x*diag([.5 pi/4]) + ones(size(x,1),1)*[.5 pi/4];
     bNvec(m) = size(ptsMFScoll,1);
 
     % Find the points which are Neumann BC instead of Dirichlet
