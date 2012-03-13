@@ -103,7 +103,6 @@ ylabel('error')
 xlabel('Collocation points')
 title('Solution via GaussQR')
 xlim([min(Nvec),max(Nvec)])
-ylim([1e-16 1e-6])
 set(gca,'xtick',Nvec)
 
 pause
@@ -448,6 +447,18 @@ fsol = @(x,y) (2*x-3*y).^2;
 fdysol = @(x,y) -12*x+18*y;
 lapfsol = @(x,y) 26*ones(size(x,1),1);
 f = @(x,y) zeros(size(x,1),1);
+
+% These are the shifted problems, but doesn't make a difference
+% fsol = @(x,y) (x+1-3*pi/4*(y+1)).^2;
+% fdysol = @(x,y) -3*pi/2*(x+1-3*pi/4*(y+1));
+% lapfsol = @(x,y) 2+9*pi^2/8*ones(size(x,1),1);
+% f = @(x,y) zeros(size(x,1),1);
+
+% These are a nonhomogeneous set of equations
+% fsol = @(x,y) exp(x).*sin(y);
+% fdysol = @(x,y) exp(x).*cos(y);
+% lapfsol = @(x,y) zeros(size(x,1),1);
+% f = @(x,y) exp(x).*sin(y);
 
 ptsEVAL = pick2Dpoints([-1 -1],[1 1],NN);
 ptsEVAL = ptsEVAL(find( ptsEVAL(:,1)<=0 | ptsEVAL(:,2)<=0 ),:);
