@@ -15,11 +15,7 @@ elseif(length(strfind(thisDir,'/'))>0) % We are in Unix
     exampleDir = strcat(thisDir,'/examples');
     otherDir = strcat(thisDir,'/fromothers');
 end
-path(P,sourceDir);
-P = path;
-path(P,exampleDir);
-P = path;
-path(P,otherDir);
+addpath(sourceDir,exampleDir,otherDir,1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Setup global constants and parameters
@@ -129,5 +125,18 @@ GAUSSQR_PARAMETERS.ORTH_SEARCH_ACCURACY = 1e-1;
 % now this is only used to get a starting point for the optimization
 % routine which uses the full 1e-6 tolerance.
 GAUSSQR_PARAMETERS.ORTH_INTEGRATION_TOL = 1e-4;
+
+% We use a linear eigenvalue computation to determine the roots of the
+% eigenfunctions.  At some point, it is cheaper to only find the largest
+% eigenvalue than all the eigenvalues (if that's all you need) using sparse
+% eigensolver methods.  This value allows you to determine where you'd like
+% to switch between eig(J) and eigs(Jsparse).
+% 
+% If you are computing all the roots, it will always use eig(J) because it
+% is much faster, at least on my laptop.  If you are going to be using a
+% large number of points often, maybe consider computing them all once and
+% then storing them.  Or maybe I could do that and store up to M=1000 roots
+% or so in a binary file in the repo.
+GAUSSQR_PARAMETERS.ORTH_ROOT_SPARSE_LIMIT = 500;
 
 end
