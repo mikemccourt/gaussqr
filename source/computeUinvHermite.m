@@ -60,6 +60,8 @@ q1 = 2*sqrt(Dvec(1)/Dvec(2))*(x.*q0+c*q0);
 Q(:,2) = q1;
 
 % Go through the full iteration
+% Is there less error by computing v separately at each turn,
+% because then there is no inner product adding up small errors?
 for k=3:M
     tmp = ApplyTM(u1,1);
     c = -tmp'*v1/Dvec(k-1);
