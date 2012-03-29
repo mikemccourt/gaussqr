@@ -30,7 +30,7 @@ end
 
 if M<splimit | allroots==1
     J = diag(sqrt(1:M-2),1)+diag(sqrt(1:M-2),-1);
-    eigvals = sort(eig(J));J,eig(J)
+    eigvals = sort(eig(J));
     if allroots==1
         eigroots = eigvals;
     else
