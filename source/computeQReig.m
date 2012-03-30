@@ -45,8 +45,8 @@ v0 = tmp(:,1);
 Svec(1) = sqrt(u0'*v0);
 invU(:,1) = u0;
 
-% q0 = 1/sqrt(Svec(1))*ones(N,1);
-% Q(:,1) = q0;
+q0 = ones(N,1)/Svec(1);
+Q(:,1) = q0;
 
 % Get the second columns
 
@@ -59,20 +59,27 @@ v1(M) = v1(M) - sqrt(2)*ba*(d'*u0); v1 = phi'*phi*u1;
 Svec(2) = sqrt(u1'*v1);
 invU(:,2) = u1;
 
-for k = 3:M
+q1 = sqrt(2)*(ba*x.*q0 + c*q0)*Svec(1)/Svec(2);
+Q(:,2) = q1;
+
+for k = 2:M-1
 
     tmp = ApplyTM(u1,ba);
-    c = -ba/Svec(k-1)^2*(v1'*tmp);
-    b = sqrt((k-2)/2)*ba/Svec(k-2)^2*(v0'*tmp);
-    u2 = sqrt(2/(k-1))*(ba*tmp+c*u1) - 2*b/sqrt((k-1)*(k-2))*u0;
-    v2 = sqrt(2/(k-1))*(ba*ApplyTM(v1,ba)+c*v1) - 2*b/sqrt((k-1)*(k-2))*v0;
-    v2(M) = v2(M) - sqrt(2/(k-1))*ba*(d'*u1); v2 = phi'*phi*u2;
+    c = -ba/Svec(k)^2*(v1'*tmp);
+    b = sqrt((k-1)/2)*ba/Svec(k-1)^2*(v0'*tmp);
+    u2 = sqrt(2/k)*(ba*tmp+c*u1) - 2*b/sqrt(k^2-k)*u0;
+    v2 = sqrt(2/k)*(ba*ApplyTM(v1,ba)+c*v1) - 2*b/sqrt(k^2-k)*v0;
+    v2(M) = v2(M) - sqrt(2/k)*ba*(d'*u1); v2 = phi'*phi*u2;
     
-    Svec(k) = sqrt(u2'*v2);
-    invU(:,k) = u2;
+    Svec(k+1) = sqrt(u2'*v2);
+    invU(:,k+1) = u2;
+    
+    q2 = sqrt(2/k)*(ba*x.*q1+c*q1)*Svec(k)/Svec(k+1) - (2*b/sqrt(k^2-k))*(Svec(k-1)/Svec(k+1))*q0;
+    Q(:,k+1) = q2;
 
     u0 = u1; u1 = u2;
     v0 = v1; v1 = v2;
+    q0 = q1; q1 = q2;
 end
 end
 
@@ -82,8 +89,10 @@ end
 % to a vector without forming that matrix
 % M is the length of the vector
 %
-% NOTE: this function should also divide by beta*alpha, but it doesn't
-% because above the T application is mostly accompanied by beta*alpha
+% NOTE: this function could avoid being passed ba, but I need to make some
+% changes throughout to make that viable
+%
+% Also, it only should be passed column vectors, not multiple columns yet
 function TMx = ApplyTM(x,ba)
 persistent M Mvec k;
 if isempty(Mvec)
