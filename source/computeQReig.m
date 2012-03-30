@@ -26,6 +26,7 @@ function [invU,Svec,Q] = computeQReig(M,x,ep,alpha)
 N = size(x,1);
 invU = zeros(M);
 Svec = zeros(M,1);
+Qvec = zeros(M,1);
 Q = zeros(N,M);
 
 beta = (1+(2*ep/alpha)^2)^.25;
@@ -45,7 +46,8 @@ v0 = tmp(:,1);
 Svec(1) = sqrt(u0'*v0);
 invU(:,1) = u0;
 
-q0 = ones(N,1)/Svec(1);
+q0 = exp(-delta2*x.^2);
+q0 = q0/norm(q0);
 Q(:,1) = q0;
 
 % Get the second columns
@@ -54,7 +56,7 @@ tmp = ApplyTM(u0,ba);
 c = -ba*tmp'*v0/Svec(1)^2;
 u1 = sqrt(2)*(ba*tmp+c*u0);
 v1 = sqrt(2)*(ba*ApplyTM(v0,ba) + c*v0);
-v1(M) = v1(M) - sqrt(2)*ba*(d'*u0); v1 = phi'*phi*u1;
+v1(M) = v1(M) - sqrt(2)*ba*(d'*u0);
 
 Svec(2) = sqrt(u1'*v1);
 invU(:,2) = u1;
@@ -69,12 +71,12 @@ for k = 2:M-1
     b = sqrt((k-1)/2)*ba/Svec(k-1)^2*(v0'*tmp);
     u2 = sqrt(2/k)*(ba*tmp+c*u1) - 2*b/sqrt(k^2-k)*u0;
     v2 = sqrt(2/k)*(ba*ApplyTM(v1,ba)+c*v1) - 2*b/sqrt(k^2-k)*v0;
-    v2(M) = v2(M) - sqrt(2/k)*ba*(d'*u1); v2 = phi'*phi*u2;
+    v2(M) = v2(M) - sqrt(2/k)*ba*(d'*u1);
     
     Svec(k+1) = sqrt(u2'*v2);
     invU(:,k+1) = u2;
     
-    q2 = sqrt(2/k)*(ba*x.*q1+c*q1)*Svec(k)/Svec(k+1) - (2*b/sqrt(k^2-k))*(Svec(k-1)/Svec(k+1))*q0;
+    q2 = sqrt(2/k)*(ba*x.*q1+c*q1)*(Svec(k)/Svec(k+1)) - (2*b/sqrt(k^2-k))*(Svec(k-1)/Svec(k+1))*q0;
     Q(:,k+1) = q2;
 
     u0 = u1; u1 = u2;
