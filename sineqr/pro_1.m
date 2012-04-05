@@ -29,24 +29,23 @@ for N=Nvec
 %         k = k+1;
 %     end
 
-    n
-    pause
     k = 1;
     for sigma=sigmavecd
         [x,spacestr] = pickpoints(aa,bb,N,spaceopt,sigma);
         y = yf(x);
-        %K = exp(-sigma*abs(repmat(x,1,N)-repmat(x',N,1))); % C0
+        K = exp(-sigma*abs(repmat(x,1,N)-repmat(x',N,1))); % C0
         %K = (1+sigma*abs(repmat(x,1,N)-repmat(x',N,1))).*exp(-sigma*abs(repmat(x,1,N)-repmat(x',N,1))); % C2
-        K = (3+3*sigma*abs(repmat(x,1,N)-repmat(x',N,1))+...
-            sigma^2*abs(repmat(x,1,N)-repmat(x',N,1)).^2).*exp(-sigma*abs(repmat(x,1,N)-repmat(x',N,1))); % C4
-        c(n,k)=cond(K) % conditioning
+        %K = (3+3*sigma*abs(repmat(x,1,N)-repmat(x',N,1))+...
+        %sigma^2*abs(repmat(x,1,N)-repmat(x',N,1)).^2).*exp(-sigma*abs(repmat(x,1,N)-repmat(x',N,1))); % C4
+        c(n,k)=cond(K); % conditioning
         warning off % We know it's bad
+%         beta = pinv(K)*y;
         beta = K\y;
         warning on
-        %yp = exp(-sigma*abs(repmat(x',NN,1)-repmat(xx,1,N)))*beta; % C0
+        yp = exp(-sigma*abs(repmat(x',NN,1)-repmat(xx,1,N)))*beta; % C0
         %yp =((1+sigma*abs(repmat(x',NN,1)-repmat(xx,1,N))).*exp(-sigma*abs(repmat(x',NN,1)-repmat(xx,1,N))))*beta; % C2
-        yp = ((3+3*sigma*abs(repmat(x',NN,1)-repmat(xx,1,N))+...
-             sigma^2*abs(repmat(x',NN,1)-repmat(xx,1,N)).^2).*exp(-sigma*abs(repmat(x',NN,1)-repmat(xx,1,N))))*beta; % C4
+        %yp = ((3+3*sigma*abs(repmat(x',NN,1)-repmat(xx,1,N))+...
+        %     sigma^2*abs(repmat(x',NN,1)-repmat(xx,1,N)).^2).*exp(-sigma*abs(repmat(x',NN,1)-repmat(xx,1,N))))*beta; % C4
         errvecd(n,k) = abs(max(yy-yp)); %errvecd(n,k) = errcompute(yp,yy);
         k = k+1;
     end
