@@ -23,14 +23,8 @@ function [invU,Svec,Q] = computeQReig(M,x,ep,alpha)
 % stability analysis to do, but you should be aware that for larger M it
 % could be an issue.
 %
-% NOTE: TM should have a 1/(beta*alpha) term in it, but that is applied
-% analytically throughout because TM always appears with a beta*alpha.  It
-% seemed unnecessary to apply it and then immediately undo it.
-%
-% Possible optimization may exist for computing b.  In the Hermite paper,
-% it was computed without an inner product, but I haven't been able to
-% determine how that was done, so I haven't been able to make it happen
-% here.  Will look at that soon.
+% I should also add a version of this code that takes in a RHS and solves
+% the system without actually storing the factorization.
 
 N = size(x,1);
 invU = zeros(M);
@@ -57,29 +51,32 @@ Q(:,1) = q0;
 % Get the second columns
 tmp = ApplyTM(u0);
 c = -tmp'*v0/Svec(1)^2;
-u1 = sqrt(2)*(tmp+c*u0);
-v1 = sqrt(2)*(ApplyTM(v0) + c*v0);
-v1(M) = v1(M) - sqrt(2)*(d'*u0);
+s2ok = sqrt(2);
+u1 = s2ok*(tmp+c*u0);
+v1 = s2ok*(ApplyTM(v0) + c*v0);
+v1(M) = v1(M) - s2ok*(d'*u0);
 
 Svec(2) = sqrt(u1'*v1);
 invU(:,2) = u1;
 
-q1 = (sqrt(2)*Svec(1)/Svec(2))*(Dx.*q0 + c*q0);
+q1 = (s2ok*Svec(1)/Svec(2))*(Dx.*q0 + c*q0);
 Q(:,2) = q1;
 
 % Iterate through the remaining columns
 for k = 2:M-1
     tmp = ApplyTM(u1);
     c = -(v1'*tmp)/Svec(k)^2;
-    b = .5*(k-1)*Svec(k)^2/Svec(k-1)^2;
-    u2 = sqrt(2/k)*(tmp+c*u1) - (2*b/sqrt(k^2-k))*u0;
-    v2 = sqrt(2/k)*(ApplyTM(v1)+c*v1) - (2*b/sqrt(k^2-k))*v0;
-    v2(M) = v2(M) - sqrt(2/k)*(d'*u1);
+    b = .5*(k-1)*(Svec(k)/Svec(k-1))^2;
+    s2ok = sqrt(2/k);
+    bosk = 2*b/sqrt(k^2-k);
+    u2 = s2ok*(tmp+c*u1) - bosk*u0;
+    v2 = s2ok*(ApplyTM(v1)+c*v1) - bosk*v0;
+    v2(M) = v2(M) - s2ok*(d'*u1);
     
     Svec(k+1) = sqrt(u2'*v2);
     invU(:,k+1) = u2;
     
-    q2 = (sqrt(2/k)*Svec(k)/Svec(k+1))*(Dx.*q1+c*q1) - (2*b/sqrt(k^2-k)*Svec(k-1)/Svec(k+1))*q0;
+    q2 = (s2ok*Svec(k)/Svec(k+1))*(Dx.*q1+c*q1) - (bosk*Svec(k-1)/Svec(k+1))*q0;
     Q(:,k+1) = q2;
 
     u0 = u1; u1 = u2;
@@ -100,12 +97,17 @@ end
 %
 % Also, it only should be passed column vectors, not multiple columns.
 % This shouldn't be a problem, but I'm leaving a note in case I go senile.
+%
+% The initial if block allows you to avoid extra computation if x is the
+% same size as the last time this function was called
 function TMx = ApplyTM(x)
-persistent M Mvec k;
+persistent M Mvec;
 if isempty(Mvec)
     M = size(x,1);
-    k = 1;
+    Mvec = sqrt(1:M-1)'/sqrt(2);
+elseif M~=size(x,1);
+    M = size(x,1);
     Mvec = sqrt(1:M-1)'/sqrt(2);
 end
-TMx = ([Mvec.*x(2:end);0] + [0;Mvec.*x(1:end-1)]);
+TMx = [Mvec.*x(2:end);0] + [0;Mvec.*x(1:end-1)];
 end
