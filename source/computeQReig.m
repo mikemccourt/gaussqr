@@ -1,5 +1,5 @@
-function [invU,Svec,Q] = computeQReig(M,x,ep,alpha)
-% function [invU,Svec,Q] = computeQReig(M,x,ep,alpha)
+function [invU,Svec,Q] = computeQReig(M,x,ep,alpha,rhs)
+% function [invU,Svec,Q] = computeQReig(M,x,ep,alpha,rhs)
 %
 % This computes the decomposition
 %    P = Q * S * U
@@ -7,6 +7,9 @@ function [invU,Svec,Q] = computeQReig(M,x,ep,alpha)
 %        Q - from P = QR, has orthonormal columns
 %        S - diagonal matrix, such that U'*S^2*U = P'*P
 %        U - from the LDL decomposition of U'*S^2*U = P'*P
+%
+% Calling: [invU,Svec,Q] = computeQReig(M,x,ep,alpha)
+%          This computes the full factorization and returns it
 %
 % Inputs: M - length of the eigenfunction summation
 %             note that M<size(x,1)
@@ -18,6 +21,21 @@ function [invU,Svec,Q] = computeQReig(M,x,ep,alpha)
 %          Svec - diag(S) where S is defined above
 %          Q - the orthonormal matrix from the QR decomposition
 %
+% Calling: sol = computeQReig(M,x,ep,alpha,rhs)
+%          This computes only the solution to the problem
+%                  Phi*sol = rhs
+%          without returning the factorization
+%          You can only pass one rhs right now
+%
+% Inputs: M - length of the eigenfunction summation
+%             note that M<size(x,1)
+%         x - the collocation points
+%         ep - Gaussian shape parameter
+%         alpha - GaussQR global scale parameter
+%         rhs - right hand side of Phi*sol = rhs
+%
+% Outputs: sol - column vector such that Phi*sol = rhs
+%
 % Note that this may have less stability than the traditional QR
 % factorization via Householder or whatever.  I still have some more
 % stability analysis to do, but you should be aware that for larger M it
@@ -26,6 +44,22 @@ function [invU,Svec,Q] = computeQReig(M,x,ep,alpha)
 % I should also add a version of this code that takes in a RHS and solves
 % the system without actually storing the factorization.
 
+if nargin<4
+    error('Insufficient arguments passed')
+elseif nargin==4
+    [invU,Svec,Q] = computeQRfactorization(M,x,ep,alpha);
+else
+    invU = computeQRsolve(M,x,ep,alpha,rhs);
+    Svec = [];
+    Q = [];
+end
+
+% ApplyTM(eye(5,1))
+
+end
+
+% This computes the actual factorization, and shouldn't be called directly
+function [invU,Svec,Q] = computeQRfactorization(M,x,ep,alpha)
 N = size(x,1);
 invU = zeros(M);
 Svec = zeros(M,1);
@@ -42,7 +76,7 @@ d = tmp(:,2)*sqrt(M-1)/sqrt(2) - ApplyTM(tmp(:,3));
 u0 = eye(M,1);
 v0 = tmp(:,1);
 
-Svec(1) = sqrt(u0'*v0);
+Svec(1) = sqrt(tmp(1,1));
 invU(:,1) = u0;
 
 q0 = phi(:,1)/Svec(1);
@@ -83,6 +117,41 @@ for k = 2:M-1
     v0 = v1; v1 = v2;
     q0 = q1; q1 = q2;
 end
+end
+
+% This private function computes the actual solution without storing the
+% full factorization.  That allows for less storage
+function sol = computeQRsolve(M,x,ep,alpha,rhs)
+N = size(x,1);
+sol = zeros(M,1);
+
+Dx = (1+(2*ep/alpha)^2)^.25*alpha*x;
+
+phi = rbfphi(1:M,x,ep,alpha);
+
+tmp = phi'*phi(:,[1,M-1:M]);
+d = tmp(:,2)*sqrt(M-1)/sqrt(2) - ApplyTM(tmp(:,3));
+
+% Start with the first columnn of the inverse
+u0 = eye(M,1);
+v0 = tmp(:,1);
+s0 = sqrt(tmp(1,1));
+q0 = phi(:,1)/s0;
+
+sol(1) = (q0'*rhs)/s0;
+
+% Apply the second column of the inverse
+s2ok = sqrt(2);
+c = -v0(2)/s2ok/s0^2;
+
+u1 = [c*u0*s2ok;1;zeros(M-2,1)];
+v1 = s2ok*(ApplyTM(v0) + c*v0);
+v1(M) = v1(M) - s2ok*(d'*u0);
+s1 = sqrt(u1(1)*v1(1)+v1(2));
+q1 = (s2ok*Svec(1)/Svec(2))*(Dx.*q0 + c*q0);
+
+sol(1:2) = sol(1:2) + ((q1'*rhs)/s1)*u1(1:2);
+
 end
 
 % This is a private function that shouldn't be accessed outside this file
