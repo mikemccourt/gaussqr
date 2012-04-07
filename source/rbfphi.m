@@ -73,6 +73,7 @@ end
 %   - activates the flag in rbfsetup
 %   - is in 1D
 %   - has no derivatives
+%   - has Marr=1:Mc
 if fastphi
     if xc>1
         warning('Fast phi eval unavailable for higher dimensions, using slow eval')
@@ -80,8 +81,10 @@ if fastphi
     elseif deriv>0
         warning('Fast phi eval unavailable for derivatives, using slow eval')
         fastphi = 0;
-    elseif max(Marr)<3
+    elseif size(Marr,2)<3 | Mc~=Marr(end)
         fastphi = 0; % Just pass it on to rbfphi_EVAL
+    elseif any(Marr~=1:Mc)
+        fastphi = 0; % Indices are out of order
     else
         p = rbfphi_FASTEVAL(Marr,x,ep,alpha,beta,delta2);
     end
