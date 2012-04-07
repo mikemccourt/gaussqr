@@ -8,6 +8,8 @@ function [invU,Svec,Q] = computeQReig(M,x,ep,alpha,rhs)
 %        S - diagonal matrix, such that U'*S^2*U = P'*P
 %        U - from the LDL decomposition of U'*S^2*U = P'*P
 %
+%%%%%
+%
 % Calling: [invU,Svec,Q] = computeQReig(M,x,ep,alpha)
 %          This computes the full factorization and returns it
 %
@@ -20,6 +22,8 @@ function [invU,Svec,Q] = computeQReig(M,x,ep,alpha,rhs)
 % Outputs: invU - inv(U) where U is defined above
 %          Svec - diag(S) where S is defined above
 %          Q - the orthonormal matrix from the QR decomposition
+%
+%%%%%
 %
 % Calling: sol = computeQReig(M,x,ep,alpha,rhs)
 %          This computes only the solution to the problem
@@ -53,8 +57,6 @@ else
     Svec = [];
     Q = [];
 end
-
-% ApplyTM(eye(5,1))
 
 end
 
@@ -144,14 +146,34 @@ sol(1) = (q0'*rhs)/s0;
 s2ok = sqrt(2);
 c = -v0(2)/s2ok/s0^2;
 
-u1 = [c*u0*s2ok;1;zeros(M-2,1)];
+u1 = [c*s2ok;1;zeros(M-2,1)];
 v1 = s2ok*(ApplyTM(v0) + c*v0);
 v1(M) = v1(M) - s2ok*(d'*u0);
 s1 = sqrt(u1(1)*v1(1)+v1(2));
-q1 = (s2ok*Svec(1)/Svec(2))*(Dx.*q0 + c*q0);
+q1 = (s2ok*s0/s1)*(Dx.*q0 + c*q0);
 
 sol(1:2) = sol(1:2) + ((q1'*rhs)/s1)*u1(1:2);
 
+% Iterate through the remaining columns
+for k = 2:M-1
+    tmp = ApplyTM(u1);
+    c = -(v1'*tmp)/s1^2;
+    s2ok = sqrt(2/k);
+    bosk = (s1/s0)^2*sqrt((k-1)/k);
+    
+    u2 = s2ok*(tmp+c*u1) - bosk*u0;
+    v2 = s2ok*(ApplyTM(v1)+c*v1) - bosk*v0;
+    v2(M) = v2(M) - s2ok*(d'*u1);
+    s2 = sqrt(u2'*v2);
+    q2 = (s2ok*s1/s2)*(Dx.*q1+c*q1) - (bosk*s0/s2)*q0;
+    
+    sol = sol + ((q2'*rhs)/s2)*u2;
+
+    u0 = u1; u1 = u2;
+    v0 = v1; v1 = v2;
+    q0 = q1; q1 = q2;
+    s0 = s1; s1 = s2;
+end
 end
 
 % This is a private function that shouldn't be accessed outside this file
