@@ -27,6 +27,7 @@ if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
 end
 asympttol = GAUSSQR_PARAMETERS.RBFPHI_EXP_TOL;
+fastphi = GAUSSQR_PARAMETERS.FAST_PHI_EVALUATION;
 
 % Here we define: n as the number of data points
 %                 s as the dimension of the data
@@ -68,11 +69,34 @@ else
     delta2 = 1/2*alpha^2*(beta^2-1);
 end
 
-p = zeros(n,Mc);
-sx2 = sum(x.^2,2);
-for k=1:Mc
-    if min(Marr(:,k))>=1 % Since H_{-1}=0 by definition
-        p(:,k) = rbfphi_EVAL(Marr(:,k),x,ep,alpha,deriv,beta,delta2,sx2);
+% Consider fast evaluation, and perform it if the problem
+%   - activates the flag in rbfsetup
+%   - is in 1D
+%   - has no derivatives
+if fastphi
+    if xc>1
+        warning('Fast phi eval unavailable for higher dimensions, using slow eval')
+        fastphi = 0;
+    elseif deriv>0
+        warning('Fast phi eval unavailable for derivatives, using slow eval')
+        fastphi = 0;
+    elseif max(Marr)<3
+        fastphi = 0; % Just pass it on to rbfphi_EVAL
+    else
+        p = rbfphi_FASTEVAL(Marr,x,ep,alpha,beta,delta2);
+    end
+end
+
+% Use traditional evaluation of eigenfunctions, either because fast
+% evaluation was declined, or because the if block above said fast
+% evaluation was unavailable
+if not(fastphi)
+    p = zeros(n,Mc);
+    sx2 = sum(x.^2,2);
+    for k=1:Mc
+        if min(Marr(:,k))>=1 % Since H_{-1}=0 by definition
+            p(:,k) = rbfphi_EVAL(Marr(:,k),x,ep,alpha,deriv,beta,delta2,sx2);
+        end
     end
 end
 end
@@ -83,7 +107,8 @@ end
 
 
 % This below is the private function which actually does the evaluation of
-% the eigenfunctions.  You should not ever directly call this.
+% the eigenfunctions.  You should not ever directly call this from outside
+% of this file.
 %
 % This function only accepts one multiindex at a time, although I'm sure
 % there's a better way to do it.
@@ -217,6 +242,46 @@ else
 end
 end
 
+% This below is the private function which actually does the evaluation of
+% the eigenfunctions.  You should not ever directly call this from outside
+% of this file.
+%
+% This exploits the recurrence relation
+%   phi_{n+1} = sqrt(2/n)*beta*alpha*x*phi_n - sqrt((n-1)/n)*phi_{n-1}
+% to compute all the columns of the phi matrix using only direct
+% computation of the first two columns.
+%
+% This method only works right now for 1D and no derivatives, although the
+% derivatives can be added without too much difficulty.
+%
+% Also, this assumes that Marr is ordered 1:M.  Technically I guess this
+% doesn't have to be true, but for practical circumstances it would
+% be, so I'm not sure that I need to consider anything else.  I'll think
+% about it - maybe you'd want only the even powers for something ...
+%
+% The error properties of this approach are still not know, and need to be
+% considered eventually.
+function p = rbfphi_FASTEVAL(Marr,x,ep,alpha,beta,delta2)
+global GAUSSQR_PARAMETERS
+if ~isstruct(GAUSSQR_PARAMETERS)
+    error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
+end
+logoption = GAUSSQR_PARAMETERS.RBFPHI_WITH_LOGS;
+
+M = size(Marr,2);
+N = size(x,1);
+p = zeros(N,M);
+sx2 = sum(x.^2,2); % For passing to rbfphi_EVAL
+
+p(:,1) = rbfphi_EVAL(1,x,ep,alpha,0,beta,delta2,sx2);
+p(:,2) = rbfphi_EVAL(2,x,ep,alpha,0,beta,delta2,sx2);
+
+for k=2:M-1
+    p(:,k+1) = (sqrt(2/k)*beta*alpha)*(x.*p(:,k)) - sqrt((k-1)/k)*p(:,k-1);
+end
+
+end
+
 % For Developers only
 % Note: serious improvments may be possible using a recurrence relation -
 %       it will generally be the case that we are interested in computing
@@ -234,12 +299,6 @@ end
 %       probably be improved by computing more than one column of this
 %       matrix at a time.  Given that, the dominant cost is still the QR
 %       factorization, but it might not always be that way.
-%
-%       Also, I need to fix this whole issue with the indices being off by
-%       one now that we've switched to the alpha evaluation.  I could fix
-%       that in the rbfFormMarr function, but I need to think about this a
-%       little more.
-%           NOTE: I think I fixed this, but I need to confirm
 %
 %       Derivatives could potentially be handled combinatorially to allow
 %       for more efficient computation, but that would be really hard.  The

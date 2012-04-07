@@ -141,4 +141,13 @@ GAUSSQR_PARAMETERS.ORTH_INTEGRATION_TOL = 1e-4;
 % or so in a binary file in the repo.
 GAUSSQR_PARAMETERS.ORTH_ROOT_SPARSE_LIMIT = 500;
 
+% Activate this switch if you want to allow for the fast evaluation of the
+% rbfphi function using the recurrence relation.  This is only avaiable
+% right now in 1D, and has not been tested for error issues that may arise
+% in cancelation.
+%
+% Also, you cannot use this with derivatives yet, although that won't be
+% difficult to implement, I'm just not worried about it yet
+GAUSSQR_PARAMETERS.FAST_PHI_EVALUATION = 0;
+
 end
