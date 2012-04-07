@@ -3,15 +3,15 @@
 % This is called a function because I don't want the user to
 %   see these internal variables after this is called
 function rbfsetup
-P = path;
 thisDir = pwd;
+thisOS = system_dependent('getos');
 
-if(length(strfind(thisDir,'\'))>0) % We are in Windows
+if(strfind(thisOS,'Windows')>0) % We are in Windows
     sourceDir = strcat(thisDir,'\source');
     exampleDir = strcat(thisDir,'\examples');
     otherDir = strcat(thisDir,'\fromothers');
     sineqrDir = strcat(thisDir,'\sineqr');
-elseif(length(strfind(thisDir,'/'))>0) % We are in Unix
+else % We are in Unix
     sourceDir = strcat(thisDir,'/source');
     exampleDir = strcat(thisDir,'/examples');
     otherDir = strcat(thisDir,'/fromothers');
