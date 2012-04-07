@@ -37,10 +37,12 @@ if M<splimit | allroots==1
         eigroots = eigvals(end);
     end
 else
-    sM = spdiags(sqrt(1:M-2)',0,M-1,M-1);
-    Jf = @(x) [zeros(1,size(x,2));sM*x(1:end-1,:)] + [sM*x(2:end,:);zeros(1,size(x,2))];
-    opts.display = 0;
-    eigroots = eigs(Jf,M-1,1,'lm',opts);
+    sM = sqrt(1:M-1)';
+    Jf = @(x) [zeros(1,size(x,2));sM.*x(1:end-1,:)] + [sM.*x(2:end,:);zeros(1,size(x,2))];
+    Jf(ones(M,1));
+    opts.disp = 0;
+    opts.issym = true;
+    eigroots = eigs(Jf,M,1,'la',opts);
 end
 
 % Finish by scaling the roots according to the domain
