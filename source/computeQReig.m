@@ -66,8 +66,16 @@ else
     
     [ep,alpha] = rbfsolveprep(1,x,ep,alpha);
     
+% If the size of the problem is too small, the recurrence doesn't make
+% sense, so direct evaluation is computed
     if nargin==4
-        [invU,Svec,Q] = computeQRfactorization(M,x,ep,alpha);
+        if M<4
+            [Q,R] = qr(rbfphi(rbfformMarr(M),x,ep,alpha),0);
+            Svec = diag(R);
+            invU = triu(inv(diag(1./Svec)*R));
+        else
+            [invU,Svec,Q] = computeQRfactorization(M,x,ep,alpha);
+        end
     elseif nargin==5
         r = size(rhs,1);
         if N~=r
@@ -75,7 +83,11 @@ else
         elseif nargout>1
             error('Only one output returned when rhs is passed')
         end
-        invU = computeQRsolve(M,x,ep,alpha,rhs);
+        if M<4
+            invU = linsolve(rbfphi(rbfformMarr(M),x,ep,alpha),rhs);
+        else
+            invU = computeQRsolve(M,x,ep,alpha,rhs);
+        end
     end
 end
 end

@@ -10,7 +10,7 @@ GAUSSQR_PARAMETERS.FAST_PHI_EVALUATION = 1;
 
 % These are the values I'm interested in testing
 % Note M is stored as a percentage of N
-Nvec = 100*2.^(0:7);
+Nvec = 200*2.^(0:7);
 Mvec = .01*2.^(0:5);
 
 % These values are arbitrary, because I don't really care about the
