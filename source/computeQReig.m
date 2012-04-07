@@ -124,8 +124,9 @@ end
 % This private function computes the actual solution without storing the
 % full factorization.  That allows for less storage
 function sol = computeQRsolve(M,x,ep,alpha,rhs)
-N = size(x,1);
-sol = zeros(M,1);
+N = size(x,1); % Size of input data
+r = size(rhs,2); % Number of right hand sides to consider
+sol = zeros(M,r);
 
 Dx = (1+(2*ep/alpha)^2)^.25*alpha*x;
 
@@ -140,7 +141,7 @@ v0 = tmp(:,1);
 s0 = sqrt(tmp(1,1));
 q0 = phi(:,1)/s0;
 
-sol(1) = (q0'*rhs)/s0;
+sol(1,:) = (q0'*rhs)/s0;
 
 % Apply the second column of the inverse
 s2ok = sqrt(2);
@@ -152,7 +153,7 @@ v1(M) = v1(M) - s2ok*(d'*u0);
 s1 = sqrt(u1(1)*v1(1)+v1(2));
 q1 = (s2ok*s0/s1)*(Dx.*q0 + c*q0);
 
-sol(1:2) = sol(1:2) + ((q1'*rhs)/s1)*u1(1:2);
+sol(1:2,:) = sol(1:2,:) + u1(1:2)*((q1'*rhs)/s1);
 
 % Iterate through the remaining columns
 for k = 2:M-1
@@ -167,7 +168,7 @@ for k = 2:M-1
     s2 = sqrt(u2'*v2);
     q2 = (s2ok*s1/s2)*(Dx.*q1+c*q1) - (bosk*s0/s2)*q0;
     
-    sol = sol + ((q2'*rhs)/s2)*u2;
+    sol = sol + u2*((q2'*rhs)/s2);
 
     u0 = u1; u1 = u2;
     v0 = v1; v1 = v2;
