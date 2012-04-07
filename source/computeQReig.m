@@ -3,7 +3,7 @@ function [invU,Svec,Q] = computeQReig(M,x,ep,alpha,rhs)
 %
 % This computes the decomposition
 %    P = Q * S * U
-% where: P - rbfphi(Mx,ep,alpha)
+% where: P - rbfphi(1:M,x,ep,alpha)
 %        Q - from P = QR, has orthonormal columns
 %        S - diagonal matrix, such that U'*S^2*U = P'*P
 %        U - from the LDL decomposition of U'*S^2*U = P'*P
@@ -27,40 +27,63 @@ function [invU,Svec,Q] = computeQReig(M,x,ep,alpha,rhs)
 %
 % Calling: sol = computeQReig(M,x,ep,alpha,rhs)
 %          This computes only the solution to the problem
-%                  Phi*sol = rhs
+%                  rbfphi(1:M,x,ep,alpha)*sol = rhs
 %          without returning the factorization
-%          You can only pass one rhs right now
+%          Multiple rhs can be passed in matrix form
 %
 % Inputs: M - length of the eigenfunction summation
 %             note that M<size(x,1)
 %         x - the collocation points
 %         ep - Gaussian shape parameter
 %         alpha - GaussQR global scale parameter
-%         rhs - right hand side of Phi*sol = rhs
+%         rhs - right hand sides of Phi*sol = rhs
 %
-% Outputs: sol - column vector such that Phi*sol = rhs
+% Outputs: sol - column vectors such that Phi*sol = rhs
+%
+%%%%%
 %
 % Note that this may have less stability than the traditional QR
 % factorization via Householder or whatever.  I still have some more
 % stability analysis to do, but you should be aware that for larger M it
 % could be an issue.
-%
-% I should also add a version of this code that takes in a RHS and solves
-% the system without actually storing the factorization.
 
 if nargin<4
     error('Insufficient arguments passed')
-elseif nargin==4
-    [invU,Svec,Q] = computeQRfactorization(M,x,ep,alpha);
 else
-    invU = computeQRsolve(M,x,ep,alpha,rhs);
-    Svec = [];
-    Q = [];
+    [N,c] = size(x);
+    if M~=floor(M)
+        M = floor(M);
+        warning('Noninteger M passed, reset to M=%d',M)
+    end
+    
+    if M>=N
+        error('May only consider M<N for QR factorization, M=%g',M)
+    elseif M<1
+        error('Invalid value for M=%g',M)
+    elseif c>1
+        error('May only consider 1D problems, size(x,2)=%d',c)
+    end
+    
+    [ep,alpha] = rbfsolveprep(1,x,ep,alpha);
+    
+    if nargin==4
+        [invU,Svec,Q] = computeQRfactorization(M,x,ep,alpha);
+    elseif nargin==5
+        r = size(rhs,1);
+        if N~=r
+            error('dimension mismatch: size(x,1)=%d, size(rhs,1)=%d',N,r)
+        elseif nargout>1
+            error('Only one output returned when rhs is passed')
+        end
+        invU = computeQRsolve(M,x,ep,alpha,rhs);
+    end
+end
 end
 
-end
 
+%%%%%%%%%%%
 % This computes the actual factorization, and shouldn't be called directly
+% from outside this file
 function [invU,Svec,Q] = computeQRfactorization(M,x,ep,alpha)
 N = size(x,1);
 invU = zeros(M);
@@ -121,8 +144,11 @@ for k = 2:M-1
 end
 end
 
+
+%%%%%%%%%%%
 % This private function computes the actual solution without storing the
-% full factorization.  That allows for less storage
+% full factorization.  That allows for less storage.  Do not call this
+% function from outside this file
 function sol = computeQRsolve(M,x,ep,alpha,rhs)
 N = size(x,1); % Size of input data
 r = size(rhs,2); % Number of right hand sides to consider
@@ -160,7 +186,7 @@ for k = 2:M-1
     tmp = ApplyTM(u1);
     c = -(v1'*tmp)/s1^2;
     s2ok = sqrt(2/k);
-    bosk = (s1/s0)^2*sqrt((k-1)/k);
+    bosk = (s1/s0)^2*sqrt((k-1)/k); % this replaces b
     
     u2 = s2ok*(tmp+c*u1) - bosk*u0;
     v2 = s2ok*(ApplyTM(v1)+c*v1) - bosk*v0;
@@ -177,6 +203,8 @@ for k = 2:M-1
 end
 end
 
+
+%%%%%%%%%%%
 % This is a private function that shouldn't be accessed outside this file
 % It applies the matrix
 %      TM = (diag(sqrt(1:M-1),1) + diag(sqrt(1:M-1),-1))/sqrt(2)
@@ -188,9 +216,10 @@ end
 % in the paper.
 %
 % Also, it only should be passed column vectors, not multiple columns.
-% This shouldn't be a problem, but I'm leaving a note in case I go senile.
+% This shouldn't be a problem, because it will only ever be called on the
+% column vectors of u and v, but I'm leaving a note in case I go senile.
 %
-% The initial if block allows you to avoid extra computation if x is the
+% The if block allows you to avoid extra computation if x is the
 % same size as the last time this function was called
 function TMx = ApplyTM(x)
 persistent M Mvec;
