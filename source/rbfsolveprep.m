@@ -63,45 +63,49 @@ end
 % This switch changes what we're computing based on if the
 % user wants to do interpolation or regression
 if reg
-    if Mdefault<=1 % Only a percentage of N is considered
-        Mdefault = floor(Mdefault*N);
-    elseif Mdefault>N
-        Mdefault = N;
-    end
-
-    % All this figures out what an acceptable Marr is
-    % For now I'm doing Marr+1 to solve for an off-by-one issues in the paper
-    % I'll work on fixing this eventually
-    if not(exist('M'))
-        M = zeros(d,1);
-        Mlim = Mdefault;
-    else
-        % Need to check to make sure passed M is reasonable
-        if any(M>N)
-            warning('M value %d>%d unacceptable, reset to %d',M,N,Mdefault)
-            Mlim = Mdefault;
-            M = zeros(d,1);
-        elseif any(M<0)
-            warning('Negative M value passed, setting max Marr length to %d',Mdefault)
-            Mlim = Mdefault;
-            M = zeros(d,1);
+    % If we call this function but don't actually want to compute Marr we
+    % can skip the rest of this
+    if nargout==3
+        if Mdefault<=1 % Only a percentage of N is considered
+            Mdefault = floor(Mdefault*N);
+        elseif Mdefault>N
+            Mdefault = N;
         end
-        [Md,Mc] = size(M);
-        if Md~=d
-            if Md==1 % The user only passed a max length for Marr
-                Mlim = M;
+
+        % All this figures out what an acceptable Marr is
+        % For now I'm doing Marr+1 to solve for an off-by-one issues in the paper
+        % I'll work on fixing this eventually
+        if not(exist('M'))
+            M = zeros(d,1);
+            Mlim = Mdefault;
+        else
+            % Need to check to make sure passed M is reasonable
+            if any(M>N)
+                warning('M value %d>%d unacceptable, reset to %d',M,N,Mdefault)
+                Mlim = Mdefault;
                 M = zeros(d,1);
-            else
-                error('M of length %d passed, but data has dimension %d',Md,d)
+            elseif any(M<0)
+                warning('Negative M value passed, setting max Marr length to %d',Mdefault)
+                Mlim = Mdefault;
+                M = zeros(d,1);
             end
-        elseif Mc~=1
-            error('Multiple columns in M detected, but only 1 is allowed')
-        else % This is the everything was passed correctly case
-            Mlim = N;
+            [Md,Mc] = size(M);
+            if Md~=d
+                if Md==1 % The user only passed a max length for Marr
+                    Mlim = M;
+                    M = zeros(d,1);
+                else
+                    error('M of length %d passed, but data has dimension %d',Md,d)
+                end
+            elseif Mc~=1
+                error('Multiple columns in M detected, but only 1 is allowed')
+            else % This is the everything was passed correctly case
+                Mlim = N;
+            end
         end
-    end
 
-    Marr = rbfformMarr(M,[],Mlim);
+        Marr = rbfformMarr(M,[],Mlim);
+    end
 else
     nu = (2*ep/alpha)^2;
     lam = nu/(2+nu+2*sqrt(1+nu));
