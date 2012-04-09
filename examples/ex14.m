@@ -10,16 +10,18 @@ GAUSSQR_PARAMETERS.FAST_PHI_EVALUATION = 1;
 
 % These are the values I'm interested in testing
 % Note M is stored as a percentage of N
-Nvec = 200*2.^(0:7);
-Mvec = .01*2.^(0:5);
+Nvec = 1000*2.^(0:4);
+Mvec = .001*2.^(0:5);
 
 % These values are arbitrary, because I don't really care about the
 % solution, just the time it takes to find it
 ep = 1;
 alpha = 1;
 
-timeMat = zeros(length(Nvec),length(Mvec));
+fastMat = zeros(length(Nvec),length(Mvec));
 slowMat = zeros(length(Nvec),length(Mvec));
+fastFull = zeros(length(Nvec),length(Mvec));
+slowFull = zeros(length(Nvec),length(Mvec));
 
 % Ignore because we're not concerned about the solution accuracy
 warning off
@@ -33,13 +35,22 @@ for N=Nvec
         M = floor(Mp*N);
         c = zeros(M,1);
         tic
+%         c = computeQReig_adjusted(M,x,ep,alpha,b);
         c = computeQReig(M,x,ep,alpha,b);
-        timeMat(n,m) = toc;
+        fastMat(n,m) = toc;
         tic
         phi = rbfphi(1:M,x,ep,alpha);
         c = phi\b;
         slowMat(n,m) = toc;
-        fprintf('%d\t%d\t%g\t%g\n',M,N,timeMat(n,m),slowMat(n,m))
+        tic
+%         [A,B,C] = computeQReig_adjusted(M,x,ep,alpha);
+        [A,B,C] = computeQReig(M,x,ep,alpha);
+        fastFull(n,m) = toc;
+        tic
+        phi = rbfphi(1:M,x,ep,alpha);
+        [Q,R] = qr(phi,0);
+        slowFull(n,m) = toc;
+        fprintf('%d\t%d\t%g\t%g\t%g\t%g\n',M,N,fastMat(n,m),slowMat(n,m),fastFull(n,m),slowFull(n,m))
         m = m + 1;
     end
     n = n + 1;
@@ -47,4 +58,4 @@ end
 
 warning on
 
-save('speedtest.mat','slowMat','timeMat')
+save('speedtest.mat','slowMat','fastMat','slowFull','fastFull')
