@@ -11,6 +11,15 @@ BN = [4,8,16,32,64,128];
 rbf = @(ep,r) exp(-(ep*r).^2);
 rbfdx = @(ep,r,dx) -2*ep^2*dx.*exp(-(ep*r).^2);
 
+alpha = 1;
+FM = 20;
+epvec = logspace(-2,1,FM);
+epvec = [];
+epv = .55;%epv = 1e-5;
+ind = 3;
+
+warning off
+
 if not(exist('ind')) % Consider the first index (looping only)
   ind = 1;
 end
@@ -24,11 +33,14 @@ nsteps = 2*(2^(count-1));
 stencil9 = [1/6 2/3 1/6  2/3 -10/3 2/3  1/6 2/3 1/6];
 errt = zeros(1,nsteps);
 couplebuffer = 0.1/(2^(ind-1)); % accounts for fuzzy math
-couplewidth = 2; % How many points included in coupling
+couplewidth = 1; % How many points included in coupling
 Fcstyle = 1; % Finite difference or meshfree
 
 yf = @(x,t) exp(-t)*(1-0.5*(x(:,1).^2+x(:,2).^2));
 ff = @(x,t) exp(-t)*(1+0.5*(x(:,1).^2+x(:,2).^2));
+
+% yf = @(x,t) exp(-t)*sinh(x(:,1)+x(:,2));
+% ff = @(x,t) -3*yf(x,t);
 
 Ald = [-1 0];Aud = [0 1];
 Bld = [0 0];Bud = [1 1];
@@ -274,9 +286,6 @@ for tn=1:nsteps
         BDMdx_int = DistanceMatrix(Fx(FBifa,:),BMFpts);
         BDMdx_diff = DifferenceMatrix(Fx(FBifa,1),BMFpts(:,1));
         
-        FM = 40;
-        alpha = 3;
-        epvec = logspace(-2,1,FM);
         Fval = zeros(FM,1);
         Fdir = zeros(FM,1);
         Fapx = zeros(FM,1);
@@ -320,7 +329,7 @@ for tn=1:nsteps
             Fval(k) = errcompute(Funew,Fsol);
             
 %             Marr = rbfformMarr([couplewidth+1;ap],[],floor(.7*ap));
-            Marr = rbfformMarr([couplewidth+1;ap],[],length([FAcou,FAifa]));
+            Marr = rbfformMarr([couplewidth+1;ap],[],ap);
             phiA = rbfphi(Marr,AMFpts,ep,alpha);
             phiAx = rbfphi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
             phiB = rbfphi(Marr,BMFpts,ep,alpha);
@@ -334,17 +343,19 @@ for tn=1:nsteps
             Fapx(k) = errcompute(Funew,Fsol);
             k = k+1;
         end
-%         [epvec',Fdir,Fval]
-        
-        ep = 1e-3;
-        A_int = rbf(ep,ADM_int);
-        A_x = rbfdx(ep,ADMdx_int,ADMdx_diff);
-        B_int = rbf(ep,BDM_int);
-        B_x = rbfdx(ep,BDMdx_int,BDMdx_diff);
+        if not(isempty(epvec)) % If we did a search for the best alpha
+            [err,epi] = min(Fapx);
+            epv = epvec(epi);
+        end
 
-        Fmat(FBifa,:) = zeros(size(Fmat(FBifa,:)));
-        Fmat(FBifa,[FAcou,FAifa]) = A_x/A_int;
-        Fmat(FBifa,[FBcou,FBifa]) = -B_x/B_int;
+        Marr = rbfformMarr([couplewidth+1;ap],[],ap);
+        phiA = rbfphi(Marr,AMFpts,epv,alpha);
+        phiAx = rbfphi(Marr,Fx(FBifa,:),epv,alpha,[1 0]);
+        phiB = rbfphi(Marr,BMFpts,epv,alpha);
+        phiBx = rbfphi(Marr,Fx(FBifa,:),epv,alpha,[1 0]);
+
+        Fmat(FBifa,[FAcou,FAifa]) = phiAx/phiA;
+        Fmat(FBifa,[FBcou,FBifa]) = -phiBx/phiB;
     end
     
     % Solve the system and compute the error on the grid
@@ -356,3 +367,4 @@ for tn=1:nsteps
     Aunew = temp(1:AMM);
     Bunew = temp(AMM+1:end);
 end
+warning on
