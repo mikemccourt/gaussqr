@@ -8,8 +8,8 @@ epvecd = logspace(-1,1,20);
 epvecr = logspace(-1,1,20);
 AN = [4,8,16,32,64,128];
 BN = [4,8,16,32,64,128];
-rbf = @(ep,x) exp(-(ep*x).^2);
-ep = 1.0;
+rbf = @(ep,r) exp(-(ep*r).^2);
+rbfdx = @(ep,r,dx) -2*ep^2*dx.*exp(-(ep*r).^2);
 
 if not(exist('ind')) % Consider the first index (looping only)
   ind = 1;
@@ -25,6 +25,7 @@ stencil9 = [1/6 2/3 1/6  2/3 -10/3 2/3  1/6 2/3 1/6];
 errt = zeros(1,nsteps);
 couplebuffer = 0.1/(2^(ind-1)); % accounts for fuzzy math
 couplewidth = 2; % How many points included in coupling
+Fcstyle = 1; % Finite difference or meshfree
 
 yf = @(x,t) exp(-t)*(1-0.5*(x(:,1).^2+x(:,2).^2));
 ff = @(x,t) exp(-t)*(1+0.5*(x(:,1).^2+x(:,2).^2));
@@ -185,8 +186,7 @@ FBcou = k+1:k+length(Bcoupts);
 k = k + length(Bcoupts);
 FBifa = k+1:k+length(Bifapts);
 
-% The simplest coupling style just matches values and derivatives
-Fcstyle = 1;
+% The coupling style just matches values and derivatives
 Ferrt = zeros(1,nsteps);
 
 Fx = [Ax;Bx];
@@ -242,10 +242,10 @@ for tn=1:nsteps
         Fmat(FAifa,:) = zeros(size(Fmat(FAifa,:)));
         for k=1:length(FAifa)
             Fmat(FAifa(k),[FAifa(k),FBifa(k)]) = [1 -1];
-            Frhs(FAifa(k)) = 0;
         end
+        Frhs(FAifa) = zeros(size(FAifa));
+        
         Fmat(FBifa,:) = zeros(size(Fmat(FBifa,:)));
-        Z = length(FBifa);
         for k=1:length(FBifa)
             if couplewidth==1
                 Fmat(FBifa(k),[FAcou(k),FAifa(k),FBcou(k),FBifa(k)]) = [[-1 1]/Adeltax [-1 1]/Bdeltax];
@@ -254,8 +254,97 @@ for tn=1:nsteps
             else
                 error('couplewidth should be 1 or 2')
             end
-            Frhs(FBifa(k)) = 0;
         end
+        Frhs(FBifa) = zeros(size(FBifa));
+    elseif Fcstyle==2 % Meshfree coupling
+        Fmat(FAifa,:) = zeros(size(Fmat(FAifa,:)));
+        for k=1:length(FAifa)
+            Fmat(FAifa(k),[FAifa(k),FBifa(k)]) = [1 -1];
+        end
+        Frhs(FAifa) = zeros(size(FAifa));
+        Frhs(FBifa) = zeros(size(FBifa));
+        
+        AMFpts = Fx([FAcou,FAifa],:);
+        ADM_int = DistanceMatrix(AMFpts,AMFpts);
+        ADMdx_int = DistanceMatrix(Fx(FAifa,:),AMFpts);
+        ADMdx_diff = DifferenceMatrix(Fx(FAifa,1),AMFpts(:,1));
+
+        BMFpts = Fx([FBcou,FBifa],:);
+        BDM_int = DistanceMatrix(BMFpts,BMFpts);
+        BDMdx_int = DistanceMatrix(Fx(FBifa,:),BMFpts);
+        BDMdx_diff = DifferenceMatrix(Fx(FBifa,1),BMFpts(:,1));
+        
+        FM = 40;
+        alpha = 3;
+        epvec = logspace(-2,1,FM);
+        Fval = zeros(FM,1);
+        Fdir = zeros(FM,1);
+        Fapx = zeros(FM,1);
+        k = 1;
+        for ep=epvec
+            A_int = rbf(ep,ADM_int);
+            A_x = rbfdx(ep,ADMdx_int,ADMdx_diff);
+            B_int = rbf(ep,BDM_int);
+            B_x = rbfdx(ep,BDMdx_int,BDMdx_diff);
+
+            Fmat(FBifa,:) = zeros(size(Fmat(FBifa,:)));
+            Fmat(FBifa,[FAcou,FAifa]) = A_x/A_int;
+            Fmat(FBifa,[FBcou,FBifa]) = -B_x/B_int;
+            Funew = Fmat\Frhs;
+            Fdir(k) = errcompute(Funew,Fsol);
+            
+            ap = length(AMFpts);
+%             Marr = rbfformMarr([0;0],[],2*ap);
+%             Marr = [1 1 2 1 2 1 2 2  3 2 3 2 3 3 4 3;1 2 2 3 3 4 4 5  5 6 6 7 7 8 8 9];
+%             Marr = [1 1 2 1 2 1 2 2  1 2 3 1 2 3 1 2;1 2 2 3 3 4 4 5  7 6 5 8 7 6 9 8];
+            Marr = rbfformMarr([couplewidth+1;ap]);
+            beta = (1+(2*ep/alpha)^2)^.25;
+            delta2 = .5*alpha^2*(beta^2-1);
+            Lvec = (alpha^2/(alpha^2+delta2+ep^2))* ...
+                      (ep^2/(alpha^2+delta2+ep^2)).^(sum(Marr)-2);
+            L1 = diag(Lvec(1:ap));
+            L2 = diag(Lvec(ap+1:end));
+            phiFull = rbfphi(Marr,AMFpts,ep,alpha);
+            phi1 = phiFull(:,1:ap);
+            phi2 = phiFull(:,ap+1:end);
+            phix = rbfphi(Marr,Fx(FAifa,:),ep,alpha,[1 0]);
+            phix1 = phix(:,1:ap);
+            phix2 = phix(:,ap+1:end);
+            A_psi = phiFull*[eye(ap);L2*(phi2'*pinv(phi1'))/L1];
+            A_psi_x = phix*[eye(ap);L2*(phi2'*pinv(phi1'))/L1];
+            
+            Fmat(FBifa,[FAcou,FAifa]) = A_psi_x*pinv(A_psi);
+            Fmat(FBifa,[FBcou,FBifa]) = A_psi_x*pinv(A_psi);
+            
+            Funew = Fmat\Frhs;
+            Fval(k) = errcompute(Funew,Fsol);
+            
+%             Marr = rbfformMarr([couplewidth+1;ap],[],floor(.7*ap));
+            Marr = rbfformMarr([couplewidth+1;ap],[],length([FAcou,FAifa]));
+            phiA = rbfphi(Marr,AMFpts,ep,alpha);
+            phiAx = rbfphi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
+            phiB = rbfphi(Marr,BMFpts,ep,alpha);
+            phiBx = rbfphi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
+
+            Fmat(FBifa,[FAcou,FAifa]) = phiAx/phiA;
+            Fmat(FBifa,[FBcou,FBifa]) = -phiBx/phiB;
+            
+%             Funew = Fmat\Frhs;
+            Funew = pinv(full(Fmat))*Frhs;
+            Fapx(k) = errcompute(Funew,Fsol);
+            k = k+1;
+        end
+%         [epvec',Fdir,Fval]
+        
+        ep = 1e-3;
+        A_int = rbf(ep,ADM_int);
+        A_x = rbfdx(ep,ADMdx_int,ADMdx_diff);
+        B_int = rbf(ep,BDM_int);
+        B_x = rbfdx(ep,BDMdx_int,BDMdx_diff);
+
+        Fmat(FBifa,:) = zeros(size(Fmat(FBifa,:)));
+        Fmat(FBifa,[FAcou,FAifa]) = A_x/A_int;
+        Fmat(FBifa,[FBcou,FBifa]) = -B_x/B_int;
     end
     
     % Solve the system and compute the error on the grid
