@@ -10,7 +10,7 @@ GAUSSQR_PARAMETERS.FAST_PHI_EVALUATION = 1;
 
 % These are the values I'm interested in testing
 % Note M is stored as a percentage of N
-Nvec = 1000*2.^(0:4);
+Nvec = 1000*2.^(0:8);
 Mvec = .001*2.^(0:5);
 
 % These values are arbitrary, because I don't really care about the
@@ -54,6 +54,23 @@ for N=Nvec
         m = m + 1;
     end
     n = n + 1;
+end
+
+M = 1024;
+Nvec = [3200,6400,12800,25600,51200];
+
+for N=Nvec
+    b = rand(N,1);
+    x = pickpoints(0,1,N);
+    c = zeros(M,1);
+    tic
+    c = computeQReig(M,x,ep,alpha,b);
+    timeMN = toc;
+    tic
+    phi = rbfphi(1:M,x,ep,alpha);
+    c = phi\b;
+    slowMN = toc;
+    [timeMN,slowMN]
 end
 
 warning on
