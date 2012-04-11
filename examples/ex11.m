@@ -12,10 +12,10 @@ rbf = @(ep,r) exp(-(ep*r).^2);
 rbfdx = @(ep,r,dx) -2*ep^2*dx.*exp(-(ep*r).^2);
 
 alpha = 1;
-FM = 20;
+FM = 21;
 epvec = logspace(-2,1,FM);
-epvec = [];
-epv = .55;%epv = 1e-5;
+%epvec = [];
+epv = .8;%epv = 1e-5;
 ind = 3;
 
 warning off
@@ -34,7 +34,7 @@ stencil9 = [1/6 2/3 1/6  2/3 -10/3 2/3  1/6 2/3 1/6];
 errt = zeros(1,nsteps);
 couplebuffer = 0.1/(2^(ind-1)); % accounts for fuzzy math
 couplewidth = 1; % How many points included in coupling
-Fcstyle = 1; % Finite difference or meshfree
+Fcstyle = 2; % 1 = Finite difference or 2 = meshfree
 
 yf = @(x,t) exp(-t)*(1-0.5*(x(:,1).^2+x(:,2).^2));
 ff = @(x,t) exp(-t)*(1+0.5*(x(:,1).^2+x(:,2).^2));
@@ -306,27 +306,27 @@ for tn=1:nsteps
 %             Marr = rbfformMarr([0;0],[],2*ap);
 %             Marr = [1 1 2 1 2 1 2 2  3 2 3 2 3 3 4 3;1 2 2 3 3 4 4 5  5 6 6 7 7 8 8 9];
 %             Marr = [1 1 2 1 2 1 2 2  1 2 3 1 2 3 1 2;1 2 2 3 3 4 4 5  7 6 5 8 7 6 9 8];
-            Marr = rbfformMarr([couplewidth+1;ap]);
-            beta = (1+(2*ep/alpha)^2)^.25;
-            delta2 = .5*alpha^2*(beta^2-1);
-            Lvec = (alpha^2/(alpha^2+delta2+ep^2))* ...
-                      (ep^2/(alpha^2+delta2+ep^2)).^(sum(Marr)-2);
-            L1 = diag(Lvec(1:ap));
-            L2 = diag(Lvec(ap+1:end));
-            phiFull = rbfphi(Marr,AMFpts,ep,alpha);
-            phi1 = phiFull(:,1:ap);
-            phi2 = phiFull(:,ap+1:end);
-            phix = rbfphi(Marr,Fx(FAifa,:),ep,alpha,[1 0]);
-            phix1 = phix(:,1:ap);
-            phix2 = phix(:,ap+1:end);
-            A_psi = phiFull*[eye(ap);L2*(phi2'*pinv(phi1'))/L1];
-            A_psi_x = phix*[eye(ap);L2*(phi2'*pinv(phi1'))/L1];
-            
-            Fmat(FBifa,[FAcou,FAifa]) = A_psi_x*pinv(A_psi);
-            Fmat(FBifa,[FBcou,FBifa]) = A_psi_x*pinv(A_psi);
-            
-            Funew = Fmat\Frhs;
-            Fval(k) = errcompute(Funew,Fsol);
+%            Marr = rbfformMarr([couplewidth+1;ap]);
+%            beta = (1+(2*ep/alpha)^2)^.25;
+%            delta2 = .5*alpha^2*(beta^2-1);
+%            Lvec = (alpha^2/(alpha^2+delta2+ep^2))* ...
+%                      (ep^2/(alpha^2+delta2+ep^2)).^(sum(Marr)-2);
+%            L1 = diag(Lvec(1:ap));
+%            L2 = diag(Lvec(ap+1:end));
+%            phiFull = rbfphi(Marr,AMFpts,ep,alpha);
+%            phi1 = phiFull(:,1:ap);
+%            phi2 = phiFull(:,ap+1:end);
+%            phix = rbfphi(Marr,Fx(FAifa,:),ep,alpha,[1 0]);
+%            phix1 = phix(:,1:ap);
+%            phix2 = phix(:,ap+1:end);
+%            A_psi = phiFull*[eye(ap);L2*(phi2'*pinv(phi1'))/L1];
+%            A_psi_x = phix*[eye(ap);L2*(phi2'*pinv(phi1'))/L1];
+%            
+%            Fmat(FBifa,[FAcou,FAifa]) = A_psi_x*pinv(A_psi);
+%            Fmat(FBifa,[FBcou,FBifa]) = A_psi_x*pinv(A_psi);
+%            
+%            Funew = Fmat\Frhs;
+%            Fval(k) = errcompute(Funew,Fsol);
             
 %             Marr = rbfformMarr([couplewidth+1;ap],[],floor(.7*ap));
             Marr = rbfformMarr([couplewidth+1;ap],[],ap);
@@ -338,9 +338,11 @@ for tn=1:nsteps
             Fmat(FBifa,[FAcou,FAifa]) = phiAx/phiA;
             Fmat(FBifa,[FBcou,FBifa]) = -phiBx/phiB;
             
-%             Funew = Fmat\Frhs;
-            Funew = pinv(full(Fmat))*Frhs;
+            Funew = Fmat\Frhs;
+%            Funew = pinv(full(Fmat))*Frhs;
             Fapx(k) = errcompute(Funew,Fsol);
+
+            fprintf('%d\t%g\t%g\t%g\n',k,ep,Fdir(k),Fapx(k))
             k = k+1;
         end
         if not(isempty(epvec)) % If we did a search for the best alpha
