@@ -234,7 +234,9 @@ else
         end
         if logoption
             Ni = Ni + (pv<0);
+            warning off MATLAB:log:logOfZero
             p = p + log(abs(pv));
+            warning on MATLAB:log:logOfZero
         else
             p = p.*pv;
         end
@@ -327,3 +329,7 @@ end
 %       coefficients for any order derivative in the recurrence form and
 %       call that each time it is needed.  Then the eigenfunction and the
 %       coefficient computation are separated.
+%
+%       For derivatives, there's potential of a log of 0, which isn't real,
+%       because it will go away when it get's applied to the other
+%       dimensions.  I need to consider that.
