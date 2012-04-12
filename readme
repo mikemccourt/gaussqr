@@ -1,8 +1,9 @@
-RBF-QR Matlab files v1.1
-  comments/questions: mccomic@mcs.anl.gov
+RBF-QR Matlab files v1.2
+  comments/questions: Mike McCourt <mccomic@mcs.anl.gov>
 
-Source code is kept in the source file
-Examples are kept in the examples file
+Source code is kept in the source folder
+Examples are kept in the examples folder
+Files from other authors are kept in the fromothers folder
 
 To run an example, you first boot up Matlab
 Then run the setup:
@@ -23,35 +24,48 @@ You also can use
 This shows that RBF-QRr is superior to RBF-QR in certain instances
 
 List of examples:
-  ex1  : Test of RBF-QR in 1D
-  ex2a : Test of RBF-QRr in 1D
-  ex2b : Test of RBF-QRr in 2D
-  ex2c : Test of RBF-QRr on optics examples
-  ex2d : Test of RBF-QRr in 5D
-  ex3  : Test of HermiteAppx
-  ex4  : Parameter study for epsilon and alpha
-  ex5  : 2-pt collocation BVP example
-  ex6  : Regression for several M values
-  ex7  : Parameter study for epsilon and M
-  ex8  : Study of condition number for regression
-  ex9  : Time test for interpolation in 1D and 2D
-  ex10 : Orthonormality test for various eigenfunctions
+  ex1   : Test of RBF-QR in 1D
+  ex2a  : Test of RBF-QRr in 1D
+  ex2b  : Test of RBF-QRr in 2D
+  ex2c  : Test of RBF-QRr on optics examples
+  ex2d  : Test of RBF-QRr in 5D
+  ex3   : Test of HermiteAppx
+  ex4   : Parameter study for epsilon and alpha
+  ex5   : 2-pt collocation BVP example
+  ex5b  : 2-pt BVP solver comparison
+  ex5c  : Helmholtz solver comparison
+  ex5d  : GaussQR collocation versus MFS
+  ex6   : Regression for several M values
+  ex7   : Parameter study for epsilon and M
+  ex8   : Study of condition number for regression
+  ex9   : Time test for interpolation in 1D and 2D
+  ex10  : Orthonormality test for various eigenfunctions
+  ex11  : (incomplete) Example of meshfree collocation
+  ex12  : Ill-conditioning study on derivatives
 
 Function descriptions:
-  DistanceMatrix : Computes matrix A_ij = ||x_i-x_j||
-  haltonseq      : Generates an n-dimensional Halton sequence
-  HermiteAppx    : Computes an asymptotic approximation to Hermite polynomials
-  HermitePoly    : Evaluates 1D Hermite polynomials
-  HermiteProd    : Evaluates n-dim Hermite polynomials via tensor product
-  pick2Dpoints   : Returns points spaced in a certain design in 2D
-  pickfunc       : Returns a function for RBF testing
-  pickpoints     : Returns points spaced in a certain design in 1D
-  ranksolve      : Solves a system of the form (eye(n)+U*VT)*X=B
-  rbfalphasearch : Finds a good alpha for RBF-QR via orthogonality
-  rbfformMarr    : Orders the eigenfunction indices for stability
-  rbfphi         : Evaluates the eigenfunctions
-  rbfqr_eval     : Evaluates an RBF-QR approximation
-  rbfqr_solve    : Computes an RBF-QR interpolant
-  rbfqrr_solve   : Computes an RBF-QR regression
-  wamdisk        : Defines a WAM inside a 2D disk
-  wamquadrangle  : Defines a WAM inside a parametrized quadrangle
+  computeUinvHermite : Computes a fast QR decomposition of the Hermite matrix
+  errcompute         : Computes the difference between two vectors
+  HermiteAppx        : Computes an asymptotic approximation to Hermite polynomials
+  HermitePoly        : Evaluates 1D Hermite polynomials
+  HermiteProd        : Evaluates n-dim Hermite polynomials via tensor product
+  pick2Dpoints       : Returns points spaced in a certain design in 2D
+  pickfunc           : Returns a function for RBF testing
+  pickpoints         : Returns points spaced in a certain design in 1D
+  ranksolve          : Solves a system of the form (eye(n)+U*VT)*X=B
+  rbfalphasearch     : Finds a good alpha for RBF-QR via orthogonality
+  rbfformMarr        : Orders the eigenfunction indices for stability
+  rbfphi             : Evaluates the eigenfunctions
+  rbfqr_eval         : Evaluates an RBF-QR approximation
+  rbfqr_solve        : Computes an RBF-QR interpolant
+  rbfqrr_solve       : Computes an RBF-QR regression
+  rbfroots           : Finds the roots of the eigenfunctions
+  rbfsolveprep       : Checks passed arguments to confirm they are acceptable
+  
+External function descriptions:
+  cheb             : Produces the Trefethen Chebyshev differentiation matrix
+  DifferenceMatrix : Computes matrix of differences between nodes
+  DistanceMatrix   : Computes matrix A_ij = ||x_i-x_j||
+  haltonseq        : Generates an n-dimensional Halton sequence
+  wamdisk          : Defines a WAM inside a 2D disk
+  wamquadrangle    : Defines a WAM inside a parametrized quadrangle
