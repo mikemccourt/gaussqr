@@ -1,5 +1,20 @@
 function [x,spacestr] = pickpoints(a,b,N,spaceopt,ep)
-% Note that ep is only needed for 'inner' points
+% function [x,spacestr] = pickpoints(a,b,N,spaceopt,ep)
+% This function creates points in 1D according to a spacing you choose
+%
+% Inputs - a : the lower bound for the points
+%          b : the upper bound for the points
+%          N : number of points requested
+%          spaceopt : how you want the points spaced
+%             even : <default> evenly spaced points
+%             cheb : Chebyshev nodes
+%             inner : Gaussian cluster near the center
+%             halton : described by the Halton sequence
+%          ep : the Gaussian shape parameter
+%             Note that ep is only needed for 'inner' points
+%
+% Outputs - x : a column vector of points spaced as you requested
+%           spacestr : a string describing the spacing of the points
 if nargin<5
     ep=0;
     if nargin<4
