@@ -28,7 +28,7 @@ for N=Nvec
        for sigma=sigmavec
            [x,spacestr] = pickpoints(aa,bb,N,spaceopt,sigma);
            y = yf(x);
-           M = ceil(2.1*N);
+           M = ceil(5.1*N);
            n = 1:M;
           S = sqrt(2/L)*sin(pi*x*n/L); % size(S)  K = Se*D*Sn'  psi = Se*(I;D2Sn2'Sn1^-TD1^-1)
           [Q,R] = qr(S);
@@ -63,7 +63,7 @@ for N=Nvec
         MINGR = min(repmat(x',NN,1),repmat(xx,1,N));
         MAXGR = max(repmat(x',NN,1),repmat(xx,1,N));
         yp = (sinh(sigma*MINGR).*sinh(sigma*(L-MAXGR))/(sigma*sinh(L*sigma)))*beta;
-        errvecd(i,k) = abs(max(yy-yp));%errcompute(yp,yy);
+        %errvecd(i,k) = abs(max(yy-yp));%errcompute(yp,yy);
         errvecd(i,k) = errcompute(yp,yy);
         k = k+1;
     end
@@ -109,5 +109,5 @@ xlabel('\sigma')
 ylabel('average error')
 %ylim([10^-15 10])
 ptsstr=strcat(', x\in[',num2str(aa),',',num2str(bb),'],');
-title(strcat(fstr,ptsstr,spacestr))
+title(strcat(ptsstr,spacestr)) %title(strcat(fstr,ptsstr,spacestr))
 legend('N=10 (Direct)','N=20 (Direct)','N=30 (Direct)','N=10 (QR)','N=20 (QR)','N=30 (QR)', 'Location', 'Best');

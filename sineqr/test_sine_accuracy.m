@@ -4,7 +4,7 @@ t = 16; % 10^(-t)
 tvec = linspace(1,t,100);
 
 sigma = 10.;
-beta = 3;
+beta = 1;
 L = 1;
 
 M = 1; N = 10;
