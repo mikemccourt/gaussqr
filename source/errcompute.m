@@ -38,6 +38,8 @@ switch errstyle
         err = norm(x-y,normtype);
     case 3
         err = norm(x-y,normtype)/norm(y,normtype);
+    case 4
+        err = norm(x-y,normtype)/norm(y,normtype)/sqrt(n);
     otherwise
         error('GP.ERROR_STYLE = %d, unacceptable',errstyle)
 end
