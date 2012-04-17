@@ -26,7 +26,7 @@ k = 1;
 fprintf('Length\tRelative Err\tExec Time\tEval Ratio\n')
 for M=Mvec
     tic
-    compsf = sobfunc(x,z,L,sigma,beta,M);
+    compsf = sobfunc(x,z,L,sigma,beta,0,M);
     tcomp = toc;
     errvec(k) = errcompute(compsf,truesf);
     evalrat = (pi^2+sigma^2*L^2)/(pi^2*M^2+sigma^2*L^2);
@@ -55,7 +55,7 @@ k = 1;
 fprintf('Length\tRelative Err\tExec Time\tEval Ratio\n')
 for M=Mvec
     tic
-    compsf = sobfunc(x,z,L,sigma,beta,M);
+    compsf = sobfunc(x,z,L,sigma,beta,0,M);
     tcomp = toc;
     errvec(k) = errcompute(compsf,truesf);
     evalrat = (pi^2+sigma^2*L^2)/(pi^2*M^2+sigma^2*L^2);
@@ -84,7 +84,7 @@ k = 1;
 fprintf('Length\tRelative Err\tExec Time\tEval Ratio\n')
 for M=Mvec
     tic
-    compsf = sobfunc(x,z,L,sigma,beta,M);
+    compsf = sobfunc(x,z,L,sigma,beta,0,M);
     tcomp = toc;
     errvec(k) = errcompute(compsf,truesf);
     evalrat = (pi^2+sigma^2*L^2)/(pi^2*M^2+sigma^2*L^2);
@@ -105,6 +105,6 @@ sigma = 10;
 beta = 3;
 Vk = zeros(N,9);
 for k=1:9
-    Vk(:,k) = sobfunc(x,L*k/10,L,sigma,beta);
+    Vk(:,k) = sobfunc(x,L*k/10,L,sigma,beta,1);
 end
 plot(x,Vk)
