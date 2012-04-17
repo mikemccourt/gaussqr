@@ -71,6 +71,8 @@ end
 
 if deriv>0 & beta==1
     error('First order kernel is not differentiable, deriv=%d, beta=%d',deriv,beta)
+elseif deriv>2 & beta==2
+    error('Second order kernel can have at most 2 derivatives, deriv=%d, beta=%d',deriv,beta)
 end
 
 % These are the eigenfunctions of the series
