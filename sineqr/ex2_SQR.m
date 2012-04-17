@@ -66,11 +66,9 @@ for N=Nvec
         
         for j=1:N
             K_solve(:,j) = sobfunc(x,x(j),L,sigma,beta);
-        end
-        b = K_solve\y;
-        for j=1:N
             K_eval(:,j) = sobfunc(xx,x(j),L,sigma,beta);
         end
+        b = K_solve\y;
         yp = K_eval*b;
         errvecd(i,k) = errcompute(yp,yy);
         k = k+1;
