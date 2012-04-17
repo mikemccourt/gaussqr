@@ -77,6 +77,7 @@ end
 
 % These are the eigenfunctions of the series
 % Each line below is a derivative
+sinfunc0 = @(n,L,x) sqrt(2/L)*sin(pi*x*n/L);
 switch deriv
     case 0
         sinfunc = @(n,L,x) sqrt(2/L)*sin(pi*x*n/L);
@@ -116,7 +117,7 @@ else
         n = Mind-blocksize+1:Mind;
 
         Xmat = sinfunc(n,L,x);
-        Zmat = sinfunc(n,L,z);
+        Zmat = sinfunc0(n,L,z);
         Xmat = Xmat.*Zmat;
         Zmat = repmat(lamfunc(n,L,sigma,beta),rx,1);
         Xmat = Xmat.*Zmat;
@@ -129,7 +130,7 @@ else
         n = 1:Mind;
 
         Xmat = sinfunc(n,L,x);
-        Zmat = sinfunc(n,L,z);
+        Zmat = sinfunc0(n,L,z);
         Xmat = Xmat.*Zmat;
         Zmat = repmat(lamfunc(n,L,sigma,beta),rx,1);
         Xmat = Xmat.*Zmat;
