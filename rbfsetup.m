@@ -151,4 +151,11 @@ GAUSSQR_PARAMETERS.ORTH_ROOT_SPARSE_LIMIT = 500;
 % difficult to implement, I'm just not worried about it yet
 GAUSSQR_PARAMETERS.FAST_PHI_EVALUATION = 0;
 
+% This is the tolerance associated with the sobolev function which is the
+% kernel of the new operator we are working with.  I don't remember
+% what it is, so we'll need to note it here at some point.  This value is
+% the ratio of the Mth eigenvalue to the first eigenvalues.  It can roughly
+% be used as a tolerance for the accuracy of the function.
+GAUSSQR_PARAMETERS.SUMMATION_TOLERANCE = 1e-16;
+
 end
