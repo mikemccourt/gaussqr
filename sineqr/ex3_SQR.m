@@ -96,3 +96,15 @@ b = [ones(size(Mvec))',log(Mvec)']\log(errvec)';
 g = ceil(exp(1/b(2)*(log(eps)-b(1))));
 fprintf('For beta=%d, L=%g, sigma=%g\n',beta,L,sigma)
 fprintf('According to these results, M=%d is required for machine precision\n',g)
+
+
+N = 100;
+L = 1;
+x = pickpoints(0,L,N);
+sigma = 10;
+beta = 3;
+Vk = zeros(N,9);
+for k=1:9
+    Vk(:,k) = sobfunc(x,L*k/10,L,sigma,beta);
+end
+plot(x,Vk)
