@@ -37,14 +37,14 @@ end
 
 % Parameters which determine how the difference between two
 % vectors is computed.
-% errstyle : 1 - individual relative RMS error <default>
+% errstyle : 1 - individual relative RMS error
 %            2 - absolute error
 %            3 - relative error
-%            4 - relative RMS error
+%            4 - relative RMS error <default>
 % normtype : 1 - sum absolute values
 %            2 - sqrt of sum of squares <default>
 %            inf - largest absolute value
-GAUSSQR_PARAMETERS.ERROR_STYLE = 1;
+GAUSSQR_PARAMETERS.ERROR_STYLE = 4;
 GAUSSQR_PARAMETERS.NORM_TYPE = 2;
 
 % Use logarithms when computing rbfphi
