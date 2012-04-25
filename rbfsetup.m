@@ -24,6 +24,10 @@ addpath(sourceDir,exampleDir,otherDir,sineqrDir,1);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 global GAUSSQR_PARAMETERS
 
+% Checks if the spline toolbox is available
+% This is used to produce some results for the SineQR stuff
+GAUSSQR_PARAMETERS.SPLINE_TOOLBOX_AVAILABLE = length(findstr('splines',path))>0;
+
 % At what point should the asymptotic approximation to Hermite be used
 % Anything between 35-60 you shouldn't be able to tell the difference
 % Beyond 70 it's pretty necessary
@@ -156,6 +160,6 @@ GAUSSQR_PARAMETERS.FAST_PHI_EVALUATION = 0;
 % what it is, so we'll need to note it here at some point.  This value is
 % the ratio of the Mth eigenvalue to the first eigenvalues.  It can roughly
 % be used as a tolerance for the accuracy of the function.
-GAUSSQR_PARAMETERS.SUMMATION_TOLERANCE = 1e-16;
+GAUSSQR_PARAMETERS.SUMMATION_TOLERANCE = 1e-7;
 
 end
