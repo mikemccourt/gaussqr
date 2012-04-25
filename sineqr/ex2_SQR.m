@@ -3,50 +3,98 @@
 rbfsetup
 global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.ERROR_STYLE = 4; % Relative RMS
+useSplines = GAUSSQR_PARAMETERS.SPLINE_TOOLBOX_AVAILABLE;
 
-sigmavecd = logspace(0,2,20);
-sigmavec =  logspace(0,2,20);
+% The range of N values to consider
 Nvec = [10,20,40];
+% The spacing choice for the points
+spaceopt = 'cheb';
+% The order (smoothness) of the kernel
+beta = 8;
+% The  range of kernel shape parameters to consider
+sigmavec =  logspace(0,2,24);
+% The length of the domain
+L = 1;
+% The embedding width for nonhomogeneous functions
+embed_cushion = .1;
+% The number of evenly spaced points at which to sample error
 NN = 100;
 
-spaceopt = 'cheb';
-fopt = 'sin';
+% This determines how many extra basis functions should be added to the
+% RBF-QR evaluation to get the necessary accuracy: M = Mfactor*N
+% Actually picking a good value for this may be difficult
+% I guess the minimum should be something like 1.1
+Mfactor = 8.5;
 
-L = 1;
-[yf,fstr] = pickfunc(fopt,1);
+% Define the eigenfunctions and eigenvalues
+sinfunc = @(n,L,x) sqrt(2/L)*sin(pi*x*n/L);
+lamfunc = @(n,L,sigma,beta) ((pi*n/L).^2+sigma^2).^(-beta);
 
-% May consider these functions which automatically satisfy the boundary
-% conditions f(0)=f(L)=0
-% yf = @(x) x.*(L-x);
-% yf = @(x) x.*(L-x).*sqrt(x);
+% This is the function we are interested in considering
+% Depending on which function consider, it will choose embedding
+fopt = 1;
+switch fopt
+    case 1
+        yf = @(x) sin(2*pi*x/L) + 1;
+        fstr = 'u(x) = sin(2\pi{x}/L)+1';
+        embed = embed_cushion;
+    case 2
+        yf = @(x) sin(2*pi*x/L);
+        fstr = 'u(x) = sin(2\pi{x}/L)';
+        embed = 0;
+    case 3
+        yf = @(x) x.*(L-x).*sqrt(x);
+        fstr = 'u(x) = x(L-x)sqrt(x)';
+        embed = 0;
+    case 4
+        yf = @(x) 1./(1+(x/L).^2);
+        fstr = 'u(x) = 1/(1+(x/L)^2)';
+        embec = embed_cushion;
+    case 5
+        yf = @(x) 1./(1+(x/L).^2)-(1-.5*(x/L));
+        fstr = 'u(x) = 1/(1+(x/L)^2)+.5(x/L)-1';
+        embec = 0;
+    case 6
+        yf = @(x) sinh(3/L*x)./(1+cosh(3/L*x));
+        fstr = 'u(x) = sinh(3x/L)./(1+cosh(3x/L))';
+        embec = embed_cushion;
+    otherwise
+        error('This function does not exist')
+end
 
 % Define the eigenfunctions and eigenvalues
 sinfunc = @(n,L,x) sqrt(2/L)*sin(pi*x*n/L);
 lamfunc = @(n,L,sigma,beta) ((pi*n/L).^2+sigma^2).^(-beta);
 
 % Selecting some points in the domain, not including the boundary
-aa = .1*L; bb = .9*L;
+aa = embed*L; bb = (1-embed)*L;
 xx = pickpoints(aa,bb,NN);
 yy = yf(xx);
 
 % Set up the error vectors to store the results
 errvec = zeros(length(Nvec),length(sigmavec));
 errvecd = zeros(length(Nvec),length(sigmavecd));
-
-% Choose the order of the basis functions
-beta = 1;
+if useSplines
+    errvecs = zeros(length(Nvec),1);
+end
 
 i = 1;
 for N=Nvec
     K_solve = zeros(N);
     K_eval = zeros(NN,N);
-    [x,spacestr] = pickpoints(aa,bb,N,spaceopt);
+    if embed==0
+    % Don't consider the homogeneous end points because they are fixed
+        [x,spacestr] = pickpoints(aa,bb,N+2);
+        x = x(2:end-1);
+    else
+        [x,spacestr] = pickpoints(aa,bb,N);
+    end
     y = yf(x);
     I = eye(N);
     
     k = 1;
     for sigma=sigmavec
-        M = ceil(8.5*N);
+        M = ceil(Mfactor*N);
         n = 1:M;
         S = sinfunc(n,L,x);
         [Q,R] = qr(S);
@@ -71,21 +119,35 @@ for N=Nvec
         b = K_solve\y;
         yp = K_eval*b;
         errvecd(i,k) = errcompute(yp,yy);
+        
         k = k+1;
     end
+        
+    if useSplines
+        sp = spapi(beta+1,x,y);
+        yp = fnval(sp,xx);
+        errvecs(i) = errcompute(yp,yy);
+        errvecs(i) = errcompute(csapi(x,y,xx),yy);
+    end
+        
     i = i+1;
 end
 
-loglog(sigmavecd,errvecd(1,:),'-bx')
+loglog(sigmavec,errvecd(1,:),'-bx')
 hold on
-loglog(sigmavecd,errvecd(2,:),'-g+')
-loglog(sigmavecd,errvecd(3,:),'-r^')
+loglog(sigmavec,errvecd(2,:),'-g+')
+loglog(sigmavec,errvecd(3,:),'-r^')
 loglog(sigmavec,errvec(1,:),'b','LineWidth',3)
 loglog(sigmavec,errvec(2,:),'g','LineWidth',3)
 loglog(sigmavec,errvec(3,:),'r','LineWidth',3)
+if useSplines
+    loglog(sigmavec,errvecs(1)*ones(size(sigmavec)),'--b','LineWidth',2)
+    loglog(sigmavec,errvecs(2)*ones(size(sigmavec)),'--g','LineWidth',2)
+    loglog(sigmavec,errvecs(3)*ones(size(sigmavec)),'--r','LineWidth',2)
+end
 hold off
 xlabel('\sigma')
 ylabel('average error')
 ptsstr=strcat(', x\in[',num2str(aa),',',num2str(bb),'],');
 title(strcat(fstr,ptsstr,spacestr))
-legend('N=10 (Direct)','N=20 (Direct)','N=40 (Direct)','N=10 (QR)','N=20 (QR)','N=40 (QR)', 'Location', 'SouthEast');
+legend('N=10 (Direct)','N=20 (Direct)','N=40 (Direct)','N=10 (QR)','N=20 (QR)','N=40 (QR)', 'Location', 'SouthWest');
