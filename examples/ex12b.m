@@ -11,14 +11,16 @@
 
 rbfsetup
 global GAUSSQR_PARAMETERS
-GAUSSQR_PARAMETERS.ERROR_STYLE = 4; % Use absolute error
+GAUSSQR_PARAMETERS.ERROR_STYLE = 2; % Use absolute error
+GAUSSQR_PARAMETERS.NORM_TYPE = inf; % Only pick the worst error
 
-Nvec = [6,8,10,12,14,16,18,20,22];
-NvecR = 3*Nvec;
+Nvec = [6,8,10,12,14,16,18,20,22,24,26];
 % Nvec = [10,15,20,25,30,35,40,45,50,60,70,80,90,100,110,120,130,140,150,160,170,180,190];
+regscale = 3;
+NvecR = regscale*Nvec;
 NN = 200;
 xx = pickpoints(-3,3,NN);
-fopt = 3;
+fopt = 1;
 
 switch fopt
     case 1
@@ -27,18 +29,21 @@ switch fopt
             (n==2)*(2*cos(x)-x.*sin(x))+...
             (n==3)*(-3*sin(x)-x.*cos(x))+...
             (n==4)*(x.*sin(x)-4*cos(x));
+        fstr = 'u(x) = x sin(x)';
     case 2
         uf = @(x,n) (n==0)*(exp(sin(x)))+...
             (n==1)*(exp(sin(x)).*cos(x))+...
             (n==2)*(exp(sin(x)).*(cos(x).^2-sin(x)))+...
             (n==3)*(exp(sin(x)).*cos(x).*(-3*sin(x)+cos(x).^2-1))+...
             (n==4)*(exp(sin(x)).*(sin(x).*(3*sin(x)+1)+cos(x).^4-2*cos(x).^2.*(3*sin(x)+2)));
+        fstr = 'u(x) = exp(sin(x))';
     case 3
         uf = @(x,n) (n==0)*(1./(1+x.^2))+...
             (n==1)*(-2*x./(1+x.^2).^2)+...
             (n==2)*((6*x.^2-2)./(1+x.^2).^3)+...
             (n==3)*(-(24*x.*(x.^2-1))./(1+x.^2).^4)+...
             (n==4)*(24*(5*x.^4-10*x.^2+1)./(1+x.^2).^5);
+        fstr = 'u(x) = 1/(1+x^2)';
 end
 
 % Consider accuracy for a fixed kernel
@@ -51,7 +56,7 @@ errmatR = zeros(5,length(Nvec));
 k = 1;
 for N=Nvec
     x = pickpoints(-3,3,N,'cheb');
-    xR = pickpoints(-3,3,3*N,'cheb');
+    xR = pickpoints(-3,3,regscale*N,'cheb');
     
     GQR = rbfqr_solve(x,uf(x,0),ep,alpha);
     GQRr = rbfqrr_solve(xR,uf(xR,0),ep,alpha);
@@ -64,18 +69,20 @@ for N=Nvec
 end
 
 semilogy(Nvec,errmatQ,'linewidth',2)
-ylim([1e-16 1e1])
+% semilogy(6./(Nvec-1),errmatQ,'linewidth',2)
+ylim([1e-14 1e1])
 xlim([min(Nvec),max(Nvec)])
 xlabel('input points N')
 ylabel('RMS relative error')
 legend('interp','1 deriv','2 deriv','3 deriv','4 deriv')
-title('Full series approximation')
+title(strcat('Full series, ',fstr,', x\in[-3,3]'))
 
 figure
-semilogy(3*Nvec,errmatR,'linewidth',2)
-ylim([1e-16 1e1])
+semilogy(regscale*Nvec,errmatR,'linewidth',2)
+% semilogy(6./(regscale*Nvec-1),errmatR,'linewidth',2)
+ylim([1e-14 1e1])
 xlim([min(NvecR),max(NvecR)])
 xlabel('input points N')
 ylabel('RMS relative error')
 legend('interp','1 deriv','2 deriv','3 deriv','4 deriv')
-title('Low-rank series approximation')
+title(strcat('Low-rank series, ',fstr,', x\in[-3,3]'))
