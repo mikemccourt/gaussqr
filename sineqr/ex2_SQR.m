@@ -10,7 +10,7 @@ Nvec = [10,20,40];
 % The spacing choice for the points
 spaceopt = 'cheb';
 % The order (smoothness) of the kernel
-beta = 1;
+beta = 3;
 % The  range of kernel shape parameters to consider
 sigmavec =  logspace(-1,2,20);
 % The length of the domain
@@ -22,7 +22,7 @@ NN = 100;
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 7;
+fopt = 3;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -33,8 +33,8 @@ switch fopt
         fstr = 'u(x) = sin(2\pi{x}/L)';
         embed = 0;
     case 3
-        yf = @(x) x.*(L-x).*sqrt(x);
-        fstr = 'u(x) = x(L-x)sqrt(x)';
+        yf = @(x) 30*x.^2.*(L-x).^2.*sin(2*pi*x/L).^4;
+        fstr = 'u(x) = 30x^2(L-x)^2sin(2\pi{x}/L)^4';
         embed = 0;
     case 4
         yf = @(x) 1./(1+(x/L).^2);
