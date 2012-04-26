@@ -16,7 +16,7 @@ sigmavec =  logspace(-1,2,20);
 % The length of the domain
 L = 1;
 % The embedding width for nonhomogeneous functions (must be <.5)
-embed_cushion = .2;
+embed_cushion = .1;
 % The number of evenly spaced points at which to sample error
 NN = 100;
 
@@ -60,7 +60,7 @@ end
 % RBF-QR evaluation to get the necessary accuracy: M = Mfactor*N
 % Actually picking a good value for this may be difficult
 % I guess the minimum should be something like 1.1
-Mfactor = 12.5;
+Mfactor = 15.5;
 
 % Define the eigenfunctions and eigenvalues
 sinfunc = @(n,L,x) sqrt(2/L)*sin(pi*x*n/L);
@@ -73,7 +73,7 @@ yy = yf(xx);
 
 % Set up the error vectors to store the results
 errvec = zeros(length(Nvec),length(sigmavec));
-errvecd = zeros(length(Nvec),length(sigmavecd));
+errvecd = zeros(length(Nvec),length(sigmavec));
 if useSplines
     errvecs = zeros(length(Nvec),1);
 end
