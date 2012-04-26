@@ -10,29 +10,19 @@ Nvec = [10,20,40];
 % The spacing choice for the points
 spaceopt = 'cheb';
 % The order (smoothness) of the kernel
-beta = 8;
+beta = 6;
 % The  range of kernel shape parameters to consider
-sigmavec =  logspace(0,2,24);
+sigmavec =  logspace(-1,2,20);
 % The length of the domain
 L = 1;
-% The embedding width for nonhomogeneous functions
+% The embedding width for nonhomogeneous functions (must be <.5)
 embed_cushion = .1;
 % The number of evenly spaced points at which to sample error
 NN = 100;
 
-% This determines how many extra basis functions should be added to the
-% RBF-QR evaluation to get the necessary accuracy: M = Mfactor*N
-% Actually picking a good value for this may be difficult
-% I guess the minimum should be something like 1.1
-Mfactor = 8.5;
-
-% Define the eigenfunctions and eigenvalues
-sinfunc = @(n,L,x) sqrt(2/L)*sin(pi*x*n/L);
-lamfunc = @(n,L,sigma,beta) ((pi*n/L).^2+sigma^2).^(-beta);
-
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 1;
+fopt = 2;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -58,15 +48,31 @@ switch fopt
         yf = @(x) sinh(3/L*x)./(1+cosh(3/L*x));
         fstr = 'u(x) = sinh(3x/L)./(1+cosh(3x/L))';
         embec = embed_cushion;
+    case 7
+        fstr = 'y(x)=cos(x)+e^{-(x-1)^2}-e^{-(x+1)^2}';
+        yf = @(x) cos(x)+exp(-(x-1).^2)-exp(-(x+1).^2);
+        embec = embed_cushion;
     otherwise
         error('This function does not exist')
 end
+
+% This determines how many extra basis functions should be added to the
+% RBF-QR evaluation to get the necessary accuracy: M = Mfactor*N
+% Actually picking a good value for this may be difficult
+% I guess the minimum should be something like 1.1
+Mfactor = 12.5;
+
+% May consider these functions which automatically satisfy the boundary
+% conditions f(0)=f(L)=0
+% yf = @(x) x.*(L-x);
+% yf = @(x) x.*(L-x).*sqrt(x);
 
 % Define the eigenfunctions and eigenvalues
 sinfunc = @(n,L,x) sqrt(2/L)*sin(pi*x*n/L);
 lamfunc = @(n,L,sigma,beta) ((pi*n/L).^2+sigma^2).^(-beta);
 
 % Selecting some points in the domain, not including the boundary
+embed = .1;
 aa = embed*L; bb = (1-embed)*L;
 xx = pickpoints(aa,bb,NN);
 yy = yf(xx);
@@ -78,16 +84,20 @@ if useSplines
     errvecs = zeros(length(Nvec),1);
 end
 
+% Don't care about warnings, yet
+warning off
+
 i = 1;
 for N=Nvec
     K_solve = zeros(N);
     K_eval = zeros(NN,N);
+    
     if embed==0
     % Don't consider the homogeneous end points because they are fixed
-        [x,spacestr] = pickpoints(aa,bb,N+2);
+        [x,spacestr] = pickpoints(aa,bb,N+2,spaceopt);
         x = x(2:end-1);
     else
-        [x,spacestr] = pickpoints(aa,bb,N);
+        [x,spacestr] = pickpoints(aa,bb,N,spaceopt);
     end
     y = yf(x);
     I = eye(N);
@@ -103,10 +113,9 @@ for N=Nvec
         opts.UT = true;
         Rhat = linsolve(R1,R2,opts);
         lambda = lamfunc(n,L,sigma,beta);
-        D = diag(lambda);
-        D1 = diag(lambda(1:N));
-        D2 = diag(lambda(N+1:end));
-        Rbar = D2*Rhat'/D1;
+        D1 = repmat(lambda(1:N),M-N,1);
+        D2 = repmat(lambda(N+1:end)',1,N);
+        Rbar = D2.*Rhat'./D1;
         b = (S*[I;Rbar])\y;
         SS = sinfunc(n,L,xx);
         yp = (SS*[I;Rbar])*b;
@@ -119,7 +128,6 @@ for N=Nvec
         b = K_solve\y;
         yp = K_eval*b;
         errvecd(i,k) = errcompute(yp,yy);
-        
         k = k+1;
     end
         
@@ -127,11 +135,12 @@ for N=Nvec
         sp = spapi(beta+1,x,y);
         yp = fnval(sp,xx);
         errvecs(i) = errcompute(yp,yy);
-        errvecs(i) = errcompute(csapi(x,y,xx),yy);
     end
-        
+    
     i = i+1;
 end
+
+warning off
 
 loglog(sigmavec,errvecd(1,:),'-bx')
 hold on
@@ -150,4 +159,4 @@ xlabel('\sigma')
 ylabel('average error')
 ptsstr=strcat(', x\in[',num2str(aa),',',num2str(bb),'],');
 title(strcat(fstr,ptsstr,spacestr))
-legend('N=10 (Direct)','N=20 (Direct)','N=40 (Direct)','N=10 (QR)','N=20 (QR)','N=40 (QR)', 'Location', 'SouthWest');
+legend('N=10 (Direct)','N=20 (Direct)','N=40 (Direct)','N=10 (QR)','N=20 (QR)','N=40 (QR)', 'Location', 'NorthWest');
