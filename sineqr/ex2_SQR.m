@@ -10,19 +10,19 @@ Nvec = [10,20,40];
 % The spacing choice for the points
 spaceopt = 'cheb';
 % The order (smoothness) of the kernel
-beta = 6;
+beta = 1;
 % The  range of kernel shape parameters to consider
 sigmavec =  logspace(-1,2,20);
 % The length of the domain
 L = 1;
 % The embedding width for nonhomogeneous functions (must be <.5)
-embed_cushion = .1;
+embed_cushion = .2;
 % The number of evenly spaced points at which to sample error
 NN = 100;
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 2;
+fopt = 7;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -39,19 +39,19 @@ switch fopt
     case 4
         yf = @(x) 1./(1+(x/L).^2);
         fstr = 'u(x) = 1/(1+(x/L)^2)';
-        embec = embed_cushion;
+        embed = embed_cushion;
     case 5
         yf = @(x) 1./(1+(x/L).^2)-(1-.5*(x/L));
         fstr = 'u(x) = 1/(1+(x/L)^2)+.5(x/L)-1';
-        embec = 0;
+        embed = 0;
     case 6
         yf = @(x) sinh(3/L*x)./(1+cosh(3/L*x));
         fstr = 'u(x) = sinh(3x/L)./(1+cosh(3x/L))';
-        embec = embed_cushion;
+        embed = embed_cushion;
     case 7
         fstr = 'y(x)=cos(x)+e^{-(x-1)^2}-e^{-(x+1)^2}';
         yf = @(x) cos(x)+exp(-(x-1).^2)-exp(-(x+1).^2);
-        embec = embed_cushion;
+        embed = embed_cushion;
     otherwise
         error('This function does not exist')
 end
@@ -62,17 +62,11 @@ end
 % I guess the minimum should be something like 1.1
 Mfactor = 12.5;
 
-% May consider these functions which automatically satisfy the boundary
-% conditions f(0)=f(L)=0
-% yf = @(x) x.*(L-x);
-% yf = @(x) x.*(L-x).*sqrt(x);
-
 % Define the eigenfunctions and eigenvalues
 sinfunc = @(n,L,x) sqrt(2/L)*sin(pi*x*n/L);
 lamfunc = @(n,L,sigma,beta) ((pi*n/L).^2+sigma^2).^(-beta);
 
 % Selecting some points in the domain, not including the boundary
-embed = .1;
 aa = embed*L; bb = (1-embed)*L;
 xx = pickpoints(aa,bb,NN);
 yy = yf(xx);
