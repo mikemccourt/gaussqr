@@ -12,6 +12,7 @@ if(strfind(thisOS,'Windows')>0) % We are in Windows
         gqrauxiliaryDir = strcat(gaussqrDir,'\auxiliary');
       utilitiesDir = strcat(sourceDir,'\utilities');
       maternqrDir = strcat(sourceDir,'\maternqr');
+        mqrauxiliaryDir = strcat(maternqrDir,'\auxiliary');
     
     examplesDir = strcat(thisDir,'\examples');
       gqrexamplesDir = strcat(examplesDir,'\gaussqr');
@@ -23,13 +24,14 @@ else % We are in Unix
         gqrauxiliaryDir = strcat(gaussqrDir,'/auxiliary');
       utilitiesDir = strcat(sourceDir,'/utilities');
       maternqrDir = strcat(sourceDir,'/maternqr');
+        mqrauxiliaryDir = strcat(maternqrDir,'/auxiliary');
       
     examplesDir = strcat(thisDir,'/examples');
       gqrexamplesDir = strcat(examplesDir,'/gaussqr');
       mqrexamplesDir = strcat(examplesDir,'/maternqr');
     otherDir = strcat(thisDir,'/fromothers');
 end
-addpath(sourceDir,gaussqrDir,examplesDir,gqrauxiliaryDir,utilitiesDir,otherDir,maternqrDir,gqrexamplesDir,mqrexamplesDir,1);
+addpath(sourceDir,gaussqrDir,examplesDir,gqrauxiliaryDir,mqrauxiliaryDir,utilitiesDir,otherDir,maternqrDir,gqrexamplesDir,mqrexamplesDir,1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Setup global constants and parameters
