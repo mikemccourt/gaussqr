@@ -1,4 +1,4 @@
-function errval = ex11cTestFunc(ep,epstruct)
+function errval = ex11c_gqr_TestFunc(ep,epstruct)
     Marr = epstruct.Marr;
     alpha = epstruct.alpha;
     AMFpts = epstruct.AMFpts;

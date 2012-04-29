@@ -298,7 +298,7 @@ for tn=1:nsteps
             epstruct.Fx = Fx;
             epstruct.FmatFD = FmatFD;
 
-            epv = fminbnd(@(ep)ex11cTestFunc(ep,epstruct),min(epvec),max(epvec));
+            epv = fminbnd(@(ep)ex11c_gqr_TestFunc(ep,epstruct),min(epvec),max(epvec));
         end
 
         % This will loop over all the values in epvec and
