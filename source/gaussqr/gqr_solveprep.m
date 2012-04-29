@@ -1,5 +1,5 @@
-function [ep,alpha,Marr,lam] = rbfsolveprep(reg,x,ep,alpha,M)
-% function [ep,alpha,Marr,lam] = rbfsolveprep(reg,x,ep,alpha,M)
+function [ep,alpha,Marr,lam] = gqr_solveprep(reg,x,ep,alpha,M)
+% function [ep,alpha,Marr,lam] = gqr_solveprep(reg,x,ep,alpha,M)
 %
 % This function takes all the stuff needed to do a GaussQR problem and
 % preps it before the problem starts.  The reason for this is so that I can
@@ -36,7 +36,7 @@ end
 if computealpha==1
     xminBound = min(x);
     xmaxBound = max(x);
-    alpha = rbfalphasearch(ep,xminBound,xmaxBound);
+    alpha = gqr_alphasearch(ep,xminBound,xmaxBound);
 end
 
 % Checks to make sure that the ep and alpha values are acceptable
@@ -104,7 +104,7 @@ if reg
             end
         end
 
-        Marr = rbfformMarr(M,[],Mlim);
+        Marr = gqr_formMarr(M,[],Mlim);
     end
 else
     nu = (2*ep/alpha)^2;
@@ -112,7 +112,7 @@ else
     if Mextramax<0
         Mextramax = (1-Mextramax/100)*N;
     end
-    MarrN = rbfformMarr(zeros(d,1),[],N);
+    MarrN = gqr_formMarr(zeros(d,1),[],N);
     Mlim = ceil(size(MarrN,2)+log(eps)/log(lam));
     Mlim = ceil(N+log(eps)/log(lam));
     if Mextramax==0
@@ -128,12 +128,12 @@ else
         if Mr~=d
             error('Incorrect M size passed, size(M)=%dx%d d=%d',Mr,Mc,d)
         elseif M<N
-            error('rbfqr_solve requires M>N, but M=%g, N=%d',M,N)
+            error('gqr_solve requires M>N, but M=%g, N=%d',M,N)
         elseif ceil(M)~=M
             warning('Noninteger M passed as %g, reset to %d',M,ceil(M))
             M = ceil(M);
         end
     end
 
-    Marr = rbfformMarr(M,Mlim,Mextramax);
+    Marr = gqr_formMarr(M,Mlim,Mextramax);
 end
