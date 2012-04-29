@@ -10,9 +10,9 @@ Nvec = [10,20,40];
 % The spacing choice for the points
 spaceopt = 'cheb';
 % The order (smoothness) of the kernel
-beta = 3;
+beta = 1;
 % The  range of kernel shape parameters to consider
-sigmavec =  logspace(-1,2,20);
+epvec =  logspace(-1,2,20);
 % The length of the domain
 L = 1;
 % The embedding width for nonhomogeneous functions (must be <.5)
@@ -22,7 +22,7 @@ NN = 100;
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 3;
+fopt = 1;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -64,7 +64,7 @@ Mfactor = 15.5;
 
 % Define the eigenfunctions and eigenvalues
 sinfunc = @(n,L,x) sqrt(2/L)*sin(pi*x*n/L);
-lamfunc = @(n,L,sigma,beta) ((pi*n/L).^2+sigma^2).^(-beta);
+lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % Selecting some points in the domain, not including the boundary
 aa = embed*L; bb = (1-embed)*L;
@@ -72,8 +72,8 @@ xx = pickpoints(aa,bb,NN);
 yy = yf(xx);
 
 % Set up the error vectors to store the results
-errvec = zeros(length(Nvec),length(sigmavec));
-errvecd = zeros(length(Nvec),length(sigmavec));
+errvec = zeros(length(Nvec),length(epvec));
+errvecd = zeros(length(Nvec),length(epvec));
 if useSplines
     errvecs = zeros(length(Nvec),1);
 end
@@ -97,7 +97,7 @@ for N=Nvec
     I = eye(N);
     
     k = 1;
-    for sigma=sigmavec
+    for ep=epvec
         M = ceil(Mfactor*N);
         n = 1:M;
         S = sinfunc(n,L,x);
@@ -106,7 +106,7 @@ for N=Nvec
         R2 = R(:,N+1:end);
         opts.UT = true;
         Rhat = linsolve(R1,R2,opts);
-        lambda = lamfunc(n,L,sigma,beta);
+        lambda = lamfunc(n,L,ep,beta);
         D1 = repmat(lambda(1:N),M-N,1);
         D2 = repmat(lambda(N+1:end)',1,N);
         Rbar = D2.*Rhat'./D1;
@@ -116,8 +116,8 @@ for N=Nvec
         errvec(i,k) = errcompute(yp,yy);
         
         for j=1:N
-            K_solve(:,j) = sobfunc(x,x(j),L,sigma,beta);
-            K_eval(:,j) = sobfunc(xx,x(j),L,sigma,beta);
+            K_solve(:,j) = cmatern(x,x(j),L,ep,beta);
+            K_eval(:,j) = cmatern(xx,x(j),L,ep,beta);
         end
         b = K_solve\y;
         yp = K_eval*b;
@@ -136,20 +136,20 @@ end
 
 warning off
 
-loglog(sigmavec,errvecd(1,:),'-bx')
+loglog(epvec,errvecd(1,:),'-bx')
 hold on
-loglog(sigmavec,errvecd(2,:),'-g+')
-loglog(sigmavec,errvecd(3,:),'-r^')
-loglog(sigmavec,errvec(1,:),'b','LineWidth',3)
-loglog(sigmavec,errvec(2,:),'g','LineWidth',3)
-loglog(sigmavec,errvec(3,:),'r','LineWidth',3)
+loglog(epvec,errvecd(2,:),'-g+')
+loglog(epvec,errvecd(3,:),'-r^')
+loglog(epvec,errvec(1,:),'b','LineWidth',3)
+loglog(epvec,errvec(2,:),'g','LineWidth',3)
+loglog(epvec,errvec(3,:),'r','LineWidth',3)
 if useSplines
-    loglog(sigmavec,errvecs(1)*ones(size(sigmavec)),'--b','LineWidth',2)
-    loglog(sigmavec,errvecs(2)*ones(size(sigmavec)),'--g','LineWidth',2)
-    loglog(sigmavec,errvecs(3)*ones(size(sigmavec)),'--r','LineWidth',2)
+    loglog(epvec,errvecs(1)*ones(size(epvec)),'--b','LineWidth',2)
+    loglog(epvec,errvecs(2)*ones(size(epvec)),'--g','LineWidth',2)
+    loglog(epvec,errvecs(3)*ones(size(epvec)),'--r','LineWidth',2)
 end
 hold off
-xlabel('\sigma')
+xlabel('\epsilon')
 ylabel('average error')
 ptsstr=strcat(', x\in[',num2str(aa),',',num2str(bb),'],');
 title(strcat(fstr,ptsstr,spacestr))

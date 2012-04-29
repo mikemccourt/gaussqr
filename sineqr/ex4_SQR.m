@@ -7,8 +7,7 @@ rbfsetup
 global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.ERROR_STYLE = 4; % Relative RMS
 
-sigmavecd = logspace(0,2,20);
-sigmavec =  logspace(0,2,20);
+epvec =  logspace(0,2,20);
 Nvec = [10,20,40];
 NN = 100;
 
@@ -30,7 +29,7 @@ ff = @(x) exp(-x); % Source
 sinfunc = @(n,L,x) sqrt(2/L)*sin(pi*x*n/L);
 sinfunc1 = @(n,L,x) (sqrt(2/L)*ones(size(x))*(pi*n/L)).*cos(pi*x*n/L);
 sinfunc2 = @(n,L,x) (-sqrt(2/L)*ones(size(x))*(pi*n/L).^2).*sin(pi*x*n/L);
-lamfunc = @(n,L,sigma,beta) ((pi*n/L).^2+sigma^2).^(-beta);
+lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % Selecting some points in the domain, not including the boundary
 aa = .1*L; bb = .9*L;
@@ -38,8 +37,8 @@ xx = pickpoints(aa,bb,NN);
 yy = yf(xx);
 
 % Set up the error vectors to store the results
-errvec = zeros(length(Nvec),length(sigmavec));
-errvecd = zeros(length(Nvec),length(sigmavecd));
+errvec = zeros(length(Nvec),length(epvec));
+errvecd = zeros(length(Nvec),length(epvec));
 
 % Choose the order of the basis functions
 beta = 8;
@@ -55,7 +54,7 @@ for N=Nvec
     I = eye(N);
     
     k = 1;
-    for sigma=sigmavec
+    for ep=epvec
         M = ceil(8.5*N);
         n = 1:M;
         S = sinfunc(n,L,x);
@@ -65,7 +64,7 @@ for N=Nvec
         R2 = R(:,N+1:end);
         opts.UT = true;
         Rhat = linsolve(R1,R2,opts);
-        lambda = lamfunc(n,L,sigma,beta);
+        lambda = lamfunc(n,L,ep,beta);
         D = diag(lambda);
         D1 = diag(lambda(1:N));
         D2 = diag(lambda(N+1:end));
@@ -78,9 +77,9 @@ for N=Nvec
         errvec(i,k) = errcompute(yp,yy);
         
         for j=1:N
-            K(:,j) = sobfunc(x,x(j),L,sigma,beta);
-            K2d(:,j) = sobfunc(x,x(j),L,sigma,beta,2);
-            K_eval(:,j) = sobfunc(xx,x(j),L,sigma,beta);
+            K(:,j) = cmatern(x,x(j),L,ep,beta);
+            K2d(:,j) = cmatern(x,x(j),L,ep,beta,2);
+            K_eval(:,j) = cmatern(xx,x(j),L,ep,beta);
         end
         K_solve = [K(1,:);K2d(2:end-1,:);K(end,:)];
         b = K_solve\y;
@@ -91,15 +90,15 @@ for N=Nvec
     i = i+1;
 end
 
-loglog(sigmavecd,errvecd(1,:),'-bx')
+loglog(epvec,errvecd(1,:),'-bx')
 hold on
-loglog(sigmavecd,errvecd(2,:),'-g+')
-loglog(sigmavecd,errvecd(3,:),'-r^')
-loglog(sigmavec,errvec(1,:),'b','LineWidth',3)
-loglog(sigmavec,errvec(2,:),'g','LineWidth',3)
-loglog(sigmavec,errvec(3,:),'r','LineWidth',3)
+loglog(epvec,errvecd(2,:),'-g+')
+loglog(epvec,errvecd(3,:),'-r^')
+loglog(epvec,errvec(1,:),'b','LineWidth',3)
+loglog(epvec,errvec(2,:),'g','LineWidth',3)
+loglog(epvec,errvec(3,:),'r','LineWidth',3)
 hold off
-xlabel('\sigma')
+xlabel('\epsilon')
 ylabel('average error')
 ptsstr=strcat(', x\in[',num2str(aa),',',num2str(bb),'],');
 title(strcat(fstr,ptsstr,spacestr))

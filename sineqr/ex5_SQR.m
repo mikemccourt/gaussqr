@@ -3,7 +3,7 @@
 % We consider two choices:
 %     General functions with arbitrary "BC" embedded in [0,L]
 %     Functions which are homogeneous on [0,L]
-% These tests will fix L, sigma and beta and consider an increase in N
+% These tests will fix L, ep and beta and consider an increase in N
 % Points will be evenly spaced at first, althought we could consider other
 %   choices of point distributions
 % For the embedded setting, the embedding cushion will be fixed.  The
@@ -18,7 +18,7 @@ Nvec = 10:5:100;
 % The orders (smoothness) of the kernel to consider
 betavec = 1:5;
 % The kernel shape parameter
-sigma = .1;
+ep = .1;
 % The length of the domain
 L = 1;
 % The embedding width for nonhomogeneous functions
@@ -34,7 +34,7 @@ Mfactor = 4.5;
 
 % Define the eigenfunctions and eigenvalues
 sinfunc = @(n,L,x) sqrt(2/L)*sin(pi*x*n/L);
-lamfunc = @(n,L,sigma,beta) ((pi*n/L).^2+sigma^2).^(-beta);
+lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
@@ -98,8 +98,8 @@ for N=Nvec
             K_solve = zeros(N);
             K_eval = zeros(NN,N);
             for n=1:N
-                K_solve(:,n) = sobfunc(x,x(n),L,sigma,beta);
-                K_eval(:,n) = sobfunc(xx,x(n),L,sigma,beta);
+                K_solve(:,n) = cmatern(x,x(n),L,ep,beta);
+                K_eval(:,n) = cmatern(xx,x(n),L,ep,beta);
             end
             b = K_solve\y;
             yp = K_eval*b;
@@ -112,7 +112,7 @@ for N=Nvec
             R2 = R(:,N+1:end);
             opts.UT = true;
             Rhat = linsolve(R1,R2,opts);
-            lambda = lamfunc(n,L,sigma,beta);
+            lambda = lamfunc(n,L,ep,beta);
             D = diag(lambda);
             D1 = diag(lambda(1:N));
             D2 = diag(lambda(N+1:end));
@@ -134,5 +134,5 @@ warning on
 semilogy(Nvec,errvec,'linewidth',2)
 xlabel('input points N')
 ylabel('RMS relative error')
-title(strcat(fstr,sprintf('x\\in[%g,%g], ',embed*L,(1-embed)*L),sprintf('\\sigma=%g',sigma)))
+title(strcat(fstr,sprintf('x\\in[%g,%g], ',embed*L,(1-embed)*L),sprintf('\\epsilon=%g',ep)))
 legend('\beta=1','\beta=2','\beta=3','\beta=4','\beta=5','location','northeast')
