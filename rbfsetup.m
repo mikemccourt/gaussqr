@@ -8,16 +8,24 @@ thisOS = system_dependent('getos');
 
 if(strfind(thisOS,'Windows')>0) % We are in Windows
     sourceDir = strcat(thisDir,'\source');
+      gaussqrDir = strcat(sourceDir,'\gaussqr');
+        gqrauxiliaryDir = strcat(gaussqrDir,'\auxiliary');
+      utilitiesDir = strcat(sourceDir,'\utilities');
+    
     exampleDir = strcat(thisDir,'\examples');
     otherDir = strcat(thisDir,'\fromothers');
     sineqrDir = strcat(thisDir,'\sineqr');
 else % We are in Unix
     sourceDir = strcat(thisDir,'/source');
+      gaussqrDir = strcat(sourceDir,'/gaussqr');
+        gqrauxiliaryDir = strcat(gaussqrDir,'/auxiliary');
+      utilitiesDir = strcat(sourceDir,'/utilities');
+      
     exampleDir = strcat(thisDir,'/examples');
     otherDir = strcat(thisDir,'/fromothers');
     sineqrDir = strcat(thisDir,'/sineqr');
 end
-addpath(sourceDir,exampleDir,otherDir,sineqrDir,1);
+addpath(sourceDir,gaussqrDir,exampleDir,gqrauxiliaryDir,utilitiesDir,otherDir,sineqrDir,1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Setup global constants and parameters
