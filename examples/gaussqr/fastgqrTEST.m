@@ -11,7 +11,7 @@ beta = (1+(2*ep/alpha)^2)^.25;
 ba = beta*alpha;
 delta2 = .5*alpha^2*(beta^2-1);
 
-phi = rbfphi(1:M,x,ep,alpha);
+phi = gqr_phi(1:M,x,ep,alpha);
 X = zeros(N,M);
 H = zeros(N,M);
 L = zeros(M);
@@ -53,7 +53,7 @@ Hp = fliplr(HermitePoly(M));
 
 % Next important result
 % This deals with the recurrence, and the Frobenius matrix
-norm( X'*D*diag(x) - ( (L\(G\Ts)*G*L)*X'*D + [zeros(M-1,N);rbfphi(M+1,x,ep,alpha)'*sqrt(gamma(M+1)/(beta*2^M))/(beta*alpha)] ) )
+norm( X'*D*diag(x) - ( (L\(G\Ts)*G*L)*X'*D + [zeros(M-1,N);gqr_phi(M+1,x,ep,alpha)'*sqrt(gamma(M+1)/(beta*2^M))/(beta*alpha)] ) )
 norm( L\(G\Ts)*G*L - [[zeros(M-1,1),eye(M-1)];-Hp(1:M)/Hp(M+1)]/(ba) )
 
 

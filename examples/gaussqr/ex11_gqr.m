@@ -303,20 +303,20 @@ for tn=1:nsteps
             Fdir(k) = errcompute(Funew,Fsol);
             
             ap = length(AMFpts);
-%             Marr = rbfformMarr([0;0],[],2*ap);
+%             Marr = gqr_formMarr([0;0],[],2*ap);
 %             Marr = [1 1 2 1 2 1 2 2  3 2 3 2 3 3 4 3;1 2 2 3 3 4 4 5  5 6 6 7 7 8 8 9];
 %             Marr = [1 1 2 1 2 1 2 2  1 2 3 1 2 3 1 2;1 2 2 3 3 4 4 5  7 6 5 8 7 6 9 8];
-%            Marr = rbfformMarr([couplewidth+1;ap]);
+%            Marr = gqr_formMarr([couplewidth+1;ap]);
 %            beta = (1+(2*ep/alpha)^2)^.25;
 %            delta2 = .5*alpha^2*(beta^2-1);
 %            Lvec = (alpha^2/(alpha^2+delta2+ep^2))* ...
 %                      (ep^2/(alpha^2+delta2+ep^2)).^(sum(Marr)-2);
 %            L1 = diag(Lvec(1:ap));
 %            L2 = diag(Lvec(ap+1:end));
-%            phiFull = rbfphi(Marr,AMFpts,ep,alpha);
+%            phiFull = gqr_phi(Marr,AMFpts,ep,alpha);
 %            phi1 = phiFull(:,1:ap);
 %            phi2 = phiFull(:,ap+1:end);
-%            phix = rbfphi(Marr,Fx(FAifa,:),ep,alpha,[1 0]);
+%            phix = gqr_phi(Marr,Fx(FAifa,:),ep,alpha,[1 0]);
 %            phix1 = phix(:,1:ap);
 %            phix2 = phix(:,ap+1:end);
 %            A_psi = phiFull*[eye(ap);L2*(phi2'*pinv(phi1'))/L1];
@@ -328,12 +328,12 @@ for tn=1:nsteps
 %            Funew = Fmat\Frhs;
 %            Fval(k) = errcompute(Funew,Fsol);
             
-%             Marr = rbfformMarr([couplewidth+1;ap],[],floor(.7*ap));
-            Marr = rbfformMarr([couplewidth+1;ap],[],ap);
-            phiA = rbfphi(Marr,AMFpts,ep,alpha);
-            phiAx = rbfphi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
-            phiB = rbfphi(Marr,BMFpts,ep,alpha);
-            phiBx = rbfphi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
+%             Marr = gqr_formMarr([couplewidth+1;ap],[],floor(.7*ap));
+            Marr = gqr_formMarr([couplewidth+1;ap],[],ap);
+            phiA = gqr_phi(Marr,AMFpts,ep,alpha);
+            phiAx = gqr_phi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
+            phiB = gqr_phi(Marr,BMFpts,ep,alpha);
+            phiBx = gqr_phi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
 
             Fmat(FBifa,[FAcou,FAifa]) = phiAx/phiA;
             Fmat(FBifa,[FBcou,FBifa]) = -phiBx/phiB;
@@ -350,11 +350,11 @@ for tn=1:nsteps
             epv = epvec(epi);
         end
 
-        Marr = rbfformMarr([couplewidth+1;ap],[],ap);
-        phiA = rbfphi(Marr,AMFpts,epv,alpha);
-        phiAx = rbfphi(Marr,Fx(FBifa,:),epv,alpha,[1 0]);
-        phiB = rbfphi(Marr,BMFpts,epv,alpha);
-        phiBx = rbfphi(Marr,Fx(FBifa,:),epv,alpha,[1 0]);
+        Marr = gqr_formMarr([couplewidth+1;ap],[],ap);
+        phiA = gqr_phi(Marr,AMFpts,epv,alpha);
+        phiAx = gqr_phi(Marr,Fx(FBifa,:),epv,alpha,[1 0]);
+        phiB = gqr_phi(Marr,BMFpts,epv,alpha);
+        phiBx = gqr_phi(Marr,Fx(FBifa,:),epv,alpha,[1 0]);
 
         Fmat(FBifa,[FAcou,FAifa]) = phiAx/phiA;
         Fmat(FBifa,[FBcou,FBifa]) = -phiBx/phiB;

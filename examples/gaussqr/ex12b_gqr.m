@@ -58,11 +58,11 @@ for N=Nvec
     x = pickpoints(-3,3,N,'cheb');
     xR = pickpoints(-3,3,regscale*N,'cheb');
     
-    GQR = rbfqr_solve(x,uf(x,0),ep,alpha);
-    GQRr = rbfqrr_solve(xR,uf(xR,0),ep,alpha);
+    GQR = gqr_solve(x,uf(x,0),ep,alpha);
+    GQRr = gqr_rsolve(xR,uf(xR,0),ep,alpha);
     for d=0:4
-        errmatQ(d+1,k) = errcompute(rbfqr_eval(GQR,xx,d),uf(xx,d));
-        errmatR(d+1,k) = errcompute(rbfqr_eval(GQRr,xx,d),uf(xx,d));
+        errmatQ(d+1,k) = errcompute(gqr_eval(GQR,xx,d),uf(xx,d));
+        errmatR(d+1,k) = errcompute(gqr_eval(GQRr,xx,d),uf(xx,d));
     end
   
     k = k + 1;

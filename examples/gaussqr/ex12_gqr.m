@@ -83,13 +83,13 @@ errvecR2d = [];
 errvecR1d = [];
 k = 1;
 for ep=epvec
-    GQR = rbfqr_solve(x,u,ep,alpha);
-    errvecQ1d(k) = errcompute(rbfqr_eval(GQR,x,1),ud);
-    errvecQ2d(k) = errcompute(rbfqr_eval(GQR,x,2),ud2);
+    GQR = gqr_solve(x,u,ep,alpha);
+    errvecQ1d(k) = errcompute(gqr_eval(GQR,x,1),ud);
+    errvecQ2d(k) = errcompute(gqr_eval(GQR,x,2),ud2);
     
-    GQR = rbfqrr_solve(x,u,ep,alpha);
-    errvecR1d(k) = errcompute(rbfqr_eval(GQR,x,1),ud);
-    errvecR2d(k) = errcompute(rbfqr_eval(GQR,x,2),ud2);
+    GQR = gqr_rsolve(x,u,ep,alpha);
+    errvecR1d(k) = errcompute(gqr_eval(GQR,x,1),ud);
+    errvecR2d(k) = errcompute(gqr_eval(GQR,x,2),ud2);
   
     k = k + 1;
 end

@@ -24,8 +24,8 @@ for N=Nvec
     k = 1;
     for ep=epvec
         [x,spacestr] = pickpoints(aa,bb,N,spaceopt,ep);
-        rbfqrOBJ = rbfqr_solve(x,yf(x),ep,alpha);
-        yp = rbfqr_eval(rbfqrOBJ,xx);
+        GQR = gqr_solve(x,yf(x),ep,alpha);
+        yp = gqr_eval(GQR,xx);
         errvec(n,k) = errcompute(yp,yy);
         k = k+1;
     end

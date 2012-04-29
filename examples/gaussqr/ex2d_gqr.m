@@ -25,7 +25,7 @@ tic
 status = 'Finding alpha values'
 k = 1;
 for ep=epvecr
-    alphavals(k) = rbfalphasearch(ep,[-1,-1,-1,-1,-1],[1,1,1,1,1]);
+    alphavals(k) = gqr_alphasearch(ep,[-1,-1,-1,-1,-1],[1,1,1,1,1]);
     k = k+1;
 end
 Total_time = toc
@@ -38,10 +38,10 @@ for N=Nvec
     y = yf(x);
     k = 1;
     for ep=epvecr
-        rbfqrOBJ = rbfqrr_solve(x,y,ep,alphavals(k));
-        yp = rbfqr_eval(rbfqrOBJ,xx);
+        GQR = gqr_rsolve(x,y,ep,alphavals(k));
+        yp = gqr_eval(GQR,xx);
         errvecr(j,k) = errcompute(yp,yy,NN-N);
-        fprintf(' %g ',rbfqrOBJ.alpha)
+        fprintf(' %g ',GQR.alpha)
 %         fprintf(' %d ',k)
         k = k+1;
     end

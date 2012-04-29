@@ -16,7 +16,7 @@ AN = [4,8,16,32,64,128];
 BN = [4,8,16,32,64,128];
 epopt1 = [.989,.9886,1.0512,.9267,.8861,.8030];
 rfrac1 = [.9,.5,.3,.3,.2,.1];
-ind = 6; % Handles the number of points
+ind = 2; % Handles the number of points
 count = 1; % Handles the number of time steps
 restart = 30; % GMRES restart value
 
@@ -282,7 +282,7 @@ for tn=1:nsteps
         % If requested, this will do a parameter search
         % Otherwise, skip this for loop
         if not(isempty(epvec))
-            Marr = rbfformMarr([couplewidth+1;ap],[],floor(regfrac*ap));
+            Marr = gqr_formMarr([couplewidth+1;ap],[],floor(regfrac*ap));
             epstruct.Marr = Marr;
             epstruct.alpha = alpha;
             epstruct.AMFpts = AMFpts;
@@ -307,11 +307,11 @@ for tn=1:nsteps
         k = 1;
         if length(epvec)>2
             for ep=epvec
-                Marr = rbfformMarr([couplewidth+1;ap],[],floor(regfrac*ap));
-                phiA = rbfphi(Marr,AMFpts,ep,alpha);
-                phiAx = rbfphi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
-                phiB = rbfphi(Marr,BMFpts,ep,alpha);
-                phiBx = rbfphi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
+                Marr = gqr_formMarr([couplewidth+1;ap],[],floor(regfrac*ap));
+                phiA = gqr_phi(Marr,AMFpts,ep,alpha);
+                phiAx = gqr_phi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
+                phiB = gqr_phi(Marr,BMFpts,ep,alpha);
+                phiBx = gqr_phi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
     
                 FmatMF(FBifa,:) = zeros(size(FmatMF(FBifa,:)));
                 FmatMF(FBifa,[FAcou,FAifa]) = phiAx/phiA;
@@ -328,11 +328,11 @@ for tn=1:nsteps
             epv = epvec(epi);
         end
 
-        Marr = rbfformMarr([couplewidth+1;ap],[],floor(regfrac*ap));
-        phiA = rbfphi(Marr,AMFpts,epv,alpha);
-        phiAx = rbfphi(Marr,Fx(FBifa,:),epv,alpha,[1 0]);
-        phiB = rbfphi(Marr,BMFpts,epv,alpha);
-        phiBx = rbfphi(Marr,Fx(FBifa,:),epv,alpha,[1 0]);
+        Marr = gqr_formMarr([couplewidth+1;ap],[],floor(regfrac*ap));
+        phiA = gqr_phi(Marr,AMFpts,epv,alpha);
+        phiAx = gqr_phi(Marr,Fx(FBifa,:),epv,alpha,[1 0]);
+        phiB = gqr_phi(Marr,BMFpts,epv,alpha);
+        phiBx = gqr_phi(Marr,Fx(FBifa,:),epv,alpha,[1 0]);
 
         FmatMF(FBifa,:) = zeros(size(FmatMF(FBifa,:)));
         FmatMF(FBifa,[FAcou,FAifa]) = phiAx/phiA;

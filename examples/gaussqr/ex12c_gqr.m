@@ -12,7 +12,6 @@
 %   Trefethen: Cheb
 %   Collocation 2D
 %   Collocation 1D
-%   GaussQR 2D
 %   GaussQRr 2D
 
 rbfsetup
@@ -66,15 +65,14 @@ end
 
 N = size(x,1);
 errvecR2d = [];
-% errvecQ2d = [];
 errvecR1d = [];
 errvecQ1d = [];
 k = 1;
 alpha = 3;
 for ep=epvec
-  [ep,alpha,Marr,lam] = rbfsolveprep(0,x,ep,alpha);
-  phiMat = rbfphi(Marr,x,ep,alpha);
-  phiMat2d = rbfphi(Marr,x,ep,alpha,2);
+  [ep,alpha,Marr,lam] = gqr_solveprep(0,x,ep,alpha);
+  phiMat = gqr_phi(Marr,x,ep,alpha);
+  phiMat2d = gqr_phi(Marr,x,ep,alpha,2);
   [Q,R] = qr(phiMat);
   R1 = R(:,1:N);
   R2 = R(:,N+1:end);
@@ -89,21 +87,17 @@ for ep=epvec
   L = kron(I,D2) + kron(D2,I);
   errvecQ1d(k) = errcompute(L*u,Lfu);
   
-  [ep,alpha,Marr] = rbfsolveprep(1,x,ep,alpha);
-  phiMat = rbfphi(Marr,x,ep,alpha);
-  phiMat2d = rbfphi(Marr,x,ep,alpha,2);
+  [ep,alpha,Marr] = gqr_solveprep(1,x,ep,alpha);
+  phiMat = gqr_phi(Marr,x,ep,alpha);
+  phiMat2d = gqr_phi(Marr,x,ep,alpha,2);
   D2 = phiMat2d/phiMat;
   L = kron(I,D2) + kron(D2,I);
   errvecR1d(k) = errcompute(L*u,Lfu);
   
-  % Note that alpha was defined earlier in rbfsolveprep
-  GQR = rbfqrr_solve(pts,u,ep,alpha);
-  Lu = rbfqr_eval(GQR,pts,[2,0]) + rbfqr_eval(GQR,pts,[0,2]);
+  % Note that alpha was defined earlier in gqr_solveprep
+  GQR = gqr_rsolve(pts,u,ep,alpha);
+  Lu = gqr_eval(GQR,pts,[2,0]) + gqr_eval(GQR,pts,[0,2]);
   errvecR2d(k) = errcompute(Lu,Lfu);
-  
-%   GQR = rbfqr_solve(pts,u,ep,alpha);
-%   Lu = rbfqr_eval(GQR,pts,[2,0]) + rbfqr_eval(GQR,pts,[0,2]);
-%   errvecQ2d(k) = errcompute(Lu,Lfu);
   
   k = k + 1;
 end

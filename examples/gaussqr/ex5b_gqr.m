@@ -69,9 +69,9 @@ for ep = epvec
   if Mextramax~=0
       M = min(M,abs(Mextramax));
   end
-  Marr = rbfformMarr(M);
-  phiMat = rbfphi(Marr,t,ep,alpha);
-  phiMatD2 = rbfphi(Marr,t(2:end-1),ep,alpha,2);
+  Marr = gqr_formMarr(M);
+  phiMat = gqr_phi(Marr,t,ep,alpha);
+  phiMatD2 = gqr_phi(Marr,t(2:end-1),ep,alpha,2);
 
   [Q,R] = qr(phiMat);
   R1 = R(:,1:N);
@@ -86,15 +86,15 @@ for ep = epvec
   A = [phiMat(1,:);phiMatD2;phiMat(end,:)]*[eye(N);Rbar];
   coef = A\rhs;
 
-  rbfqrOBJ.reg   = false;
-  rbfqrOBJ.ep    = ep;
-  rbfqrOBJ.alpha = alpha;
-  rbfqrOBJ.N     = N;
-  rbfqrOBJ.coef  = coef;
-  rbfqrOBJ.Rbar  = Rbar;
-  rbfqrOBJ.Marr  = Marr;
+  GQR.reg   = false;
+  GQR.ep    = ep;
+  GQR.alpha = alpha;
+  GQR.N     = N;
+  GQR.coef  = coef;
+  GQR.Rbar  = Rbar;
+  GQR.Marr  = Marr;
 
-  err_GQR(k) = errcompute(rbfqr_eval(rbfqrOBJ,xx),exact(xx));
+  err_GQR(k) = errcompute(gqr_eval(GQR,xx),exact(xx));
   k = k+1;
 end
 
@@ -102,25 +102,25 @@ end
 err_GQRr = [];
 Mfactor = .5;
 M = Mfactor*N;
-Marr = rbfformMarr(M);
+Marr = gqr_formMarr(M);
 rhs = [exact(t(1));f(t(2:end-1));exact(t(end))];
 k = 1;
 for ep=epvec
-%  alpha = rbfalphasearch(ep,-1,1); % bounds of the problem: [-1,1]
+%  alpha = gqr_alphasearch(ep,-1,1); % bounds of the problem: [-1,1]
   alpha = 1;
-  phiMat = rbfphi(Marr,t,ep,alpha);
-  phiMatD2 = rbfphi(Marr,t(2:end-1),ep,alpha,2);
+  phiMat = gqr_phi(Marr,t,ep,alpha);
+  phiMatD2 = gqr_phi(Marr,t(2:end-1),ep,alpha,2);
   A = [phiMat(1,:);phiMatD2;phiMat(end,:)];
   coef = A\rhs;
 
-  rbfqrOBJ.reg   = true;
-  rbfqrOBJ.ep    = ep;
-  rbfqrOBJ.alpha = alpha;
-  rbfqrOBJ.N     = N;
-  rbfqrOBJ.coef  = coef;
-  rbfqrOBJ.Marr  = Marr;
+  GQR.reg   = true;
+  GQR.ep    = ep;
+  GQR.alpha = alpha;
+  GQR.N     = N;
+  GQR.coef  = coef;
+  GQR.Marr  = Marr;
 
-  err_GQRr(k) = errcompute(rbfqr_eval(rbfqrOBJ,xx),exact(xx));
+  err_GQRr(k) = errcompute(gqr_eval(GQR,xx),exact(xx));
   k = k+1;
 end
 

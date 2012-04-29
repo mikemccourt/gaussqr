@@ -31,7 +31,7 @@ for N=Nvec
     c = computeQReig(M,x,ep,alpha,b);
     timeMN = toc;
     tic
-    phi = rbfphi(1:M,x,ep,alpha);
+    phi = gqr_phi(1:M,x,ep,alpha);
     c = phi\b;
     slowMN = toc;
     fprintf('%d\t%d\t%g\t%g\n',M,N,timeMN,slowMN)
@@ -44,14 +44,14 @@ Mvec = [4,8,16,32,64,128,256,512,1024];
 b = rand(N,1);
 
 for M=Mvec
-    r = rbfroots(M,ep,alpha);
+    r = gqr_roots(M,ep,alpha);
     x = pickpoints(-r,r,N);
     c = zeros(M,1);
     tic
     c = computeQReig(M,x,ep,alpha,b);
     timeMN = toc;
     tic
-    phi = rbfphi(1:M,x,ep,alpha);
+    phi = gqr_phi(1:M,x,ep,alpha);
     c = phi\b;
     slowMN = toc;
 %    rank(phi) % just so that I know

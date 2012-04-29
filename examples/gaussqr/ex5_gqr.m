@@ -42,9 +42,9 @@ for ep=epvec
     if Mextramax~=0
         M = min(M,abs(Mextramax));
     end
-    Marr = rbfformMarr(M);
-    phiMat = rbfphi(Marr,x,ep,alpha);
-    phiMatD2 = rbfphi(Marr,x(2:end-1),ep,alpha,2); % Only interior derivatives needed
+    Marr = gqr_formMarr(M);
+    phiMat = gqr_phi(Marr,x,ep,alpha);
+    phiMatD2 = gqr_phi(Marr,x(2:end-1),ep,alpha,2); % Only interior derivatives needed
 
     [Q,R] = qr(phiMat);
     R1 = R(:,1:N);
@@ -62,21 +62,21 @@ for ep=epvec
     coef = A\rhs;
     warning on MATLAB:nearlySingularMatrix
     
-    rbfqrOBJ.reg   = false;
-    rbfqrOBJ.ep    = ep;
-    rbfqrOBJ.alpha = alpha;
-    rbfqrOBJ.N     = N;
-    rbfqrOBJ.coef  = coef;
-    rbfqrOBJ.Rbar  = Rbar;
-    rbfqrOBJ.Marr  = Marr;
+    GQR.reg   = false;
+    GQR.ep    = ep;
+    GQR.alpha = alpha;
+    GQR.N     = N;
+    GQR.coef  = coef;
+    GQR.Rbar  = Rbar;
+    GQR.Marr  = Marr;
     
-    yp = rbfqr_eval(rbfqrOBJ,xx);
+    yp = gqr_eval(GQR,xx);
     errvec(ie) = errcompute(yp,yy);
     
     M = Mfactor*N;
-    Marr = rbfformMarr(M);
-    phiMat = rbfphi(Marr,x,ep,alpha);
-    phiMatD2 = rbfphi(Marr,x(2:end-1),ep,alpha,2); % Only interior derivatives needed
+    Marr = gqr_formMarr(M);
+    phiMat = gqr_phi(Marr,x,ep,alpha);
+    phiMatD2 = gqr_phi(Marr,x(2:end-1),ep,alpha,2); % Only interior derivatives needed
     
     A = [phiMat(1,:);phiMatD2;phiMat(end,:)];
     rhs = [1;cosh(x(2:end-1));cosh(1)];
@@ -84,14 +84,14 @@ for ep=epvec
     coef = A\rhs;
     warning on MATLAB:nearlySingularMatrix
     
-    rbfqrOBJ.reg   = true;
-    rbfqrOBJ.ep    = ep;
-    rbfqrOBJ.alpha = alpha;
-    rbfqrOBJ.N     = N;
-    rbfqrOBJ.coef  = coef;
-    rbfqrOBJ.Marr  = Marr;
+    GQR.reg   = true;
+    GQR.ep    = ep;
+    GQR.alpha = alpha;
+    GQR.N     = N;
+    GQR.coef  = coef;
+    GQR.Marr  = Marr;
     
-    yp = rbfqr_eval(rbfqrOBJ,xx);
+    yp = gqr_eval(GQR,xx);
     errvecREG(ie) = errcompute(yp,yy);
     
     ie = ie + 1;

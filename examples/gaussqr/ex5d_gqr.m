@@ -76,9 +76,9 @@ for N=5:10
     bi = setdiff(1:size(x,1),b)';
     Nvec(m) = size(x,1);
     
-    [ep,alpha,Marr] = rbfsolveprep(1,x,ep,alpha);
-    phiMat = rbfphi(Marr,x(b,:),ep,alpha);
-    phiMat2d = rbfphi(Marr,x(bi,:),ep,alpha,[2,0])+rbfphi(Marr,x(bi,:),ep,alpha,[0,2]);
+    [ep,alpha,Marr] = gqr_solveprep(1,x,ep,alpha);
+    phiMat = gqr_phi(Marr,x(b,:),ep,alpha);
+    phiMat2d = gqr_phi(Marr,x(bi,:),ep,alpha,[2,0])+gqr_phi(Marr,x(bi,:),ep,alpha,[0,2]);
     A = [phiMat2d;phiMat];
     rhs = zeros(length(x),1);
     rhs(1:length(bi)) = f(x(bi,1),x(bi,2));
@@ -92,7 +92,7 @@ for N=5:10
     GQR.N = length(x);
     GQR.coef = coef;
     
-    uGQR = rbfqr_eval(GQR,ptsEVAL);
+    uGQR = gqr_eval(GQR,ptsEVAL);
     errvecR2D(m) = errcompute(uGQR,usol);
     m = m+1;
 end
@@ -185,9 +185,9 @@ for N=5:12
     bi = setdiff(1:size(x,1),b)';
     Nvec(m) = size(x,1);
 
-    [ep,alpha,Marr] = rbfsolveprep(1,x,ep,alpha);
-    phiMat = rbfphi(Marr,x(b,:),ep,alpha);
-    phiMat2d = rbfphi(Marr,x(bi,:),ep,alpha,[2,0])+rbfphi(Marr,x(bi,:),ep,alpha,[0,2]);
+    [ep,alpha,Marr] = gqr_solveprep(1,x,ep,alpha);
+    phiMat = gqr_phi(Marr,x(b,:),ep,alpha);
+    phiMat2d = gqr_phi(Marr,x(bi,:),ep,alpha,[2,0])+gqr_phi(Marr,x(bi,:),ep,alpha,[0,2]);
     A = [phiMat2d;phiMat];
     rhs = zeros(length(x),1);
     rhs(1:length(bi)) = f(x(bi,1),x(bi,2));
@@ -201,7 +201,7 @@ for N=5:12
     GQR.N = Nvec(m);
     GQR.coef = coef;
 
-    uGQR = rbfqr_eval(GQR,ptsEVAL);
+    uGQR = gqr_eval(GQR,ptsEVAL);
     errvecR2D(m) = errcompute(uGQR,usol);
     m = m + 1;
 end
@@ -312,11 +312,11 @@ for N=5:12
     bi = setdiff(1:Nvec(m),[bN;bD])';
 
     % Get the preliminary RBF-QR stuff (namely Marr)
-    [ep,alpha,Marr] = rbfsolveprep(1,x,ep,alpha);
+    [ep,alpha,Marr] = gqr_solveprep(1,x,ep,alpha);
     % Build the collocation matrix
-    phiMat2d = rbfphi(Marr,x(bi,:),ep,alpha,[2,0])+rbfphi(Marr,x(bi,:),ep,alpha,[0,2]);
-    phiMat = rbfphi(Marr,x(bD,:),ep,alpha);
-    phiMat1dy = rbfphi(Marr,x(bN,:),ep,alpha,[0,1]);
+    phiMat2d = gqr_phi(Marr,x(bi,:),ep,alpha,[2,0])+gqr_phi(Marr,x(bi,:),ep,alpha,[0,2]);
+    phiMat = gqr_phi(Marr,x(bD,:),ep,alpha);
+    phiMat1dy = gqr_phi(Marr,x(bN,:),ep,alpha,[0,1]);
     A = [phiMat2d;phiMat;phiMat1dy];
     % Build the RHS
     rhs_interior = f(x(bi,1),x(bi,2));
@@ -332,7 +332,7 @@ for N=5:12
     GQR.N = Nvec(m);
     GQR.coef = coef;
 
-    uGQR = rbfqr_eval(GQR,ptsEVAL);
+    uGQR = gqr_eval(GQR,ptsEVAL);
     errvecR2D(m) = errcompute(uGQR,usol);
     m = m + 1;
 end
@@ -489,12 +489,12 @@ for N=5:12
 
     % Get the preliminary RBF-QR stuff (namely Marr)
     % Note that to get the right size, I need to account for the double BC
-    [ep,alpha,Marr] = rbfsolveprep(1,[x;x(bD,:)],ep,alpha);
+    [ep,alpha,Marr] = gqr_solveprep(1,[x;x(bD,:)],ep,alpha);
     % Build the collocation matrix
-    phiMat4d = rbfphi(Marr,x(bi,:),ep,alpha,[4,0])+rbfphi(Marr,x(bi,:),ep,alpha,[0,4])+rbfphi(Marr,x(bi,:),ep,alpha,[2,2]);
-    phiMat2d = rbfphi(Marr,x(bL,:),ep,alpha,[2,0])+rbfphi(Marr,x(bL,:),ep,alpha,[0,2]);
-    phiMat = rbfphi(Marr,x(bD,:),ep,alpha);
-    phiMat1dy = rbfphi(Marr,x(bN,:),ep,alpha,[0,1]);
+    phiMat4d = gqr_phi(Marr,x(bi,:),ep,alpha,[4,0])+gqr_phi(Marr,x(bi,:),ep,alpha,[0,4])+gqr_phi(Marr,x(bi,:),ep,alpha,[2,2]);
+    phiMat2d = gqr_phi(Marr,x(bL,:),ep,alpha,[2,0])+gqr_phi(Marr,x(bL,:),ep,alpha,[0,2]);
+    phiMat = gqr_phi(Marr,x(bD,:),ep,alpha);
+    phiMat1dy = gqr_phi(Marr,x(bN,:),ep,alpha,[0,1]);
     A = [phiMat4d;phiMat2d;phiMat;phiMat1dy];
     % Build the RHS
     rhs_interior = f(x(bi,1),x(bi,2));
@@ -511,7 +511,7 @@ for N=5:12
     GQR.N = size([x;x(bD,:)],1); % Double BC
     GQR.coef = coef;
 
-    uGQR = rbfqr_eval(GQR,ptsEVAL);
+    uGQR = gqr_eval(GQR,ptsEVAL);
     errvecR2D(m) = errcompute(uGQR,usol);
     m = m + 1;
 end

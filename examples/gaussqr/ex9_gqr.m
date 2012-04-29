@@ -24,16 +24,16 @@ for N=Nvec
     yy = yf(xx);
     j = 1;
     for ep=epvec
-        clear rbfqrOBJ yp
+        clear GQR yp
         rbfsetup
-        alpha = rbfalphasearch(ep,aa,bb);
+        alpha = gqr_alphasearch(ep,aa,bb);
         tic
-        rbfqrOBJ = rbfqr_solve(x,y,ep,alpha);
+        GQR = gqr_solve(x,y,ep,alpha);
         times1d(i,j) = toc;
         tic
-        yp = rbfqr_eval(rbfqrOBJ,xx);
+        yp = gqr_eval(GQR,xx);
         teval1d(i,j) = toc;
-        Msize1d(i,j) = size(rbfqrOBJ.Marr,2);
+        Msize1d(i,j) = size(GQR.Marr,2);
         j = j+1;
         fprintf(' %d ',j)
     end
@@ -59,16 +59,16 @@ for N=Nvec
     yy = yf(xx);
     j = 1;
     for ep=epvec
-        clear rbfqrOBJ yp
+        clear GQR yp
         rbfsetup
-        alpha = rbfalphasearch(ep,aa,bb);
+        alpha = gqr_alphasearch(ep,aa,bb);
         tic
-        rbfqrOBJ = rbfqr_solve(x,y,ep,alpha);
+        GQR = gqr_solve(x,y,ep,alpha);
         times2d(i,j) = toc;
         tic
-        yp = rbfqr_eval(rbfqrOBJ,xx);
+        yp = gqr_eval(GQR,xx);
         teval2d(i,j) = toc;
-        Msize2d(i,j) = size(rbfqrOBJ.Marr,2);
+        Msize2d(i,j) = size(GQR.Marr,2);
         j = j+1;
         fprintf(' %d ',j)
     end

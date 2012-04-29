@@ -30,10 +30,10 @@ ie = 1;
 for ep=epvec
     ia = 1;
     for alpha=alphavec
-        rbfqrOBJ = rbfqr_solve(x,y,ep,alpha);
-        yp = rbfqr_eval(rbfqrOBJ,xx);
+        GQR = gqr_solve(x,y,ep,alpha);
+        yp = gqr_eval(GQR,xx);
         errvec(ie,ia) = errcompute(yp,yy);
-        condvec(ie,ia) = strcmp(rbfqrOBJ.warnid,'');
+        condvec(ie,ia) = strcmp(GQR.warnid,'');
         ia = ia + 1;
     end
     

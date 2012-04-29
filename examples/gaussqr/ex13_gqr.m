@@ -72,9 +72,9 @@ for bN=bvec
     usol = fsol(ptsEVAL(:,1),ptsEVAL(:,2));
     
     % Solve the particular solution problem indirectly
-    [ep,alpha,Marr] = rbfsolveprep(1,ptsGQR,ep,alpha);
-    phiMat = rbfphi(Marr,ptsGQR,ep,alpha);
-    phiMat2d = rbfphi(Marr,ptsGQR,ep,alpha,[2,0])+rbfphi(Marr,ptsGQR,ep,alpha,[0,2]);
+    [ep,alpha,Marr] = gqr_solveprep(1,ptsGQR,ep,alpha);
+    phiMat = gqr_phi(Marr,ptsGQR,ep,alpha);
+    phiMat2d = gqr_phi(Marr,ptsGQR,ep,alpha,[2,0])+gqr_phi(Marr,ptsGQR,ep,alpha,[0,2]);
     A = phiMat2d - lambda^2*phiMat;
     rhs = f(ptsGQR(:,1),ptsGQR(:,2));
     coef = A\rhs;
@@ -94,10 +94,10 @@ for bN=bvec
 %     ptsBDY = pick2Dpoints([-1,-1],[1 1],sqrt(GQR.N));
     ptsBDY = ptsBDY(find(any(abs(ptsBDY)==1,2)),:);
     ptsFULL = [ptsGQR;ptsBDY];
-    [ep,alpha,Marr] = rbfsolveprep(1,ptsFULL,ep,alpha);
-    phiMat = rbfphi(Marr,ptsGQR,ep,alpha);
-    phiMatBC = rbfphi(Marr,ptsBDY,ep,alpha);
-    phiMat2d = rbfphi(Marr,ptsGQR,ep,alpha,[2,0])+rbfphi(Marr,ptsGQR,ep,alpha,[0,2]);
+    [ep,alpha,Marr] = gqr_solveprep(1,ptsFULL,ep,alpha);
+    phiMat = gqr_phi(Marr,ptsGQR,ep,alpha);
+    phiMatBC = gqr_phi(Marr,ptsBDY,ep,alpha);
+    phiMat2d = gqr_phi(Marr,ptsGQR,ep,alpha,[2,0])+gqr_phi(Marr,ptsGQR,ep,alpha,[0,2]);
     A = [phiMat2d - lambda^2*phiMat;phiMatBC];
     rhs = [f(ptsGQR(:,1),ptsGQR(:,2));fsol(ptsBDY(:,1),ptsBDY(:,2))];
     coef = A\rhs;
@@ -111,25 +111,25 @@ for bN=bvec
     GQRfull.coef = coef;
     
     % Now enforce the boundary with MFS
-    uPonBDY = rbfqr_eval(GQR,ptsMFScoll);
+    uPonBDY = gqr_eval(GQR,ptsMFScoll);
     rhs = fsol(ptsMFScoll(:,1),ptsMFScoll(:,2)) - uPonBDY;
     DM_coll = DistanceMatrix(ptsMFScoll,ptsMFSsource);
     A_coll = Hfs(DM_coll);
     coefMFS = A_coll\rhs;
     
     % Also consider improved MFS with full GaussQR
-    uPonBDY = rbfqr_eval(GQRfull,ptsMFScoll);
+    uPonBDY = gqr_eval(GQRfull,ptsMFScoll);
     rhs = fsol(ptsMFScoll(:,1),ptsMFScoll(:,2)) - uPonBDY;
     DM_coll = DistanceMatrix(ptsMFScoll,ptsMFSsource);
     A_coll = Hfs(DM_coll);
     coefMFSimp = A_coll\rhs;
     
     % Now evaluate the full solution at the error points
-    uP_eval = rbfqr_eval(GQR,ptsEVAL);
+    uP_eval = gqr_eval(GQR,ptsEVAL);
     DM_eval = DistanceMatrix(ptsEVAL,ptsMFSsource);
     A_eval = Hfs(DM_eval);
     uF_eval = A_eval*coefMFS;
-    uPi_eval = rbfqr_eval(GQRfull,ptsEVAL);
+    uPi_eval = gqr_eval(GQRfull,ptsEVAL);
     uFi_eval = A_eval*coefMFSimp;
     errMPS(m) = errcompute(uF_eval+uP_eval,usol);
     errGQR(m) = errcompute(rbfqr_eval(GQRfull,ptsEVAL),usol);

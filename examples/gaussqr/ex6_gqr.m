@@ -28,8 +28,8 @@ for i=1:length(Mfrac)
         y = yf(x);
         xx = pickpoints(-3,3,NN);
         yy = yf(xx);
-        RBFQR = rbfqrr_solve(x,y,ep,alpha,M);
-        yp = rbfqr_eval(RBFQR,xx);
+        RBFQR = gqr_rsolve(x,y,ep,alpha,M);
+        yp = gqr_eval(RBFQR,xx);
         errs(i,j) = errcompute(yp,yy);
     end
 end

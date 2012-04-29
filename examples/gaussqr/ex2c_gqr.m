@@ -58,8 +58,8 @@ for N=Nvec
     y = yf(x);
     k = 1;
     for ep=epvecr
-        rbfqrOBJ = rbfqrr_solve(x,y,ep);
-        yp = rbfqr_eval(rbfqrOBJ,xx);
+        GQR = gqr_rsolve(x,y,ep);
+        yp = gqr_eval(GQR,xx);
         errvecr(j,k) = errcompute(yp,yy);
         k = k+1;
     end

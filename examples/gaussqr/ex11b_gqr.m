@@ -86,9 +86,9 @@ for ep=epvec
 
     ap = length(FAind);
     bp = length(FBind);
-%     Marr = rbfformMarr([0;0],[],ap+bp);
+%     Marr = gqr_formMarr([0;0],[],ap+bp);
 %     Marr = [1 1 2 1 2 1 2 2  1 2 3 1 2 3 1 2;1 2 2 3 3 4 4 5  7 6 5 8 7 6 9 8];
-    Marr = rbfformMarr([couplewidth+1;ap]);
+    Marr = gqr_formMarr([couplewidth+1;ap]);
     beta = (1+(2*ep/alpha)^2)^.25;
     delta2 = .5*alpha^2*(beta^2-1);
     Lvec = (alpha^2/(alpha^2+delta2+ep^2))* ...
@@ -96,20 +96,20 @@ for ep=epvec
     L1 = diag(Lvec(1:ap));
     L2 = diag(Lvec(ap+1:end));
     
-    phiA = rbfphi(Marr,AMFpts,ep,alpha);
+    phiA = gqr_phi(Marr,AMFpts,ep,alpha);
     phiA1 = phiA(:,1:ap);
     phiA2 = phiA(:,ap+1:end);
-    phiAx = rbfphi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
+    phiAx = gqr_phi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
     phiAx1 = phiAx(:,1:ap);
     phiAx2 = phiAx(:,ap+1:end);
     Abar = [eye(ap);L2*(phiA2'*pinv(phiA1'))/L1];
     A_psi = phiA*Abar;
     A_psi_x = phiAx*Abar;
     
-%     phiB = rbfphi(Marr,BMFpts,ep,alpha);
+%     phiB = gqr_phi(Marr,BMFpts,ep,alpha);
 %     phiB1 = phiB(:,1:bp);
 %     phiB2 = phiB(:,bp+1:end);
-%     phiBx = rbfphi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
+%     phiBx = gqr_phi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
 %     phiBx1 = phiBx(:,1:bp);
 %     phiBx2 = phiBx(:,bp+1:end);
 %     Bbar = [eye(ap);L2*(phiB2'*pinv(phiB1'))/L1];
@@ -122,12 +122,12 @@ for ep=epvec
     PS_QR = Dmat*yFx;
     QR_x(k) = errcompute(PS_QR,true_x);
     
-    Marr = rbfformMarr([couplewidth+1;ap],[],floor(.7*ap));
-%     Marr = rbfformMarr([0;0],[],floor(.7*ap));
-    phiA = rbfphi(Marr,AMFpts,ep,alpha);
-    phiAx = rbfphi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
-%     phiB = rbfphi(Marr,BMFpts,ep,alpha);
-%     phiBx = rbfphi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
+    Marr = gqr_formMarr([couplewidth+1;ap],[],floor(.7*ap));
+%     Marr = gqr_formMarr([0;0],[],floor(.7*ap));
+    phiA = gqr_phi(Marr,AMFpts,ep,alpha);
+    phiAx = gqr_phi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
+%     phiB = gqr_phi(Marr,BMFpts,ep,alpha);
+%     phiBx = gqr_phi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
 
 %     Dmat(:,[FAcou,FAifa]) = phiAx/phiA;
 %     Dmat(:,[FBcou,FBifa]) = -phiBx/phiB;

@@ -15,7 +15,7 @@ for index=indexvec
         erra = zeros(1,Na);
         j = 1;
         for alpha=alphavec
-            erra(j) = quadl(@(x)rbfphi(index,x',ep,alpha)'.^2.*weightfunc(alpha,x),a,b);
+            erra(j) = quadl(@(x)gqr_phi(index,x',ep,alpha)'.^2.*weightfunc(alpha,x),a,b);
             j = j+1;
         end
         subplot(length(indexvec),length(epvec),k)

@@ -18,8 +18,8 @@ i = 1;
 for ep=epvec
     j = 1;
     for M=Mvec
-        RBF = rbfqrr_solve(x,y,ep,alpha,M);
-        yp = rbfqr_eval(RBF,xx);
+        RBF = gqr_rsolve(x,y,ep,alpha,M);
+        yp = gqr_eval(RBF,xx);
         errs(i,j) = errcompute(yp,yy);
         j = j+1;
     end

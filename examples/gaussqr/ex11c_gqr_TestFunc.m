@@ -18,10 +18,10 @@ function errval = ex11c_gqr_TestFunc(ep,epstruct)
         FmatFD = [];
     end
 
-    phiA = rbfphi(Marr,AMFpts,ep,alpha);
-    phiAx = rbfphi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
-    phiB = rbfphi(Marr,BMFpts,ep,alpha);
-    phiBx = rbfphi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
+    phiA = gqr_phi(Marr,AMFpts,ep,alpha);
+    phiAx = gqr_phi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
+    phiB = gqr_phi(Marr,BMFpts,ep,alpha);
+    phiBx = gqr_phi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
 
     FmatMF(FBifa,:) = zeros(size(FmatMF(FBifa,:)));
     FmatMF(FBifa,[FAcou,FAifa]) = phiAx/phiA;

@@ -15,8 +15,8 @@ for N=Nvec
         for M=Mvec
             a = 1;
             for alpha=alphavec
-                Marr = rbfformMarr(M);
-                phi = rbfphi(Marr,x,ep,alpha);
+                Marr = gqr_formMarr(M);
+                phi = gqr_phi(Marr,x,ep,alpha);
                 errs(a,m) = cond(phi);
                 a = a+1;
             end
