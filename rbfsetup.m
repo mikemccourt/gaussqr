@@ -11,6 +11,7 @@ if(strfind(thisOS,'Windows')>0) % We are in Windows
       gaussqrDir = strcat(sourceDir,'\gaussqr');
         gqrauxiliaryDir = strcat(gaussqrDir,'\auxiliary');
       utilitiesDir = strcat(sourceDir,'\utilities');
+      maternqrDir = strcat(sourceDir,'\maternqr');
     
     exampleDir = strcat(thisDir,'\examples');
     otherDir = strcat(thisDir,'\fromothers');
