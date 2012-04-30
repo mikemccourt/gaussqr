@@ -12,15 +12,6 @@ function p = mqr_phi(Marr,x,L,deriv)
 %
 % Note: minimum M value is 1
 
-global GAUSSQR_PARAMETERS
-if ~isstruct(GAUSSQR_PARAMETERS)
-    error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
-end
-asympttol = GAUSSQR_PARAMETERS.RBFPHI_EXP_TOL;
-fastphi = GAUSSQR_PARAMETERS.FAST_PHI_EVALUATION;
-
-% Here we define: n as the number of data points
-%                 s as the dimension of the data
 [Mr Mc] = size(Marr);
 [n xc] = size(x);
 

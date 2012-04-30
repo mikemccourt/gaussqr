@@ -56,16 +56,6 @@ switch fopt
         error('This function does not exist')
 end
 
-% This determines how many extra basis functions should be added to the
-% RBF-QR evaluation to get the necessary accuracy: M = Mfactor*N
-% Actually picking a good value for this may be difficult
-% I guess the minimum should be something like 1.1
-Mfactor = 15.5;
-
-% Define the eigenfunctions and eigenvalues
-sinfunc = @(n,L,x) sqrt(2/L)*sin(pi*x*n/L);
-lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
-
 % Selecting some points in the domain, not including the boundary
 aa = embed*L; bb = (1-embed)*L;
 xx = pickpoints(aa,bb,NN);
@@ -98,21 +88,8 @@ for N=Nvec
     
     k = 1;
     for ep=epvec
-        M = ceil(Mfactor*N);
-        n = 1:M;
-        S = sinfunc(n,L,x);
-        [Q,R] = qr(S);
-        R1 = R(:,1:N);
-        R2 = R(:,N+1:end);
-        opts.UT = true;
-        Rhat = linsolve(R1,R2,opts);
-        lambda = lamfunc(n,L,ep,beta);
-        D1 = repmat(lambda(1:N),M-N,1);
-        D2 = repmat(lambda(N+1:end)',1,N);
-        Rbar = D2.*Rhat'./D1;
-        b = (S*[I;Rbar])\y;
-        SS = sinfunc(n,L,xx);
-        yp = (SS*[I;Rbar])*b;
+        MQR = mqr_solve(x,y,L,ep,beta);
+        yp = mqr_eval(MQR,xx);
         errvec(i,k) = errcompute(yp,yy);
         
         for j=1:N
