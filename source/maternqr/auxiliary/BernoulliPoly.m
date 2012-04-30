@@ -14,13 +14,18 @@ if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
 end
 bn = GAUSSQR_PARAMETERS.BERNOULLI_NUMBERS;
+usesymbolic = GAUSSQR_PARAMETERS.SYMBOLIC_TOOLBOX_AVAILABLE;
 
-if(n>length(bn)-1)
-    error('Bernoulli polynomials of degree>%d must be computed with toolbox',length(bn)-1)
+if usesymbolic
+    b = mfun('bernoulli',n,x);
+else
+    if(n>length(bn)-1)
+        error('Bernoulli polynomials of degree>%d must be computed with toolbox',length(bn)-1)
+    end
+
+    N = size(x,1);
+
+    B = repmat(bn(1:n+1).*exp(gammaln(n+1)-gammaln((0:n)+1)-gammaln(n-(0:n)+1)),N,1);
+    X = repmat(x,1,n+1).^repmat(n-(0:n),N,1);
+    b = sum(B.*X,2);
 end
-
-N = size(x,1);
-
-B = repmat(bn(1:n+1).*exp(gammaln(n+1)-gammaln((0:n)+1)-gammaln(n-(0:n)+1)),N,1);
-X = repmat(x,1,n+1).^repmat(n-(0:n),N,1);
-b = sum(B.*X,2);
