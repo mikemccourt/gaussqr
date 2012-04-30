@@ -9,11 +9,18 @@ function b = BernoulliPoly(n,x)
 %
 % Outputs: b - the Bernoulli polynomial of order n at x
 
+global GAUSSQR_PARAMETERS
+if ~isstruct(GAUSSQR_PARAMETERS)
+    error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
+end
+bn = GAUSSQR_PARAMETERS.BERNOULLI_NUMBERS;
+
+if(n>length(bn)-1)
+    error('Bernoulli polynomials of degree>%d must be computed with toolbox',length(bn)-1)
+end
+
 N = size(x,1);
 
-b = zeros(N,1);
-for m=0:n
-    sp = repmat((-1).^(0:m).*exp(gammaln(m+1)-gammaln((0:m)+1)-gammaln(m-(0:m)+1)),N,1).*...
-        (repmat(x,1,m+1)+repmat(0:m,N,1)).^n;
-    b = b + sum(sp,2)/(m+1);
-end
+B = repmat(bn(1:n+1).*exp(gammaln(n+1)-gammaln((0:n)+1)-gammaln(n-(0:n)+1)),N,1);
+X = repmat(x,1,n+1).^repmat(n-(0:n),N,1);
+b = sum(B.*X,2);

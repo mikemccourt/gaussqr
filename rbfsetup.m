@@ -39,8 +39,12 @@ addpath(sourceDir,gaussqrDir,examplesDir,gqrauxiliaryDir,mqrauxiliaryDir,utiliti
 global GAUSSQR_PARAMETERS
 
 % Checks if the spline toolbox is available
-% This is used to produce some results for the SineQR stuff
+% This is used to produce some results for the MaternQR stuff
 GAUSSQR_PARAMETERS.SPLINE_TOOLBOX_AVAILABLE = length(findstr('splines',path))>0;
+
+% Checks if the symbolic toolbox is available
+% This is used to produce some results for the MaternQR stuff
+GAUSSQR_PARAMETERS.SYMBOLIC_TOOLBOX_AVAILABLE = length(findstr('symbolic',path))>0;
 
 % At what point should the asymptotic approximation to Hermite be used
 % Anything between 35-60 you shouldn't be able to tell the difference
@@ -52,6 +56,15 @@ GAUSSQR_PARAMETERS.HERMITE_COEFFICIENTS = cell(GAUSSQR_PARAMETERS.HERMITE_ASYMPT
 for k=1:GAUSSQR_PARAMETERS.HERMITE_ASYMPTOTIC_MIN_INDEX
     GAUSSQR_PARAMETERS.HERMITE_COEFFICIENTS{k} = HermitePoly(k-1);
 end
+
+% Finds all the Bernoulli numbers which are needed for the Bernoulli
+% polynomial computation.  This is only necessary if the symbolic
+% toolbox is not available.
+% This is only the first 30, for polynomials greater, you need to
+% have the symbolic toolbox
+GAUSSQR_PARAMETERS.BERNOULLI_NUMBERS = [1 -1/2 1/6 0 -1/30 0 1/42 0 -1/30 0 5/66 0 ...
+    -691/2730 0 7/6 0 -3617/510 0 43867/798 0 -174611/330 0 854513/138 0 ...
+    -236364091/2730 0 8553013/6 0 -23749461029/870 0 8615841276005/14322];
 
 % Parameters which determine how the difference between two
 % vectors is computed.
@@ -174,6 +187,6 @@ GAUSSQR_PARAMETERS.FAST_PHI_EVALUATION = 0;
 % what it is, so we'll need to note it here at some point.  This value is
 % the ratio of the Mth eigenvalue to the first eigenvalues.  It can roughly
 % be used as a tolerance for the accuracy of the function.
-GAUSSQR_PARAMETERS.SUMMATION_TOLERANCE = 1e-7;
+GAUSSQR_PARAMETERS.SUMMATION_TOLERANCE = 1e-14;
 
 end
