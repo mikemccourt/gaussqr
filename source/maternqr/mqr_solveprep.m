@@ -45,9 +45,12 @@ end
 if x~=abs(real(x))
     error('x must have nonnegative, real values only')
 end
+minx = min(x);
 maxx = max(x);
-if L<=maxx
-    L = maxx
+if minx<0
+    error('Values for MaternQR must be on [0,L], min(x)=%g',minx)
+elseif L<=maxx
+    L = maxx;
     warning('Data passed beyond [0,L] domain, resetting L=%g',L)
 end
 
