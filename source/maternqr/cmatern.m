@@ -1,5 +1,5 @@
-function [s,M] = CMatern(x,z,L,ep,beta,deriv,Mfix)
-% function [s,M] = CMatern(x,z,L,ep,beta,deriv,Mfix)
+function [s,M] = cmatern(x,z,L,ep,beta,deriv,Mfix)
+% function [s,M] = cmatern(x,z,L,ep,beta,deriv,Mfix)
 % This function evaluates the kernel defined by:
 %    K_beta(x,z) = sum_1^M lambda_n^beta phi_n(x) phi_n(z)
 % where
@@ -72,7 +72,7 @@ elseif cx~=1 | cz~=1
     error('only column vectors for x and z allowed, size(x,2)=%d, size(z,2)=%d',cx,cz)
 elseif L<=0 | length(L)~=1 | imag(L)~=0
     error('unacceptable length value L=%g',L)
-elseif ep<=0 | length(ep)~=1 | imag(ep)~=0
+elseif ep<0 | length(ep)~=1 | imag(ep)~=0
     error('unacceptable peakedness parameter ep=%g',ep)
 end
 
@@ -120,9 +120,14 @@ else
     M = Mfix;
 end
 
-% For beta==1 we have the closed form of the function
+% For certain values we have the closed form of the function
 % Otherwise we need to compute the series
-if beta==1 && Mfix==0
+if ep==0 && Mfix==0
+    bp = BernoulliPoly(2*beta,.5*(x+z)/L);
+    s1 = (BernoulliPoly(2*beta,.5*(x-z)/L) - bp).*(x>=z);
+    s2 = (BernoulliPoly(2*beta,.5*(z-x)/L) - bp).*(x<z);
+    s = exp((2*beta-1)*log(2*L)-gammaln(2*beta+1))*(s1+s2);
+elseif beta==1 && Mfix==0
     s = sinh(ep*min(x,z)).*sinh(ep*(L-max(x,z)))./(ep*sinh(L*ep));
 else
     % Should come up with a way to automate this so that it will check for
