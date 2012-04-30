@@ -90,7 +90,6 @@ for N=Nvec
     y = yf(x);
     xx = pickpoints(embed*L,(1-embed)*L,NN);
     yy = yf(xx);
-    I = eye(N);
     
     j = 1;
     for beta=betavec
@@ -104,22 +103,8 @@ for N=Nvec
             b = K_solve\y;
             yp = K_eval*b;
         else % Work with the series form
-            M = ceil(Mfactor*N);
-            n = 1:M;
-            S = sinfunc(n,L,x);
-            [Q,R] = qr(S);
-            R1 = R(:,1:N);
-            R2 = R(:,N+1:end);
-            opts.UT = true;
-            Rhat = linsolve(R1,R2,opts);
-            lambda = lamfunc(n,L,ep,beta);
-            D = diag(lambda);
-            D1 = diag(lambda(1:N));
-            D2 = diag(lambda(N+1:end));
-            Rbar = D2*Rhat'/D1;
-            b = (S*[I;Rbar])\y;
-            SS = sinfunc(n,L,xx);
-            yp = (SS*[I;Rbar])*b;
+            MQR = mqr_solve(x,y,L,ep,beta);
+            yp = mqr_eval(MQR,xx);
         end
 
         errvec(j,k) = errcompute(yp,yy);

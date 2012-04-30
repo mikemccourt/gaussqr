@@ -84,7 +84,6 @@ for N=Nvec
         [x,spacestr] = pickpoints(aa,bb,N,spaceopt);
     end
     y = yf(x);
-    I = eye(N);
     
     k = 1;
     for ep=epvec
