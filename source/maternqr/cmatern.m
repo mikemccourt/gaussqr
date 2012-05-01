@@ -8,9 +8,7 @@ function [s,M] = cmatern(x,z,L,ep,beta,deriv,Mfix)
 %    u(0)=u(L)=0, D^2u(0)=D^2u(L)=0, ..., D^{2beta}u(0)=D^{2beta}u(L)=0
 % We are calling this function the Compact Matern
 %
-% For some parameter values we can evaluate a closed form:
-%    beta = 1, or
-%    ep = 0
+% When beta=1, we can evaluate a closed form.
 % For other parameter values, we can only evaluate it with the summation
 %
 % NOTE: The accuracy of this summation is chosen at 
@@ -74,6 +72,14 @@ elseif L<=0 | length(L)~=1 | imag(L)~=0
     error('unacceptable length value L=%g',L)
 elseif ep<0 | length(ep)~=1 | imag(ep)~=0
     error('unacceptable peakedness parameter ep=%g',ep)
+elseif ep==0
+    error('For ep=0, calls should be made to ppsplinekernel')
+end
+
+if min(x)<0 | max(x)>L
+    error('This function can only be evaluated on [0,L], min(x)=%g, max(x)=%g',min(x),max(x))
+elseif min(z)<0 | max(z)>L
+    error('This function must have centers in [0,L], min(z)=%g, max(z)=%g',min(z),max(z))
 end
 
 if beta<1 | length(beta)~=1 | imag(beta)~=0 | floor(beta)~=beta
@@ -103,16 +109,9 @@ else
     M = Mfix;
 end
 
-% For certain values we have the closed form of the function
+% For beta=1 we have the closed form of the function
 % Otherwise we need to compute the series
-if ep==0 && Mfix==0
-    bp = BernoulliPoly(2*beta-deriv,(x+z)/(2*L));
-    b1 = BernoulliPoly(2*beta-deriv,(x-z)/(2*L));
-    b2 = BernoulliPoly(2*beta-deriv,(z-x)/(2*L));
-    s1 = (b1 - bp).*(x>=z);
-    s2 = ((-1)^deriv*b2 - bp).*(x<z);
-    s = (-1)^(beta+1)*exp((2*beta-1-deriv)*log(2*L)-gammaln(2*beta+1-deriv))*(s1+s2);
-elseif beta==1 && Mfix==0
+if beta==1 && Mfix==0
     s = sinh(ep*min(x,z)).*sinh(ep*(L-max(x,z)))./(ep*sinh(L*ep));
 else
     % Should come up with a way to automate this so that it will check for
