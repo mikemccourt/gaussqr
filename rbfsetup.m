@@ -187,6 +187,6 @@ GAUSSQR_PARAMETERS.FAST_PHI_EVALUATION = 0;
 % what it is, so we'll need to note it here at some point.  This value is
 % the ratio of the Mth eigenvalue to the first eigenvalues.  It can roughly
 % be used as a tolerance for the accuracy of the function.
-GAUSSQR_PARAMETERS.SUMMATION_TOLERANCE = 1e-14;
+GAUSSQR_PARAMETERS.SUMMATION_TOLERANCE = 1e-8;
 
 end

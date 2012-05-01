@@ -66,8 +66,6 @@ errvec = zeros(length(Nvec),length(epvec));
 errvecd = zeros(length(Nvec),length(epvec));
 errvecs = zeros(length(Nvec),1);
 
-% Don't care about warnings, yet
-warning off
 
 i = 1;
 for N=Nvec
@@ -83,6 +81,7 @@ for N=Nvec
     end
     y = yf(x);
     
+    fprintf('N=%d\t',N)
     k = 1;
     for ep=epvec
         MQR = mqr_solve(x,y,L,ep,beta);
@@ -93,7 +92,12 @@ for N=Nvec
             K_solve(:,j) = cmatern(x,x(j),L,ep,beta);
             K_eval(:,j) = cmatern(xx,x(j),L,ep,beta);
         end
+        
+        % Ill-conditioning will show up in the graph
+        warning off
         b = K_solve\y;
+        warning on
+        
         yp = K_eval*b;
         errvecd(i,k) = errcompute(yp,yy);
         fprintf('%d ',k)
@@ -112,7 +116,6 @@ for N=Nvec
     i = i+1;
 end
 
-warning off
 
 loglog(epvec,errvecd(1,:),'-bx')
 hold on
