@@ -64,9 +64,7 @@ yy = yf(xx);
 % Set up the error vectors to store the results
 errvec = zeros(length(Nvec),length(epvec));
 errvecd = zeros(length(Nvec),length(epvec));
-if useSplines
-    errvecs = zeros(length(Nvec),1);
-end
+errvecs = zeros(length(Nvec),1);
 
 % Don't care about warnings, yet
 warning off
@@ -98,14 +96,18 @@ for N=Nvec
         b = K_solve\y;
         yp = K_eval*b;
         errvecd(i,k) = errcompute(yp,yy);
+        fprintf('%d ',k)
         k = k+1;
     end
-        
-    if useSplines
-        sp = spapi(beta+1,x,y);
-        yp = fnval(sp,xx);
-        errvecs(i) = errcompute(yp,yy);
+    fprintf('\n')
+    
+    for j=1:N
+        K_solve(:,j) = ppsplinekernel(x,x(j),L,beta);
+        K_eval(:,j) = ppsplinekernel(xx,x(j),L,beta);
     end
+    b = K_solve\y;
+    yp = K_eval*b;
+    errvecs(i) = errcompute(yp,yy);
     
     i = i+1;
 end
@@ -119,11 +121,9 @@ loglog(epvec,errvecd(3,:),'-r^')
 loglog(epvec,errvec(1,:),'b','LineWidth',3)
 loglog(epvec,errvec(2,:),'g','LineWidth',3)
 loglog(epvec,errvec(3,:),'r','LineWidth',3)
-if useSplines
-    loglog(epvec,errvecs(1)*ones(size(epvec)),'--b','LineWidth',2)
-    loglog(epvec,errvecs(2)*ones(size(epvec)),'--g','LineWidth',2)
-    loglog(epvec,errvecs(3)*ones(size(epvec)),'--r','LineWidth',2)
-end
+loglog(epvec,errvecs(1)*ones(size(epvec)),'--b','LineWidth',2)
+loglog(epvec,errvecs(2)*ones(size(epvec)),'--g','LineWidth',2)
+loglog(epvec,errvecs(3)*ones(size(epvec)),'--r','LineWidth',2)
 hold off
 xlabel('\epsilon')
 ylabel('average error')
