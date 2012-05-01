@@ -39,9 +39,8 @@ else
     [L,ep,beta,M] = mqr_solveprep(x,L,ep,beta);
 end
 
-% Define the eigenfunctions and eigenvalues
-sinfunc = @(n,L,x) sqrt(2/L)*sin(pi*x*n/L);
-lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
+% Define the eigenvalues
+lamfunc = mqr_solveprep();
 
 % Stuff needed for the system solve
 I = eye(N);
@@ -49,7 +48,8 @@ opts.UT = true;
 
 % Form the Marr for this system, just 1:Mmax
 n = 1:M;
-S = sinfunc(n,L,x);
+S = mqr_phi(n,x,L);
+% S = sinfunc(n,L,x);
 
 % Compute the QR decomposition of the short, fat matrix
 [Q,R] = qr(S);

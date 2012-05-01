@@ -94,25 +94,8 @@ elseif deriv>2 & beta==2
     error('Second order kernel can have at most 2 derivatives, deriv=%d, beta=%d',deriv,beta)
 end
 
-% These are the eigenfunctions of the series
-% Each line below is a derivative
-sinfunc0 = @(n,L,x) sqrt(2/L)*sin(pi*x*n/L);
-switch deriv
-    case 0
-        sinfunc = @(n,L,x) sqrt(2/L)*sin(pi*x*n/L);
-    case 1
-        sinfunc = @(n,L,x) (sqrt(2/L)*ones(size(x))*(pi*n/L)).*cos(pi*x*n/L);
-    case 2
-        sinfunc = @(n,L,x) (-sqrt(2/L)*ones(size(x))*(pi*n/L).^2).*sin(pi*x*n/L);
-    case 3
-        sinfunc = @(n,L,x) (-sqrt(2/L)*ones(size(x))*(pi*n/L).^3).*cos(pi*x*n/L);
-    case 4
-        sinfunc = @(n,L,x) (sqrt(2/L)*ones(size(x))*(pi*n/L).^4).*sin(pi*x*n/L);
-    otherwise
-        error('Unacceptable derivative called, deriv=%d',deriv)
-end
 % These are the eigenvalues of the series
-lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
+lamfunc = mqr_solveprep();
 
 if Mfix==0
     M = floor(1/pi*sqrt(sumtol^(-1/beta)*(pi^2+(ep*L)^2)-(ep*L)^2));
@@ -142,8 +125,8 @@ else
     for k=1:floor(M/blocksize)
         n = Mind-blocksize+1:Mind;
 
-        Xmat = sinfunc(n,L,x);
-        Zmat = sinfunc0(n,L,z);
+        Xmat = mqr_phi(n,x,L,deriv);
+        Zmat = mqr_phi(n,z,L);
         Xmat = Xmat.*Zmat;
         Zmat = repmat(lamfunc(n,L,ep,beta),rx,1);
         Xmat = Xmat.*Zmat;
@@ -155,8 +138,8 @@ else
     if Mind>0
         n = 1:Mind;
 
-        Xmat = sinfunc(n,L,x);
-        Zmat = sinfunc0(n,L,z);
+        Xmat = mqr_phi(n,x,L,deriv);
+        Zmat = mqr_phi(n,z,L);
         Xmat = Xmat.*Zmat;
         Zmat = repmat(lamfunc(n,L,ep,beta),rx,1);
         Xmat = Xmat.*Zmat;
