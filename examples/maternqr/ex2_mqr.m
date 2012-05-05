@@ -124,19 +124,20 @@ end
 loglog(epvec,errvecd(1,:),'-bx')
 hold on
 loglog(epvec,errvecd(2,:),'-g+')
-loglog(epvec,errvecd(3,:),'-r^')
+hd = loglog(epvec,errvecd(3,:),'-r^')
 loglog(epvec,errvec(1,:),'b','LineWidth',3)
 loglog(epvec,errvec(2,:),'g','LineWidth',3)
-loglog(epvec,errvec(3,:),'r','LineWidth',3)
+hq = loglog(epvec,errvec(3,:),'r','LineWidth',3)
 loglog(epvec,errvecs(1)*ones(size(epvec)),'-ob','LineWidth',1)
 loglog(epvec,errvecs(2)*ones(size(epvec)),'-og','LineWidth',1)
-loglog(epvec,errvecs(3)*ones(size(epvec)),'-or','LineWidth',1)
+hs = loglog(epvec,errvecs(3)*ones(size(epvec)),'-or','LineWidth',1)
 loglog(epvec,errvecp(1)*ones(size(epvec)),'--b','LineWidth',2)
 loglog(epvec,errvecp(2)*ones(size(epvec)),'--g','LineWidth',2)
-loglog(epvec,errvecp(3)*ones(size(epvec)),'--r','LineWidth',2)
+hp = loglog(epvec,errvecp(3)*ones(size(epvec)),'--r','LineWidth',2)
 hold off
 xlabel('\epsilon')
 ylabel('average error')
 ptsstr=strcat(', x\in[',num2str(aa),',',num2str(bb),'],');
 title(strcat(fstr,ptsstr,spacestr))
-legend('N=10 (Direct)','N=20 (Direct)','N=40 (Direct)','N=10 (QR)','N=20 (QR)','N=40 (QR)', 'Location', 'NorthWest');
+% legend('N=10 (Direct)','N=20 (Direct)','N=40 (Direct)','N=10 (QR)','N=20 (QR)','N=40 (QR)', 'Location', 'NorthWest');
+legend([hd hq hs hp],'Direct','MaternQR','Cubic Natural Spline','PP Spline Kernel','location','northwest')
