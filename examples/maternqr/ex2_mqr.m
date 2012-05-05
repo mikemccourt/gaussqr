@@ -10,7 +10,7 @@ Nvec = [10,20,40];
 % The spacing choice for the points
 spaceopt = 'cheb';
 % The order (smoothness) of the kernel
-beta = 1;
+beta = 2;
 % The  range of kernel shape parameters to consider
 epvec =  logspace(-1,2,20);
 % The length of the domain
@@ -64,6 +64,7 @@ yy = yf(xx);
 % Set up the error vectors to store the results
 errvec = zeros(length(Nvec),length(epvec));
 errvecd = zeros(length(Nvec),length(epvec));
+errvecp = zeros(length(Nvec),1);
 errvecs = zeros(length(Nvec),1);
 
 
@@ -111,6 +112,9 @@ for N=Nvec
     end
     b = K_solve\y;
     yp = K_eval*b;
+    errvecp(i) = errcompute(yp,yy);
+    
+    yp = splinetx_natural(x,y,xx);
     errvecs(i) = errcompute(yp,yy);
     
     i = i+1;
@@ -124,9 +128,12 @@ loglog(epvec,errvecd(3,:),'-r^')
 loglog(epvec,errvec(1,:),'b','LineWidth',3)
 loglog(epvec,errvec(2,:),'g','LineWidth',3)
 loglog(epvec,errvec(3,:),'r','LineWidth',3)
-loglog(epvec,errvecs(1)*ones(size(epvec)),'--b','LineWidth',2)
-loglog(epvec,errvecs(2)*ones(size(epvec)),'--g','LineWidth',2)
-loglog(epvec,errvecs(3)*ones(size(epvec)),'--r','LineWidth',2)
+loglog(epvec,errvecs(1)*ones(size(epvec)),'-ob','LineWidth',1)
+loglog(epvec,errvecs(2)*ones(size(epvec)),'-og','LineWidth',1)
+loglog(epvec,errvecs(3)*ones(size(epvec)),'-or','LineWidth',1)
+loglog(epvec,errvecp(1)*ones(size(epvec)),'--b','LineWidth',2)
+loglog(epvec,errvecp(2)*ones(size(epvec)),'--g','LineWidth',2)
+loglog(epvec,errvecp(3)*ones(size(epvec)),'--r','LineWidth',2)
 hold off
 xlabel('\epsilon')
 ylabel('average error')
