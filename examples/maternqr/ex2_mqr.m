@@ -22,7 +22,7 @@ NN = 100;
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 2;
+fopt = 3;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -114,6 +114,7 @@ for N=Nvec
     yp = K_eval*b;
     errvecp(i) = errcompute(yp,yy);
     
+    % This only makes sense when beta=2, i.e., cubic splines
     yp = splinetx_natural(x,y,xx);
     errvecs(i) = errcompute(yp,yy);
     
