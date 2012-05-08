@@ -22,7 +22,7 @@ NN = 100;
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 3;
+fopt = 7;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -38,6 +38,7 @@ switch fopt
         embed = 0;
     case 4
         yf = @(x) 1./(1+(x/L).^2);
+        yf = @(x) 1./(1+(x/L).^2) - ((L-x)/L + 1/2*x/L);
         fstr = 'u(x) = 1/(1+(x/L)^2)';
         embed = embed_cushion;
     case 5
@@ -45,12 +46,12 @@ switch fopt
         fstr = 'u(x) = 1/(1+(x/L)^2)+.5(x/L)-1';
         embed = 0;
     case 6
-        yf = @(x) sinh(3/L*x)./(1+cosh(3/L*x));
+        yf = @(x) sinh(3/L*x)./(1+cosh(3/L*x)) - sinh(3)/(1+cosh(3))*x/L;
         fstr = 'u(x) = sinh(3x/L)./(1+cosh(3x/L))';
         embed = embed_cushion;
     case 7
         fstr = 'y(x)=cos(x)+e^{-(x-1)^2}-e^{-(x+1)^2}';
-        yf = @(x) cos(x)+exp(-(x-1).^2)-exp(-(x+1).^2);
+        yf = @(x) cos(x)+exp(-(x-1).^2)-exp(-(x+1).^2) - ((L-x)/L + (cos(L)+exp(-(L-1).^2)-exp(-(L+1).^2))*x/L);
         embed = embed_cushion;
     otherwise
         error('This function does not exist')
