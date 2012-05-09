@@ -22,7 +22,7 @@ NN = 100;
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 7;
+fopt = 6;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -41,6 +41,7 @@ switch fopt
         yf = @(x) 1./(1+(x/L).^2) - ((L-x)/L + 1/2*x/L);
         fstr = 'u(x) = 1/(1+(x/L)^2)';
         embed = embed_cushion;
+        embed = 0;
     case 5
         yf = @(x) 1./(1+(x/L).^2)-(1-.5*(x/L));
         fstr = 'u(x) = 1/(1+(x/L)^2)+.5(x/L)-1';
@@ -49,10 +50,12 @@ switch fopt
         yf = @(x) sinh(3/L*x)./(1+cosh(3/L*x)) - sinh(3)/(1+cosh(3))*x/L;
         fstr = 'u(x) = sinh(3x/L)./(1+cosh(3x/L))';
         embed = embed_cushion;
+        embed = 0;
     case 7
         fstr = 'y(x)=cos(x)+e^{-(x-1)^2}-e^{-(x+1)^2}';
         yf = @(x) cos(x)+exp(-(x-1).^2)-exp(-(x+1).^2) - ((L-x)/L + (cos(L)+exp(-(L-1).^2)-exp(-(L+1).^2))*x/L);
         embed = embed_cushion;
+        embed = 0;
     otherwise
         error('This function does not exist')
 end
@@ -116,6 +119,8 @@ for N=Nvec
     errvecp(i) = errcompute(yp,yy);
     
     % This only makes sense when beta=2, i.e., cubic splines
+    x = [0; x; L];
+    y = yf(x);
     yp = splinetx_natural(x,y,xx);
     errvecs(i) = errcompute(yp,yy);
     
