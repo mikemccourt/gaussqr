@@ -138,10 +138,9 @@ for bN=bvec
 end
 
 % Plot of error with MFS
-loglog(bNvec,[errMPS;errGQR;errMPSimp])
-ylabel('error')
+loglog(bNvec,[errMPS;errGQR;errMPSimp],'linewidth',3)
+ylabel('RMS error')
 xlabel('Collocation points')
-title('Solution via MPS')
 xlim([min(bNvec),max(bNvec)])
-legend('MPS','GaussQR','MPSimp')
+legend('MPS','GaussQR','MPS+GaussQR','location','southwest')
 %set(gca,'xtick',bNvec)
