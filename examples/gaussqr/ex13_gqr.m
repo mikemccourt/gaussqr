@@ -1,4 +1,4 @@
-% ex5d.m
+% ex13_gqr.m
 % Incorporating GaussQR into MPS
 % In honor of Graeme Fairweather's 70th birthday
 % The first problem we'll be looking at is 
