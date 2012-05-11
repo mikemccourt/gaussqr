@@ -49,7 +49,7 @@ norm(A*U - Ut*L'*G)
 T = diag(sqrt(1:M-1),1) + diag(sqrt(1:M-1),-1);
 Ts = T/(sqrt(2)*ba);
 
-% Intermediate result
+% Intermediate results to correct typos
 norm( (phi'*diag(x)-Ts*phi') - [zeros(M-1,N);gqr_phi(M+1,x,ep,alpha)'*sqrt(M/2)/(beta*alpha)] )
 
 Hp = fliplr(HermitePoly(M));
