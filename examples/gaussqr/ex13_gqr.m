@@ -132,7 +132,7 @@ for bN=bvec
     uPi_eval = gqr_eval(GQRfull,ptsEVAL);
     uFi_eval = A_eval*coefMFSimp;
     errMPS(m) = errcompute(uF_eval+uP_eval,usol);
-    errGQR(m) = errcompute(rbfqr_eval(GQRfull,ptsEVAL),usol);
+    errGQR(m) = errcompute(gqr_eval(GQRfull,ptsEVAL),usol);
     errMPSimp(m) = errcompute(uFi_eval+uPi_eval,usol);
     m = m+1;
 end
