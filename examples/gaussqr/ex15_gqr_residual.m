@@ -60,7 +60,7 @@ function k = kfunc(u_x,deriv)
 %
 % Eventually I may need to more carefully evaluate log(cosh) because the
 % actual value may be fine, but evaluating it directly may be a problem
-    kk = 1;
+    kk = 0;
     z = 2;
     C = 1;
     k0 = 1;

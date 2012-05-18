@@ -5,7 +5,8 @@ function fobj = ex15_gqr_resnorm(coef,GQR,x,uold,dt,BC,t)
     GQR.coef = coef; % Substitute in the test coefficients
     fu = ex15_gqr_residual(GQR,x,uold,dt);
     
-    BCenforce = 1;
+    BCenforce = 1/dt;
+%     BCenforce = 1;
     
     switch BC(1)
         case 0 % Dirichlet
