@@ -11,7 +11,7 @@ global GAUSSQR_PARAMETERS
 usol = @(x,t) exp(-t)*(1-x.^2);
 
 % Choose parameters for the simulation
-dt = .01;
+dt = .1;
 T = 10*dt; % Final time (T=dt is one time step)
 ep = .01;
 alpha = 1;
@@ -20,9 +20,10 @@ NN = 100; % Error evaluation points
 
 % Choose physical parameters for the diffusivity
 % Setting kk = 0 will convert the problem back to a linear problem
-DIFF_kk = 0;
-DIFF_z = 2;
-DIFF_C = 1;
+% Defaults: kk=1,z=2,C=1,k0=1
+DIFF_kk = 10;
+DIFF_z = 1;
+DIFF_C = .5;
 DIFF_k0 = 1;
 
 % Choose the boundary conditions
@@ -36,7 +37,8 @@ BC = [0 0];
 opts = optimset('Display','off');
 
 % Set up the spacial discretization
-x = pickpoints(-1,1,N,'cheb');
+point_spacing = 'even';
+x = pickpoints(-1,1,N,point_spacing);
 uold = usol(x,0);
 xx = pickpoints(-1,1,NN);
 
@@ -98,7 +100,7 @@ for t=dt:dt:T
     nlnres = ex15_gqr_resBC(newcoef,GQR,x,uold,dt,BC,t);
     fprintf('\t\t\t error of nonlin : %g\t residual : %g\n',errnln,norm(nlnres))
     
-%     plot(x,abs(utrue-ur))
+    plot(x,abs(utrue-up),'or',x,abs(utrue-ur))
 %     pause
     
     uold = ur;
