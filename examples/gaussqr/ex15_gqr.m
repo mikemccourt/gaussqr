@@ -11,7 +11,7 @@ global GAUSSQR_PARAMETERS
 usol = @(x,t) exp(-t)*(1-x.^2);
 
 % Choose parameters for the simulation
-dt = .1;
+dt = .0001;
 T = 10*dt; % Final time (T=dt is one time step)
 ep = .01;
 alpha = 1;
@@ -40,7 +40,7 @@ opts = optimset('Display','off');
 point_spacing = 'even';
 x = pickpoints(-1,1,N,point_spacing);
 uold = usol(x,0);
-xx = pickpoints(-1,1,NN);
+xx = pickpoints(-1,1,NN); % In case you want to test error elsewhere
 
 % First we must interpolate the initial condition for a guess of
 % the coefficients for the time stepping
@@ -63,7 +63,8 @@ for t=dt:dt:T
     GQRtrue = gqr_rsolve(x,utrue,ep,alpha);
     up = gqr_eval(GQRtrue,x);
     errtrue = errcompute(up,utrue);
-    fprintf('At t=%g, error of interpolant : %g\n',t,errtrue)
+    intres = ex15_gqr_resBC(GQRtrue.coef,GQR,x,uold,dt,BC,t);
+    fprintf('At t=%g, error of interp : %g\t residual : %g\n',t,errtrue,norm(intres))
     
     % Consider the linear version, with k(u_x) = 1
     % This provides an initial guess for the nonlinear solver
@@ -91,7 +92,8 @@ for t=dt:dt:T
     fprintf('\t\t\t error of linear : %g\t residual : %g\n',errlin,norm(linres))
     
     % Try the nonlinear solve, using initial guess from linear solve
-    c = GQRlin.coef;
+%     c = GQR.coef; % Previous time step solution
+    c = GQRlin.coef; % Current linear solve solution
     newcoef = lsqnonlin(@(coef) ex15_gqr_resBC(coef,GQR,x,uold,dt,BC,t),c,[],[],opts);
     GQR.coef = newcoef;
     
