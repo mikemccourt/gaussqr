@@ -27,9 +27,9 @@ function fu = ex15_gqr_resBC(coef,GQR,x,uold,dt,BC,t)
     u_x = gqr_eval(GQR,x,1);
     u_xx = gqr_eval(GQR,x,2);
     u_t = (u-uold)/dt;
-    ku_x = kfunc(u_x);
-    kpu_x = kfunc(u_x,1);
-    f_source = ffunc(x,t);
+    ku_x = kfunc(GQR,u_x);
+    kpu_x = kfunc(GQR,u_x,1);
+    f_source = ffunc(GQR,x,t);
     fu = u_t - u_xx.*(kpu_x.*u_x+ku_x) - f_source;
     
 % Apply the boundary conditions
@@ -52,17 +52,17 @@ function fu = ex15_gqr_resBC(coef,GQR,x,uold,dt,BC,t)
 end
 
 % This is the source term
-function f = ffunc(x,t)
+function f = ffunc(GQR,x,t)
     u_x = exp(-t)*(-2*x);
     u_xx = exp(-t)*(-2);
     u_t = -exp(-t)*(1-x.^2);
-    ku_x = kfunc(u_x);
-    kpu_x = kfunc(u_x,1);
+    ku_x = kfunc(GQR,u_x);
+    kpu_x = kfunc(GQR,u_x,1);
     f = u_t-u_xx.*(kpu_x.*u_x+ku_x);
 end
 
-function k = kfunc(u_x,deriv)
-% function k = kfunc(u_x,deriv)
+function k = kfunc(GQR,u_x,deriv)
+% function k = kfunc(GQR,u_x,deriv)
 % This function evaluated the diffusivity given the gradient of the
 % temperature within the reactor
 % Note right now that passing deriv=1 will produce the derivative with
@@ -71,14 +71,12 @@ function k = kfunc(u_x,deriv)
 %
 % Eventually I may need to more carefully evaluate log(cosh) because the
 % actual value may be fine, but evaluating it directly may be a problem
-%
-% Setting kk = 0 will convert the problem back to a linear problem
-    kk = 0;
-    z = 2;
-    C = 1;
-    k0 = 1;
+    kk = GQR.DIFF_kk;
+    z = GQR.DIFF_z;
+    C = GQR.DIFF_C;
+    k0 = GQR.DIFF_k0;
     B = .5*kk/z*log(1+cosh(2*z*C))-kk*C+(kk-2)*.5*log(2)/z;
-    if nargin==1
+    if nargin==2
         k = .5*kk/z*log(cosh(2*z*u_x)+cosh(2*z*C))-kk*C+(kk-2)*.5*log(2)/z-B+k0;
     else
         k = kk*sinh(2*z*u_x)./(cosh(2*z*u_x)+cosh(2*z*C));

@@ -11,12 +11,19 @@ global GAUSSQR_PARAMETERS
 usol = @(x,t) exp(-t)*(1-x.^2);
 
 % Choose parameters for the simulation
-dt = .00001;
-T = dt; % Final time (T=dt is one time step)
+dt = .01;
+T = 10*dt; % Final time (T=dt is one time step)
 ep = .01;
 alpha = 1;
 N = 40;
 NN = 100; % Error evaluation points
+
+% Choose physical parameters for the diffusivity
+% Setting kk = 0 will convert the problem back to a linear problem
+DIFF_kk = 0;
+DIFF_z = 2;
+DIFF_C = 1;
+DIFF_k0 = 1;
 
 % Choose the boundary conditions
 %   [0 0] - Dirichlet/Dirichlet
@@ -36,13 +43,20 @@ xx = pickpoints(-1,1,NN);
 % First we must interpolate the initial condition for a guess of
 % the coefficients for the time stepping
 % This provides us an opportunity to test the choices of ep and alpha
-GQRold = gqr_rsolve(x,uold,ep,alpha);
-up = gqr_eval(GQRold,x);
+GQR = gqr_rsolve(x,uold,ep,alpha);
+up = gqr_eval(GQR,x);
 errinit = errcompute(up,uold);
 fprintf('error of initial condition interpolant : %g\n\n',errinit)
 
+% Store the diffusivity coefficients for use in the residual 
+GQR.DIFF_kk = DIFF_kk;
+GQR.DIFF_z = DIFF_z;
+GQR.DIFF_C = DIFF_C;
+GQR.DIFF_k0 = DIFF_k0;
+
 % Need to perform the time stepping
 for t=dt:dt:T
+    % This is computed to know how good we could do
     utrue = usol(x,t);
     GQRtrue = gqr_rsolve(x,utrue,ep,alpha);
     up = gqr_eval(GQRtrue,x);
@@ -50,6 +64,7 @@ for t=dt:dt:T
     fprintf('At t=%g, error of interpolant : %g\n',t,errtrue)
     
     % Consider the linear version, with k(u_x) = 1
+    % This provides an initial guess for the nonlinear solver
     [ep,alpha,Marr] = gqr_solveprep(1,x,ep,alpha);
     phi = gqr_phi(Marr,x,ep,alpha);
     phixx = gqr_phi(Marr,x,ep,alpha,2);
@@ -64,7 +79,7 @@ for t=dt:dt:T
     rhs = S_f + uold/dt;
     rhs([1,end]) = utrue([1,end]); % Apply Dirichlet BC
     
-    GQRlin = GQRtrue;
+    GQRlin = GQR;
     c = A\rhs;
     GQRlin.coef = c;
     
@@ -73,7 +88,8 @@ for t=dt:dt:T
     linres = ex15_gqr_resBC(GQRlin.coef,GQRlin,x,uold,dt,BC,t);
     fprintf('\t\t\t error of linear : %g\t residual : %g\n',errlin,norm(linres))
     
-    GQR = GQRold;
+    % Try the nonlinear solve, using initial guess from linear solve
+    c = GQRlin.coef;
     newcoef = lsqnonlin(@(coef) ex15_gqr_resBC(coef,GQR,x,uold,dt,BC,t),c,[],[],opts);
     GQR.coef = newcoef;
     
@@ -82,6 +98,8 @@ for t=dt:dt:T
     nlnres = ex15_gqr_resBC(newcoef,GQR,x,uold,dt,BC,t);
     fprintf('\t\t\t error of nonlin : %g\t residual : %g\n',errnln,norm(nlnres))
     
-    plot(x,abs(utrue-ur))
-    pause
+%     plot(x,abs(utrue-ur))
+%     pause
+    
+    uold = ur;
 end
