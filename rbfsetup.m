@@ -182,6 +182,17 @@ GAUSSQR_PARAMETERS.ORTH_ROOT_SPARSE_LIMIT = 500;
 % difficult to implement, I'm just not worried about it yet
 GAUSSQR_PARAMETERS.FAST_PHI_EVALUATION = 0;
 
+% Activate this switch to allow storing phi_eval between successive
+% evaluations of an interpolant.  The point of this is to allow for the
+% user to provide different coefficients but keep eveything else the same
+% and not have to recompute phi_eval again.
+% 
+% This doesn't check to make sure that you haven't changed ep or alpha
+% or M, so you could run in to trouble.  I guess I just can't imagine a
+% situation where you'd want to evaluate an interpolant with a different ep
+% without also conducting a different solve.
+GAUSSQR_PARAMETERS.STORED_PHI_FOR_EVALUATION = 1;
+
 % This is the tolerance associated with the sobolev function which is the
 % kernel of the new operator we are working with.  I don't remember
 % what it is, so we'll need to note it here at some point.  This value is

@@ -22,12 +22,18 @@ if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
 end
 alertuser = GAUSSQR_PARAMETERS.WARNINGS_ON;
+storephi = GAUSSQR_PARAMETERS.STORED_PHI_FOR_EVALUATION;
 
 if nargin<3
     error('Insufficient inputs')
 end
 GQR.warnid = '';
 GQR.warnmsg = '';
+% Resets to allow user to change ep, alpha, or M without accidentally using
+% the old stored phi matrix for the old values
+if storephi
+    GQR.stored_x = [];
+end
 
 [N,d] = size(x);
 if N~=size(y,1)
