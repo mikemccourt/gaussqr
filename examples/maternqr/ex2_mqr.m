@@ -4,15 +4,17 @@ rbfsetup
 global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.ERROR_STYLE = 4; % Relative RMS
 useSplines = GAUSSQR_PARAMETERS.SPLINE_TOOLBOX_AVAILABLE;
+GAUSSQR_PARAMETERS.ERROR_STYLE = 2; % Relative RMS
+GAUSSQR_PARAMETERS.NORM_TYPE = inf; % Relative RMS
 
 % The range of N values to consider
-Nvec = [10,20,40];
+Nvec = [10,25,40];
 % The spacing choice for the points
 spaceopt = 'cheb';
 % The order (smoothness) of the kernel
-beta = 2;
+beta = 6;
 % The  range of kernel shape parameters to consider
-epvec =  logspace(-1,2,20);
+epvec =  logspace(0,2,20);
 % The length of the domain
 L = 1;
 % The embedding width for nonhomogeneous functions (must be <.5)
@@ -22,7 +24,7 @@ NN = 100;
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 6;
+fopt = 3;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -100,7 +102,7 @@ for N=Nvec
         
         % Ill-conditioning will show up in the graph
         warning off
-        b = K_solve\y;
+        [b,r] = linsolve(K_solve,y);
         warning on
         
         yp = K_eval*b;
@@ -114,7 +116,8 @@ for N=Nvec
         K_solve(:,j) = ppsplinekernel(x,x(j),L,beta);
         K_eval(:,j) = ppsplinekernel(xx,x(j),L,beta);
     end
-    b = K_solve\y;
+    [b,r] = linsolve(K_solve,y);
+    r
     yp = K_eval*b;
     errvecp(i) = errcompute(yp,yy);
     
@@ -135,16 +138,17 @@ hd = loglog(epvec,errvecd(3,:),'-r^');
 loglog(epvec,errvec(1,:),'b','LineWidth',3)
 loglog(epvec,errvec(2,:),'g','LineWidth',3)
 hq = loglog(epvec,errvec(3,:),'r','LineWidth',3);
-loglog(epvec,errvecs(1)*ones(size(epvec)),'-ob','LineWidth',1)
-loglog(epvec,errvecs(2)*ones(size(epvec)),'-og','LineWidth',1)
-hs = loglog(epvec,errvecs(3)*ones(size(epvec)),'-or','LineWidth',1);
+% loglog(epvec,errvecs(1)*ones(size(epvec)),'-ob','LineWidth',1)
+% loglog(epvec,errvecs(2)*ones(size(epvec)),'-og','LineWidth',1)
+% hs = loglog(epvec,errvecs(3)*ones(size(epvec)),'-or','LineWidth',1);
 loglog(epvec,errvecp(1)*ones(size(epvec)),'--b','LineWidth',2)
 loglog(epvec,errvecp(2)*ones(size(epvec)),'--g','LineWidth',2)
 hp = loglog(epvec,errvecp(3)*ones(size(epvec)),'--r','LineWidth',2);
 hold off
 xlabel('\epsilon')
-ylabel('average error')
+ylabel('absolute error, inf-norm')
 ptsstr=strcat(', x\in[',num2str(aa),',',num2str(bb),'],');
 title(strcat(fstr,ptsstr,spacestr))
 % legend('N=10 (Direct)','N=20 (Direct)','N=40 (Direct)','N=10 (QR)','N=20 (QR)','N=40 (QR)', 'Location', 'NorthWest');
-legend([hd hq hs hp],'Direct','MaternQR','Cubic Natural Spline','PP Spline Kernel','location','northwest')
+% legend([hd hq hs hp],'Direct','MaternQR','Cubic Natural Spline','PP Spline Kernel','location','northwest')
+legend([hd hq hp],'Direct','MaternQR','PP Spline Kernel','location','southwest')
