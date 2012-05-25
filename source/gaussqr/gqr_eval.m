@@ -1,6 +1,6 @@
 function y = gqr_eval(GQR,x,deriv)
 % function y = gqr_eval(GQR,x,deriv)
-% Here, the GQR object is created by gqr_solve or gqr_solve
+% Here, the GQR object is created by gqr_solve or gqr_rsolve
 % which is storage for the various items needed to do GaussQR.
 %
 % The x should be the locations you want the interpolant computed at.

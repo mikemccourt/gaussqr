@@ -3,7 +3,7 @@ function [invU,Svec,Q] = computeQReig(M,x,ep,alpha,rhs)
 %
 % This computes the decomposition
 %    P = Q * S * U
-% where: P - rbfphi(1:M,x,ep,alpha)
+% where: P - gqr_phi(1:M,x,ep,alpha)
 %        Q - from P = QR, has orthonormal columns
 %        S - diagonal matrix, such that U'*S^2*U = P'*P
 %        U - from the LDL decomposition of U'*S^2*U = P'*P
@@ -27,7 +27,7 @@ function [invU,Svec,Q] = computeQReig(M,x,ep,alpha,rhs)
 %
 % Calling: sol = computeQReig(M,x,ep,alpha,rhs)
 %          This computes only the solution to the problem
-%                  rbfphi(1:M,x,ep,alpha)*sol = rhs
+%                  gqr_phi(1:M,x,ep,alpha)*sol = rhs
 %          without returning the factorization
 %          Multiple rhs can be passed in matrix form
 %
@@ -64,13 +64,13 @@ else
         error('May only consider 1D problems, size(x,2)=%d',c)
     end
     
-    [ep,alpha] = rbfsolveprep(1,x,ep,alpha);
+    [ep,alpha] = gqr_solveprep(1,x,ep,alpha);
     
 % If the size of the problem is too small, the recurrence doesn't make
 % sense, so direct evaluation is computed
     if nargin==4
         if M<4
-            [Q,R] = qr(rbfphi(rbfformMarr(M),x,ep,alpha),0);
+            [Q,R] = qr(gqr_phi(gqr_formMarr(M),x,ep,alpha),0);
             Svec = diag(R);
             invU = triu(inv(diag(1./Svec)*R));
         else
@@ -84,7 +84,7 @@ else
             error('Only one output returned when rhs is passed')
         end
         if M<4
-            invU = linsolve(rbfphi(rbfformMarr(M),x,ep,alpha),rhs);
+            invU = linsolve(gqr_phi(gqr_formMarr(M),x,ep,alpha),rhs);
         else
             invU = computeQRsolve(M,x,ep,alpha,rhs);
         end
@@ -104,7 +104,7 @@ Q = zeros(N,M);
 
 Dx = (1+(2*ep/alpha)^2)^.25*alpha*x;
 
-phi = rbfphi(1:M,x,ep,alpha);
+phi = gqr_phi(1:M,x,ep,alpha);
 
 tmp = phi'*phi(:,[1,M-1:M]);
 d = tmp(:,2)*sqrt(M-1)/sqrt(2) - ApplyTM(tmp(:,3));
@@ -168,7 +168,7 @@ sol = zeros(M,r);
 
 Dx = (1+(2*ep/alpha)^2)^.25*alpha*x;
 
-phi = rbfphi(1:M,x,ep,alpha);
+phi = gqr_phi(1:M,x,ep,alpha);
 
 tmp = phi'*phi(:,[1,M-1:M]);
 d = tmp(:,2)*sqrt(M-1)/sqrt(2) - ApplyTM(tmp(:,3));
