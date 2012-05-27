@@ -16,11 +16,16 @@ if ~isstruct(GAUSSQR_PARAMETERS)
 end
 normtype = GAUSSQR_PARAMETERS.NORM_TYPE;
 errstyle = GAUSSQR_PARAMETERS.ERROR_STYLE;
+alertuser = GAUSSQR_PARAMETERS.WARNINGS_ON;
 
 if any(size(x)~=size(y))
     error('Input vectors have different sizes')
 elseif size(x,2)~=1 || size(y,2)~=1
-    error('Must pass column vectors')
+    if alertuser
+        warning('GAUSSQR:nonVectorError','Non-vectors passed, computing 2 norm of (:) form')
+    end
+    x = x(:);
+    y = y(:);
 end
 
 if not(exist('n'))

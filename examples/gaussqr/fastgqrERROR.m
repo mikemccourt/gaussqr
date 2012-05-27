@@ -1,9 +1,14 @@
 % Look at the error when using various N and M combinations
+rbfsetup
+global GAUSSQR_PARAMETERS
+GAUSSQR_PARAMETERS.NORM_TYPE = 2;
+GAUSSQR_PARAMETERS.ERROR_STYLE = 2;
+
 f = @(x) besselj(0,x);
 
 N = 200;
 NN = 1000;
-x = pickpoints(0,1,N);
+x = pickpoints(0,1,N,'cheb');
 xx = pickpoints(0,1,NN);
 y = f(x);
 yy = f(xx);
@@ -29,13 +34,13 @@ for M=Mvec
     Marr = gqr_formMarr(M);
     phi = gqr_phi(Marr,x,ep,alpha);
     [Q,R] = qr(phi,0);
-    errorth_true(m) = norm(Q'*Q - I);
+    errorth_true(m) = errcompute(Q'*Q,I);
     GQR.coef = R\(Q'*y);
     [yp,GQR] = gqr_eval(GQR,xx);
     errorth_Strue(m) = errcompute(yp,yy);
     
     [invU,Svec,Q] = computeQReig(M,x,ep,alpha);
-    errorth_fast(m) = norm(Q'*Q - I);
+    errorth_fast(m) = errcompute(Q'*Q,I);
     t = Q'*y;
     Mcut = min(find(abs(t)<Mtol));
     if isempty(Mcut)
@@ -47,7 +52,7 @@ for M=Mvec
     errorth_Sfast(m) = errcompute(yp,yy);
     
     [invU,Svec,Q] = computeQReig_adjusted(M,x,ep,alpha);
-    errorth_fnew(m) = norm(Q'*Q - I);
+    errorth_fnew(m) = errcompute(Q'*Q,I);
     t = Q'*y;
     Mcut = min(find(abs(t)<Mtol));
     if isempty(Mcut)
