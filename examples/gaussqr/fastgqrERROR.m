@@ -4,20 +4,20 @@ global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.NORM_TYPE = 2;
 GAUSSQR_PARAMETERS.ERROR_STYLE = 2;
 
-f = @(x) besselj(0,x);
+f = @(x) besselj(0,6*(x+1));
 
-N = 200;
+N = 300;
 NN = 1000;
-x = pickpoints(0,1,N,'cheb');
-xx = pickpoints(0,1,NN);
+x = pickpoints(-1,1,N,'halton');
+xx = pickpoints(-1,1,NN);
 y = f(x);
 yy = f(xx);
 
-Mvec = 5:5:100;
+Mvec = 4:2:36;
 ep = .001;
 alpha = 1;
 opts.UT = true;
-Mtol = 1e-13;
+Mtol = 1e-16;
 
 errorth_true = zeros(size(Mvec));
 errorth_fast = zeros(size(Mvec));
