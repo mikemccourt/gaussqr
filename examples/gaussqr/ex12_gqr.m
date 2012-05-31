@@ -48,7 +48,6 @@ drbf = @(e,r,dx) -2*e^2*dx.*exp(-(e*r).^2);
 d2rbf = @(e,r) 2*e^2*(2*(e*r).^2-1).*exp(-(e*r).^2);
 
 [D,x] = cheb(N);
-% x = 3*x; % Scale the domain if requested
 u = uf(x);
 ud = ufd(x);
 ud2 = ufd2(x);
@@ -72,9 +71,7 @@ for ep=epvec
   k = k + 1;
 end
 
-N = size(x,1);
 alpha = 3;
-I = eye(N);
 GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .7;
 
 errvecQ1d = [];

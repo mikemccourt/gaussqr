@@ -18,7 +18,7 @@ rbfsetup
 global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.ERROR_STYLE = 2; % Use absolute error
 
-N = 24;
+N = 25;
 ufunc = @(x,y) sinh(x).*cosh(y);
 Lf = @(x,y) 2*sinh(x).*cosh(y);
 ufunc = @(x,y) sin(x+y)+exp(-((x-.5).^2+(y+.25).^2));
@@ -38,7 +38,7 @@ xx = xx(:); yy = yy(:);
 u = ufunc(xx,yy);
 Lfu = Lf(xx,yy);
 D2 = D^2;
-I = eye(N+1);
+I = eye(N);
 L = kron(I,D2) + kron(D2,I);
 err_Trefethen = errcompute(L*u,Lfu);
 
@@ -63,7 +63,6 @@ for ep=epvec
   k = k + 1;
 end
 
-N = size(x,1);
 errvecR2d = [];
 errvecR1d = [];
 errvecQ1d = [];

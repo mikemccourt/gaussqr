@@ -33,10 +33,10 @@ warning off MATLAB:nearlySingularMatrix
 % Trefethen's method
 [D,t] = cheb(N);
 D2 = D^2;
-D2([1,end],:) = [1,zeros(1,N);zeros(1,N),1];
+D2([1,end],:) = [1,zeros(1,N-1);zeros(1,N-1),1];
 rhs = [exact(t(1));f(t(2:end-1));exact(t(end))];
 u = D2\rhs;
-[pcoef,S,mu] = polyfit(t,u,N);
+[pcoef,S,mu] = polyfit(t,u,N-1);
 err_Trefethen = errcompute(polyval(pcoef,xx,S,mu),exact(xx))
 
 % Kansa's method
@@ -57,7 +57,6 @@ for ep=epvec
 end
 
 % GaussQR interpolation
-N = N+1; % Off-by-one from Trefethen
 err_GQR = [];
 alpha = 1;
 rhs = [exact(t(1));f(t(2:end-1));exact(t(end))];

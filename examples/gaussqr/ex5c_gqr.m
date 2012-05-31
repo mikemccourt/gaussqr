@@ -43,7 +43,7 @@ Lrbf = @(e,r) 4*e^2*((e*r).^2-1).*exp(-(e*r).^2);
 epvec = logspace(-1,1,20);
 
 % Trefethen method first
-N = 24;
+N = 25;
 [D,x] = cheb(N);
 y = x;
 [xx,yy] = meshgrid(x,y);
@@ -52,15 +52,15 @@ usol = fsol(xx,yy);
 b = find(abs(xx)==1 | abs(yy)==1); % Identify boundaries
 
 D2 = D^2;
-I = eye(N+1);
+I = eye(N);
 k = 9; % Helmholtz parameter
 L = kron(I,D2) + kron(D2,I)+k^2*kron(I,I);
 rhs = f(xx,yy);
 
-L(b,:) = zeros(4*N,(N+1)^2); L(b,b) = eye(4*N);
-rhs(b) = zeros(4*N,1);rhs(b) = usol(b);
+L(b,:) = zeros(4*(N-1),N^2); L(b,b) = eye(4*(N-1));
+rhs(b) = zeros(4*(N-1),1);rhs(b) = usol(b);
 u = L\rhs;
-err_Trefethen = errcompute(u,usol);
+err_Trefethen = errcompute(u,usol)
 
 % Kansa unsymmetric collocation with 1D kronecker products
 r = DistanceMatrix(x,x);
@@ -71,7 +71,7 @@ for ep=epvec
     D2A = d2rbf(ep,r);
     D2 = D2A/A;
     L = kron(I,D2) + kron(D2,I) + k^2*kron(I,I);
-    L(b,:) = zeros(4*N,(N+1)^2); L(b,b) = eye(4*N);
+    L(b,:) = zeros(4*(N-1),N^2); L(b,b) = eye(4*(N-1));
     u = L\rhs;
     errvec1D(m) = errcompute(u,usol);
     m = m+1;
@@ -85,12 +85,11 @@ for ep=epvec
     A = rbf(ep,r);
     LA = Lrbf(ep,r);
     L = LA/A + k^2*kron(I,I);
-    L(b,:) = zeros(4*N,(N+1)^2); L(b,b) = eye(4*N);
+    L(b,:) = zeros(4*(N-1),N^2); L(b,b) = eye(4*(N-1));
     errvec2D(m) = errcompute(L\rhs,usol);
     m = m+1;
 end
 
-N = N+1;
 m = 1;
 errvecQ1D = [];
 alpha = 6;
