@@ -34,8 +34,13 @@ Fls = zeros(1,4);
 % User preferences
 plot_initial_conditions = 0;
 plot_solutions = 0;
-keep_me_notified = 1; % 0 - no, 1 - Newton level, 2 - gmres level
 store_solutions = 1;
+
+% -1 - print nothing to the screen
+% 0 - only print when a solution is stored
+% 1 - print outputs at the Newton solve level
+% 2 - print outputs at the linear solve level
+keep_me_notified = 0;
 
 % 0 - only compute the preconditioner once per time step
 % 1 - direct solve at each Newton step
@@ -125,7 +130,7 @@ for t=time_steps
         % Check for convergence or divergence
         if normdu/normu<du_tol
             if keep_me_notified
-                fprintf('Newton convergence: time %g, %d steps, %g tol\n',t,k,normdu)
+                fprintf('\t Newton convergence: time %g, %d steps, %g tol\n',t,k,normdu)
             end
             break
         elseif k==Nit_max
@@ -136,9 +141,12 @@ for t=time_steps
     computing_time(step) = toc;
 
     if store_solutions
-        if t==t_store(count_store)
-            sol_store{count_store} = u;
-            count_store = count_store + 1;
+        if abs(t-t_store(count_store))<1e-7
+             sol_store{count_store} = u;
+             count_store = count_store + 1;
+            if keep_me_notified>=0
+                fprintf('\t\t Solution stored at t=%g\n',t)
+            end
         end
     end
 
