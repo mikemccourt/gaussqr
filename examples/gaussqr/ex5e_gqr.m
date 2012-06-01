@@ -7,9 +7,15 @@ GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .6;
 
 clear functions % reset persistent variables
 
-N = 15;
+% Discretization choices
+N = 25;
 dt = .1;
-T = 20;
+T = 10;
+
+% Solution storage choices
+t_store = 0:5:T;
+sol_store = cell(size(t_store));
+count_store = 1;
 
 % Solution parameters
 h = 1e-7; % Jacobian-vector Finite difference parameter
@@ -27,31 +33,34 @@ Fls = zeros(1,4);
 
 % User preferences
 plot_initial_conditions = 0;
-plot_solutions = 1;
+plot_solutions = 0;
 keep_me_notified = 1; % 0 - no, 1 - Newton level, 2 - gmres level
+store_solutions = 1;
 
 % 0 - only compute the preconditioner once per time step
 % 1 - direct solve at each Newton step
 recompute_preconditioner = 1; 
 % 0 - use the full Jacobian as the preconditioner
 % 1 - use the ILUdt as the preconditioner
-use_ilu_factorization = 1; % iterative solve using ILU
+use_ilu_factorization = 0; % iterative solve using ILU
 
-uold = ex5e_gqr_res(x); % Evaluate initial condition
+u = ex5e_gqr_res(x); % Evaluate initial condition
 
 if plot_initial_conditions
-    N2 = size(x,1);
-    aold = uold(1:N2);
-    hold = uold(N2+1:end);
     X = reshape(x(:,1),N,N);
     Y = reshape(x(:,2),N,N);
-    A = reshape(aold,N,N);
-    H = reshape(hold,N,N);
+    A = reshape(u(1:N*N),N,N);
+    H = reshape(u(N*N+1:end),N,N);
     subplot(1,2,1)
-    surf(X,Y,A),title('Activator')
+    surf(X,Y,A),title('Activator'),xlabel('x'),ylabel('y')
     subplot(1,2,2)
-    surf(X,Y,H),title('Inhibitor')
+    surf(X,Y,H),title('Inhibitor'),xlabel('x'),ylabel('y')
     pause
+end
+
+if store_solutions
+    sol_store{count_store} = u;
+    count_store = count_store + 1;
 end
 
 % Store computational time
@@ -60,7 +69,7 @@ computing_time = zeros(size(time_steps));
 % Solve each time step using the Newton method
 %   J*du = -Fu
 %   u_new = u_old + du
-u = uold;
+uold = u;
 step = 1;
 for t=time_steps
     normu = norm(uold);
@@ -125,6 +134,14 @@ for t=time_steps
     end
     uold = u;
     computing_time(step) = toc;
+
+    if store_solutions
+        if t==t_store(count_store)
+            sol_store{count_store} = u;
+            count_store = count_store + 1;
+        end
+    end
+
     step = step + 1;
 end
 
