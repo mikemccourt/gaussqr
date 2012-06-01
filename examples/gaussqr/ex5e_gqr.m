@@ -42,6 +42,7 @@ end
 % Solve each time step using the Newton method
 %   J*du = -Fu
 u = uold;
+pause
 for t=dt:T
     for k=1:Nit_max
         % Create the preconditioner

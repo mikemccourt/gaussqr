@@ -65,25 +65,25 @@ if length(D2) == 0 & nargin > 1
 
     % Build the boundary condition operator (4th order)
     BC = sparse(N2,N2);
+    Bstenoff5 = [0 1 2 3 4];
+    for k=ix_LBC % x=-1 BC
+        Bloc = Bstenoff5 + k;
+        BC(k,Bloc) = stencil5;
+    end
     Bstenoff5 = [-4 -3 -2 -1 0];
     for k=ix_RBC % x=1 BC
         Bloc = Bstenoff5 + k;
-        BC(k,Bloc) = -stencil5;
+        BC(k,Bloc) = -fliplr(stencil5);
     end
-    Bstenoff5 = [0 1 2 3 4];
-    for k=ix_LBC % x=-1 BC
+    Bstenoff5 = N*[0 1 2 3 4];
+    for k=ix_BBC % y=-1 BC
         Bloc = Bstenoff5 + k;
         BC(k,Bloc) = stencil5;
     end
     Bstenoff5 = N*[-4 -3 -2 -1 0];
     for k=ix_TBC % y=1 BC
         Bloc = Bstenoff5 + k;
-        BC(k,Bloc) = stencil5;
-    end
-    Bstenoff5 = N*[0 1 2 3 4];
-    for k=ix_BBC % y=-1 BC
-        Bloc = Bstenoff5 + k;
-        BC(k,Bloc) = stencil5;
+        BC(k,Bloc) = -fliplr(stencil5);
     end
     
     % Create an identity matrix, because I'll need it later
