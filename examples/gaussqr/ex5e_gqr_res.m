@@ -31,7 +31,7 @@ function fu = ex5e_gqr_res(u,x,uold,dt,h,b)
 %          b - vector for Jacobian-vector multiplication
 % Outputs : Jfub - the approximate Jacobian-vector multiplication
 
-persistent ix_RBC ix_LBC ix_TBC ix_BBC ix_INT ix_BC D2 BC A H Aold Hold AoH I
+persistent ix_RBC ix_LBC ix_TBC ix_BBC ix_INT ix_BC D2 BC A H Aold Hold AoH I Jfu
 
 N2 = size(u,1)/2;
 N = sqrt(N2);

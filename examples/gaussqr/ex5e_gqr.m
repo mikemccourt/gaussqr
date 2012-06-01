@@ -7,7 +7,7 @@ GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .6;
 
 clear functions % reset persistent variables
 
-N = 5;
+N = 45;
 dt = .001;
 T = .001;
 h = 1e-7;
@@ -42,7 +42,6 @@ end
 % Solve each time step using the Newton method
 %   J*du = -Fu
 u = uold;
-pause
 for t=dt:T
     for k=1:Nit_max
         % Create the preconditioner
@@ -52,7 +51,10 @@ for t=dt:T
         Fu = -ex5e_gqr_res(u,x,uold,dt);
 
         % Solve the system
-        du = gmres(@(b)ex5e_gqr_res(u,x,uold,dt,h,b),Fu,gmres_restart,[],[],J);
+        [du,flag,relres,iter] = gmres(@(b)ex5e_gqr_res(u,x,uold,dt,h,b),Fu,gmres_restart,[],[],J);
+        if flag>0
+            error('gmres did not converge, flag=%d, iter=%d',flag,iter)
+        end
         
         % Perform the line search
         Fls(1) = norm(Fu);
@@ -65,6 +67,7 @@ for t=dt:T
         u = u + ls_val*du;
         
         if norm(du)<du_tol
+            fprintf('Newton convergence: time %g, %d steps, %g tol\n',t,k,norm(du))
             break
         elseif k==Nit_max
             warning('No Newton convergence in %d steps',Nit_max)
@@ -72,3 +75,12 @@ for t=dt:T
     end
     uold = u;
 end
+
+X = reshape(x(:,1),N,N);
+Y = reshape(x(:,2),N,N);
+A = reshape(u(1:N*N),N,N);
+H = reshape(u(1+N*N:end),N,N);
+subplot(1,2,1)
+surf(X,Y,A)
+subplot(1,2,2)
+surf(X,Y,H)
