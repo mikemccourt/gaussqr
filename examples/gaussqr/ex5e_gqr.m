@@ -10,10 +10,10 @@ clear functions % reset persistent variables
 % Discretization choices
 N = 25;
 dt = .1;
-T = 10;
+T = 1;
 
 % Solution storage choices
-t_store = 0:5:T;
+t_store = 0:.5:T;
 sol_store = cell(size(t_store));
 count_store = 1;
 
@@ -155,3 +155,33 @@ if plot_solutions
     subplot(1,2,2)
     surf(X,Y,H),title('Inhibitor'),xlabel('x'),ylabel('y')
 end
+
+% Worry about movies some other time
+% if store_solutions
+%     X = reshape(x(:,1),N,N);
+%     Y = reshape(x(:,2),N,N);
+%     
+%     window_size = [122 204 971 504];
+%     movie_figure = figure('Position',window_size);
+%     
+%     numframes = length(t_store);
+%     movie_matrix = moviein(numframes,movie_figure,window_size);
+%     set(movie_figure,'NextPlot','replacechildren')
+%     for k=1:numframes
+%         u = sol_store{k};
+%         A = reshape(u(1:N*N),N,N);
+%         H = reshape(u(1+N*N:end),N,N);
+%         
+%         subplot(1,2,1)
+% %         surf(X,Y,A,'EdgeColor','none') ,title(sprintf('Activator, t=%d',t_store(k)))
+%         mesh(X,Y,A) ,title(sprintf('Activator, t=%d',t_store(k)))
+%         zlim([0,.1]),shading interp,grid off,xlabel('x'),ylabel('y'),axis square
+%         subplot(1,2,2)
+%         surf(X,Y,H,'EdgeColor','none'),title(sprintf('Inhibitor, t=%d',t_store(k)))
+%         zlim([0,.1]),shading interp,grid off,xlabel('x'),ylabel('y'),axis square
+%         cmap = colormap('bone');colormap(flipud(cmap))
+%         
+% %         movie_matrix(:,k) = getframe(movie_figure,window_size);
+%         movie_matrix(:,k) = getframe(movie_figure);
+%     end
+% end
