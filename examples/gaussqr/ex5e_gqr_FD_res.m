@@ -1,20 +1,20 @@
-function fu = ex5e_gqr_res(u,x,uold,dt,h,b)
+function fu = ex5e_gqr_FD_res(u,x,uold,dt,h,b)
 % This evaluates the residual of the Geirer Meinhardt system
 % The spatial discretization is finite differences
 % The temporal discretization is Crank-Nicolson
 %
-% function fu = ex5e_gqr_res(x)
+% function fu = ex5e_gqr_FD_res(x)
 % Inputs : x - location of the FD discretization
 % Outputs : fu - initial condition
 %
-% function fu = ex5e_gqr_res(u,x,uold,dt)
+% function fu = ex5e_gqr_FD_res(u,x,uold,dt)
 % Inputs : u - values of the activator and inhibitor
 %          x - locations of the u values
 %          uold - values at the previous time step
 %          dt - time step
 % Outputs : fu - residual
 %
-% function Jfu = ex5e_gqr_res(u,x,uold,dt,jac)
+% function Jfu = ex5e_gqr_FD_res(u,x,uold,dt,jac)
 % Inputs : u - values of the activator and inhibitor
 %          x - locations of the u values
 %          uold - values at the previous time step
@@ -22,7 +22,7 @@ function fu = ex5e_gqr_res(u,x,uold,dt,h,b)
 %          jac - pass 1 to return a preconditioning Jacobian
 % Outputs : Jfu - the preconditioner (just a linearized operator)
 %
-% function Jfub = ex5e_gqr_res(u,x,uold,dt,h,b)
+% function Jfub = ex5e_gqr_FD_res(u,x,uold,dt,h,b)
 % Inputs : u - values of the activator and inhibitor
 %          x - locations of the u values
 %          uold - values at the previous time step
@@ -130,16 +130,16 @@ switch nargin
         fu = Jfu; % Return the Jacobian
     case 6
         if size(b,2)==1
-            fuh = ex5e_gqr_res(u,x,uold,dt);
-            fuhb = ex5e_gqr_res(u+h*b,x,uold,dt);
+            fuh = ex5e_gqr_FD_res(u,x,uold,dt);
+            fuhb = ex5e_gqr_FD_res(u+h*b,x,uold,dt);
             fu = 1/h*(fuhb - fuh);
         else
             fu = sparse(size(b,1),size(b,2));
-            fuh = ex5e_gqr_res(u,x,uold,dt);
+            fuh = ex5e_gqr_FD_res(u,x,uold,dt);
 
             k = 1;
             for bk=b
-                fuhb = ex5e_gqr_res(u+h*bk,x,uold,dt);
+                fuhb = ex5e_gqr_FD_res(u+h*bk,x,uold,dt);
                 fu(:,k) = 1/h*(fuhb - fuh);
                 k = k+1;
             end
