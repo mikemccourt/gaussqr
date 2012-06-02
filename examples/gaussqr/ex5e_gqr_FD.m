@@ -11,7 +11,8 @@ function ex5e_gqr_FD(N,dt,t_store,fileName)
 %                               t_store
 %                               N
 %                               x
-% NOTE: Should adapt this to use ode15s or ode23t
+%
+% The temporal discretization is Crank-Nicolson
 
 % In case an unsorted vector
 t_store = sort(t_store);
