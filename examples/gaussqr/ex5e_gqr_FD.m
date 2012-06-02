@@ -1,5 +1,5 @@
-function ex5e_gqr_FD(N,dt,t_store,fileName)
-% function ex5e_gqr_FD(N,dt,t_store,fileName)
+function [computing_time,time_steps] = ex5e_gqr_FD(N,dt,t_store,fileName)
+% function [computing_time,time_steps] = ex5e_gqr_FD(N,dt,t_store,fileName)
 % This computes the finite difference solution to the Geirer-Meinhardt
 % problem so that we can make a comparison to the GaussQR solution.  It
 % will store the values sol_store, t_store, N, x in the file gmFDsols.mat
@@ -7,7 +7,9 @@ function ex5e_gqr_FD(N,dt,t_store,fileName)
 %          dt - time step size
 %          t_store - the times at which you require the solution
 %          fileName - name of the file to store to
-% Output : Stored in fileName - sol_store
+% Output : computing_time - time required for each time step
+%          time_steps - list of time steps taken
+%          Stored in fileName - sol_store
 %                               t_store
 %                               N
 %                               x

@@ -1,5 +1,5 @@
-function ex5e_gqr_FD_ode(N,dt,t_store,fileName)
-% function ex5e_gqr_FD_ode(N,dt,t_store,fileName)
+function [computing_time,time_steps] = ex5e_gqr_FD_ode(N,dt,t_store,fileName)
+% function [computing_time,time_steps] = ex5e_gqr_FD_ode(N,dt,t_store,fileName)
 % This computes the finite difference solution to the Geirer-Meinhardt
 % problem so that we can make a comparison to the GaussQR solution.  It
 % will store the values sol_store, t_store, N, x in the file gmFDsols.mat
@@ -49,18 +49,31 @@ end
 % Save the data to the requested file
 save(fileName,'sol_store','t_store','N','x');
 
+% Return the required outputs
+time_steps = sol.x;
+computing_time = ex5e_gqr_output_function([],[],'time')
+
 end
 
 function status = ex5e_gqr_output_function(t,u,flag)
+persistent comp_time
+
 status = 0;
 if length(flag)==0
     fprintf('Solution found at t=%g\n',t)
+    comp_time = [comp_time,toc];
+    tic
 else
     switch flag
         case 'init'
             fprintf('Starting time stepping\n')
+            tic
         case 'done'
             fprintf('Completing time stepping\n')
+            comp_time = [comp_time,toc];
+        case 'time'
+            status = comp_time;
+            comp_time = [];
         otherwise
             fprintf('Unknown flag=%s\n',flag)
             status = 1
