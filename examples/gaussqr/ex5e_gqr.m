@@ -25,24 +25,6 @@ switch recompute_FDsols
         [computing_time,time_steps] = ex5e_gqr_FD_ode(N,dt,t_store,gmFDsols_file);
 end
 
-% Allocate storage for the solution
-sol_store = cell(size(t_store));
-count_store = 1;
-
-% Solution parameters
-h = 1e-7; % Jacobian-vector finite difference parameter
-gmres_restart = 30;
-Nit_max = 20; % Max Newton iterations
-du_tol = 1e-5; % Newton step length for convergence
-
-% Set up spatial, temporal discretization
-time_steps = dt:dt:T;
-x = pick2Dpoints([-1,-1],[1,1],N);
-
-% Line search values
-tls = [0 .25 .75 1];
-Fls = zeros(1,4);
-
 % User preferences
 plot_initial_conditions = 0;
 plot_solutions = 0;

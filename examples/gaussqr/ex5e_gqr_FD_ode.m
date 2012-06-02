@@ -51,7 +51,7 @@ save(fileName,'sol_store','t_store','N','x');
 
 % Return the required outputs
 time_steps = sol.x;
-computing_time = ex5e_gqr_output_function([],[],'time')
+computing_time = ex5e_gqr_output_function([],[],'time');
 
 end
 
