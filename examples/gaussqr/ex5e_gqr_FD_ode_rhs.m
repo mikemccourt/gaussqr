@@ -22,7 +22,7 @@ function [fu,M] = ex5e_gqr_FD_ode_rhs(x,u,t)
 %          t - time for function evaluation
 % Output : du - derivative evaluation
 
-persistent ix_RBC ix_LBC ix_TBC ix_BBC ix_INT ix_BC D2 BC A H Aold Hold AoH I Jfu JA J1
+persistent ix_RBC ix_LBC ix_TBC ix_BBC ix_INT ix_BC D2 BC A H AoH I Jfu JA J1
 
 % Size of the problem
 N2 = size(x,1);

@@ -2,7 +2,7 @@ function [computing_time,time_steps] = ex5e_gqr_FD(N,dt,t_store,fileName)
 % function [computing_time,time_steps] = ex5e_gqr_FD(N,dt,t_store,fileName)
 % This computes the finite difference solution to the Geirer-Meinhardt
 % problem so that we can make a comparison to the GaussQR solution.  It
-% will store the values sol_store, t_store, N, x in the file gmFDsols.mat
+% will store the values sol_store, t_store, N, x in the file fileName
 % Inputs : N - number of FD points in each dimension (N^2 total points)
 %          dt - time step size
 %          t_store - the times at which you require the solution
