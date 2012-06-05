@@ -107,8 +107,7 @@ function du = ApplyDerivative(x,ind_dxBC,ind_dyBC)
 % Inputs : x - computational grid
 %          u - function values in the form [A,H]
 % Output : du - derivative of u as described above
-    global GAUSSQR_PARAMETERS
-    Mlength = GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC;
+    global GAUSSQR_PARAMETERS    
     ep = GAUSSQR_PARAMETERS.MY_EPSILON;
     alpha = GAUSSQR_PARAMETERS.MY_ALPHA;
     
@@ -117,7 +116,9 @@ function du = ApplyDerivative(x,ind_dxBC,ind_dyBC)
     N2 = size(x,1);
     
     if nargin==3 & nargout==0
-        Marr = gqr_formMarr([0;0],[],Mlength);
+        % Set up Marr, and check if nonsensical ep or alpha passed
+        [ep,alpha,Marr] = gqr_solveprep(1,x,ep,alpha);
+        
         phi = gqr_phi(Marr,x,ep,alpha);
         [phi_Q,phi_R] = qr(phi,0);
         

@@ -27,6 +27,16 @@ x = pick2Dpoints([-1,-1],[1,1],N);
 % Set up initial conditions and mass matrix
 [u0,M] = ex5e_gqr_RBF_ode_rhs(x);
 
+% X = reshape(x(:,1),N,N);
+% Y = reshape(x(:,2),N,N);
+% A = reshape(u0(1:N*N),N,N);
+% H = reshape(u0(1+N*N:end),N,N);
+% subplot(1,2,1)
+% surf(X,Y,A)
+% subplot(1,2,2)
+% surf(X,Y,H)
+% pause
+
 % Set up the ODE solver options
 options = odeset('Mass',M ...
                  ,'MStateDependence','none' ...
@@ -34,14 +44,43 @@ options = odeset('Mass',M ...
                  ,'OutputFcn',@ex5e_gqr_output_function ...
                  );
 
-% Solve the system
-sol = ode15s(@(t,u)ex5e_gqr_RBF_ode_rhs(x,u,t),[0,T],u0,options);
+% % Solve the system
+% sol = ode15s(@(t,u)ex5e_gqr_RBF_ode_rhs(x,u,t),[0,T],u0,options);
 
-% Evaluate the solution at the requested points
-solmat = deval(sol,t_store);
-for k=1:length(t_store)
-    sol_store{k} = solmat(:,k);
+uold = u0;
+sol_store{1} = u0;
+
+u = uold;
+h = 1e-7; % Finite diff parameter
+for t_step=2:length(t_store);
+    t = t_store(t_step);
+    dt = t-t_store(t_step-1);
+    for k=1:20
+        rhs = ex5e_gqr_RBF_ode_rhs(x,u,t);
+        Fu = M*(u-uold)/dt - rhs;
+        delta_u = gmres(@(b)M*b/dt - (ex5e_gqr_RBF_ode_rhs(x,u+h*b,t) - ex5e_gqr_RBF_ode_rhs(x,u,t))/h,-Fu);
+        u = u + .4*delta_u;
+        fprintf('\tnorm(Fu)=%g, norm(delta_u)=%g\n',norm(Fu),norm(delta_u));
+    end
+    sol_store{t_step} = u;
+    uold = u;
+    
+    X = reshape(x(:,1),N,N);
+    Y = reshape(x(:,2),N,N);
+    A = reshape(u(1:N*N),N,N);
+    H = reshape(u(1+N*N:end),N,N);
+    subplot(1,2,1)
+    surf(X,Y,A),title(sprintf('Activator, t=%g',t));
+    subplot(1,2,2)
+    surf(X,Y,H),title(sprintf('Inhibitor, t=%g',t));
+    pause
 end
+
+% % Evaluate the solution at the requested points
+% solmat = deval(sol,t_store);
+% for k=1:length(t_store)
+%     sol_store{k} = solmat(:,k);
+% end
 
 % Save the data to the requested file
 save(fileName,'sol_store','t_store','N','x');
