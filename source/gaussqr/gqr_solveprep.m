@@ -14,6 +14,9 @@ function [ep,alpha,Marr,lam] = gqr_solveprep(reg,x,ep,alpha,M)
 %         M - (optional) truncation value suggested by user
 %
 % Note: for regression, there are only 3 outputs (not lam)
+%
+% Consider having this return the GQR object, which could then be passed in
+% the future elsewhere.  Would require some rewriting ...
 global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')

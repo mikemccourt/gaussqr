@@ -62,6 +62,7 @@ end
 % toolbox is not available.
 % This is only the first 30, for polynomials greater, you need to
 % have the symbolic toolbox
+%%%% MATERNQR relevant
 GAUSSQR_PARAMETERS.BERNOULLI_NUMBERS = [1 -1/2 1/6 0 -1/30 0 1/42 0 -1/30 0 5/66 0 ...
     -691/2730 0 7/6 0 -3617/510 0 43867/798 0 -174611/330 0 854513/138 0 ...
     -236364091/2730 0 8553013/6 0 -23749461029/870 0 8615841276005/14322];
@@ -75,6 +76,7 @@ GAUSSQR_PARAMETERS.BERNOULLI_NUMBERS = [1 -1/2 1/6 0 -1/30 0 1/42 0 -1/30 0 5/66
 % normtype : 1 - sum absolute values
 %            2 - sqrt of sum of squares <default>
 %            inf - largest absolute value
+%%%% MATERNQR relevant
 GAUSSQR_PARAMETERS.ERROR_STYLE = 4;
 GAUSSQR_PARAMETERS.NORM_TYPE = 2;
 
@@ -97,6 +99,7 @@ GAUSSQR_PARAMETERS.RBFPHI_EXP_TOL = 1e-4;
 % Choosing 0 means there is no upper bound.
 % If you choose a negative number, that is treated as a percentage of the
 % number of input points, ie. -50 would mean max M=1.5N
+%%%% MATERNQR relevant
 GAUSSQR_PARAMETERS.MAX_EXTRA_EFUNC = -1500;
 
 % This chooses a default global scale parameter
@@ -191,6 +194,7 @@ GAUSSQR_PARAMETERS.FAST_PHI_EVALUATION = 0;
 % or M, so you could run in to trouble.  I guess I just can't imagine a
 % situation where you'd want to evaluate an interpolant with a different ep
 % without also conducting a different solve.
+%%%% MATERNQR relevant
 GAUSSQR_PARAMETERS.STORED_PHI_FOR_EVALUATION = 1;
 
 % This is the tolerance associated with the sobolev function which is the
@@ -198,6 +202,7 @@ GAUSSQR_PARAMETERS.STORED_PHI_FOR_EVALUATION = 1;
 % what it is, so we'll need to note it here at some point.  This value is
 % the ratio of the Mth eigenvalue to the first eigenvalues.  It can roughly
 % be used as a tolerance for the accuracy of the function.
+%%%% MATERNQR relevant
 GAUSSQR_PARAMETERS.SUMMATION_TOLERANCE = 1e-15;
 
 end
