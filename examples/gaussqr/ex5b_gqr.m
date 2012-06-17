@@ -52,6 +52,7 @@ for ep=epvec
   Aeval = rbf(ep,reval);
   D2([1,end],:) = A([1,end],:);
   coef = D2\rhs;
+  fprintf('%g\t%g\n',ep,cond(D2))
   err_Kansa(k) = errcompute(Aeval*coef,exact(xx));
   k = k+1;
 end
@@ -126,12 +127,13 @@ end
 warning on MATLAB:nearlySingularMatrix
 
 % Plot the results
-loglog(epvec,err_Kansa,'b','LineWidth',3),hold on
-loglog(epvec,err_GQR,'r','LineWidth',3)
-loglog(epvec,err_GQRr,'g','LineWidth',3)
+loglog(epvec,err_GQR,'r','LineWidth',3),hold on
+loglog(epvec,err_Kansa,'b','LineWidth',2)
+%loglog(epvec,err_GQRr,'g','LineWidth',3)
 loglog(epvec,err_Trefethen*ones(size(epvec)),'--k','LineWidth',2)
 hold off
 xlabel('\epsilon')
-ylabel('absolute error')
+ylabel('absolute 2-norm error')
 title(sprintf('Collocation for a 2-pt BVP, N=%d',N))
-legend('Kansa','GaussQR','GaussQRr (M=.5N)','Direct','Location','East')
+% legend('Kansa','GaussQR','GaussQRr (M=.5N)','Direct','Location','East')
+legend('True Gauss Solution','Direct Gauss Collocation','Polynomial Collocation','Location','SouthEast')

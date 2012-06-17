@@ -15,6 +15,8 @@ if ~isstruct(GAUSSQR_PARAMETERS)
 end
 GAUSSQR_PARAMETERS.ERROR_STYLE = 2; % Use absolute error
 
+k = 7; % Helmholtz parameter
+
 % f = @(x,y) exp(-10*((y-1).^2+(x-.5).^2));
 % Solution below is u = (1-y^2)sin(pi*x)cosh(x+y)
 % fsol = @(x,y) (1-y.^2).*sin(pi*x).*cosh(x+y);
@@ -30,8 +32,10 @@ GAUSSQR_PARAMETERS.ERROR_STYLE = 2; % Use absolute error
 %      4*y.*sin(pi*x).*(10-20*y)+...
 %      (y.^2-1).*sin(pi*x).*(10-20*y).^2)
 %     + k^2*fsol(x,y);
-fsol = @(x,y) 1./(1+x.^2+y.^2);
-f = @(x,y) 8*(x.^2+y.^2).*fsol(x,y).^3-4*fsol(x,y).^2+k^2*fsol(x,y);
+% fsol = @(x,y) 1./(1+x.^2+y.^2);
+% f = @(x,y) 8*(x.^2+y.^2).*fsol(x,y).^3-4*fsol(x,y).^2+k^2*fsol(x,y);
+fsol = @(x,y) besselj(0,6*sqrt(x.^2+y.^2));
+f = @(x,y) (k^2-36)*besselj(0,6*sqrt(x.^2+y.^2));
 
 rbf = @(e,r) exp(-(e*r).^2);
 drbf = @(e,r,dx) -2*e^2*dx.*exp(-(e*r).^2);
@@ -40,10 +44,10 @@ d2rbf = @(e,r) 2*e^2*(2*(e*r).^2-1).*exp(-(e*r).^2);
 % These are the functions needed for the Laplacian
 Lrbf = @(e,r) 4*e^2*((e*r).^2-1).*exp(-(e*r).^2);
 
-epvec = logspace(-1,1,20);
+epvec = logspace(-1,1,15);
 
 % Trefethen method first
-N = 25;
+N = 19;
 [D,x] = cheb(N);
 y = x;
 [xx,yy] = meshgrid(x,y);
@@ -53,7 +57,6 @@ b = find(abs(xx)==1 | abs(yy)==1); % Identify boundaries
 
 D2 = D^2;
 I = eye(N);
-k = 9; % Helmholtz parameter
 L = kron(I,D2) + kron(D2,I)+k^2*kron(I,I);
 rhs = f(xx,yy);
 
@@ -92,7 +95,7 @@ end
 
 m = 1;
 errvecQ1D = [];
-alpha = 6;
+alpha = 1;
 for ep=epvec
     [ep,alpha,Marr,lam] = gqr_solveprep(0,x,ep,alpha);
     phiMat = gqr_phi(Marr,x,ep,alpha);
