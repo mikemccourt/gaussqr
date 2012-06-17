@@ -11,12 +11,17 @@ global GAUSSQR_PARAMETERS
 usol = @(x,t) exp(-t)*(1-x.^2);
 
 % Choose parameters for the simulation
-dt = .0001;
-T = 10*dt; % Final time (T=dt is one time step)
+dt = .05;
+T = 1; % Final time (T=dt is one time step)
 ep = .01;
 alpha = 1;
 N = 40;
 NN = 100; % Error evaluation points
+
+% Choose when to save the solution
+t_save = .1:.1:1;
+err_save = zeros(size(t_save));
+save_count = 1;
 
 % Choose physical parameters for the diffusivity
 % Setting kk = 0 will convert the problem back to a linear problem
@@ -102,8 +107,13 @@ for t=dt:dt:T
     nlnres = ex15_gqr_resBC(newcoef,GQR,x,uold,dt,BC,t);
     fprintf('\t\t\t error of nonlin : %g\t residual : %g\n',errnln,norm(nlnres))
     
-    plot(x,abs(utrue-up),'or',x,abs(utrue-ur))
+%     plot(x,abs(utrue-up),'or',x,abs(utrue-ur))
 %     pause
     
+    % Consider saving the error if required
+    if abs(t-t_save(save_count))<1e-10
+        err_save(save_count) = errnln;
+        save_count = save_count + 1;
+    end
     uold = ur;
 end
