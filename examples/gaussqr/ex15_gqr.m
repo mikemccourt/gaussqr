@@ -9,12 +9,12 @@ global GAUSSQR_PARAMETERS
 
 % True solution, also Dirichlet boundary condition
 % usol = @(x,t) exp(-t)*(1-x.^2);
-usol = @(x,t) exp(-t)*sin(pi*x);
+usol = @(x,t) exp(-t)*cos(pi*x/2);
 
 % Choose parameters for the simulation
 dt = .000001;
 T = .01; % Final time (T=dt is one time step)
-ep = .01;
+ep = 1;
 alpha = 1;
 N = 20;
 NN = 100; % Error evaluation points

@@ -13,8 +13,8 @@ function fu = ex15_gqr_resBC(coef,GQR,x,uold,dt,BC,t)
 % Need the true solution for boundary conditions
 %     usol = @(x,t) exp(-t)*(1-x.^2);
 %     usolx = @(x,t) exp(-t)*(-2*x);
-    usol = @(x,t) exp(-t)*sin(pi*x);
-    usolx = @(x,t) exp(-t)*pi*cos(pi*x);
+    usol = @(x,t) exp(-t)*cos(pi*x/2);
+    usolx = @(x,t) exp(-t)*(-pi)*sin(pi*x/2);
     
 % Apply the test coefficients
     GQR.coef = coef;
@@ -58,9 +58,9 @@ function f = ffunc(GQR,x,t)
 %     u_x = exp(-t)*(-2*x);
 %     u_xx = exp(-t)*(-2);
 %     u_t = -exp(-t)*(1-x.^2);
-    u_x = exp(-t)*pi*cos(pi*x);
-    u_xx = exp(-t)*(-pi^2)*sin(pi*x);
-    u_t = -exp(-t)*sin(pi*x);
+    u_x = exp(-t)*(-pi/2)*sin(pi*x/2);
+    u_xx = exp(-t)*(-pi^2/4)*cos(pi*x/2);
+    u_t = -exp(-t)*cos(pi*x/2);
     ku_x = kfunc(GQR,u_x);
     kpu_x = kfunc(GQR,u_x,1);
     f = u_t-u_xx.*(kpu_x.*u_x+ku_x);
