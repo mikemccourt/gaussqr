@@ -8,18 +8,20 @@ rbfsetup
 global GAUSSQR_PARAMETERS
 
 % True solution, also Dirichlet boundary condition
-usol = @(x,t) exp(-t)*(1-x.^2);
+% usol = @(x,t) exp(-t)*(1-x.^2);
+usol = @(x,t) exp(-t)*sin(pi*x);
 
 % Choose parameters for the simulation
-dt = .05;
-T = 1; % Final time (T=dt is one time step)
+dt = .000001;
+T = .01; % Final time (T=dt is one time step)
 ep = .01;
 alpha = 1;
-N = 40;
+N = 20;
 NN = 100; % Error evaluation points
 
 % Choose when to save the solution
-t_save = .1:.1:1;
+% t_save = .1:.1:1;
+t_save = .001:.001:.01;
 err_save = zeros(size(t_save));
 save_count = 1;
 
