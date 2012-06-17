@@ -16,7 +16,10 @@ function [ep,alpha,Marr,lam] = gqr_solveprep(reg,x,ep,alpha,M)
 % Note: for regression, there are only 3 outputs (not lam)
 %
 % Consider having this return the GQR object, which could then be passed in
-% the future elsewhere.  Would require some rewriting ...
+% the future elsewhere.  The GQR object would return everything except the
+% coef, which it obviously can't know yet.  This would make BVP problems
+% easier to write up.
+% Would require some rewriting ...
 global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
