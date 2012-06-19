@@ -20,6 +20,7 @@ lambda = 3;
 
 % This is the true solution of the problem
 fsol = @(x,y) sin(x.^2+y);
+fsoldy = @(x,y) cos(x.^2+y);
 % The source associated with the true solution
 f = @(x,y) 2*cos(x.^2+y)-4*x.^2.*sin(x.^2+y)-sin(x.^2+y)-lambda^2*fsol(x,y);
 
@@ -27,16 +28,17 @@ f = @(x,y) 2*cos(x.^2+y)-4*x.^2.*sin(x.^2+y)-sin(x.^2+y)-lambda^2*fsol(x,y);
 % f = @(x,y) (2-lambda^2)*exp(x+y);
 % The fundamental solution of the Helmholtz problem
 Hfs = @(r) besselk(0,lambda*r)/(2*pi);
+Hdyfs = @(x,y) -lambda*DifferenceMatrix(x(:,2),y(:,2)).*besselk(1,lambda*DistanceMatrix(x,y))./DistanceMatrix(x,y);
 
 % The number of error evalution points in each dimension
-NN = 35;
+NN = 30;
 
 % The length of the GaussQRr regression
 GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .5;
 % The global scale parameter for GaussQR
 alpha = 1;
 % The shape parameter commonly associated with RBFs
-ep = 1e-5;
+ep = 1e-6;
 
 bvec = 10:5:70;
 errMPS = [];
@@ -49,8 +51,13 @@ for bN=bvec
     % Choose the collocation points
     x = [pick2Dpoints([-1 -1],[1 1],bN);pick2Dpoints([0 0],[1 1],ceil(bN/2))];
     bx = find( x(:,1)==-1 | x(:,2)==-1 | (x(:,1)==1 & x(:,2)<=0) | (x(:,2)==1 & x(:,1)<=0) | (x(:,1)>=0 & x(:,2)==0) | (x(:,2)>=0 & x(:,1)==0) );
-    ptsMFScoll = unique(1e-8*ceil(1e8*x(bx,:)),'rows');
-    bNvec(m) = size(ptsMFScoll,1);
+    x = unique(1e-8*ceil(1e8*x(bx,:)),'rows');
+    bNvec(m) = size(x,1);
+    bN = find( x(:,2)==-1 );
+    bD = setdiff(1:bNvec(m),bN);
+    ptsMFScoll_D = x(bD,:);
+    ptsMFScoll_N = x(bN,:);
+    ptsMFScoll = [ptsMFScoll_D;ptsMFScoll_N];
     N = ceil(sqrt(bNvec(m)));
     
     % Find the MFS source points
@@ -75,7 +82,7 @@ for bN=bvec
     bx = find( x(:,1)<=0 | x(:,2)<=0 );
     x = x(bx,:);
     % Determine which points are boundary points, and which are interior
-    b = find( abs(x(:,1))==1 | abs(x(:,2))==1 | (x(:,1)==0 & x(:,2)>=0) | (x(:,1)>=0 & x(:,2)==0));
+    b = find( abs(x(:,1))==1 | abs(x(:,2))==1 | (x(:,1)==0 & x(:,2)>=0) | (x(:,1)>=0 & x(:,2)==0) );
     bi = setdiff(1:size(x,1),b)';
     ptsGQR = x(bi,:);
     Nvec(m) = size(ptsGQR,1);
@@ -96,39 +103,47 @@ for bN=bvec
     GQR.N = size(ptsGQR,1);
     GQR.coef = coef;
     
-    % Now enforce the boundary with MFS
-    uPonBDY = gqr_eval(GQR,ptsMFScoll);
-    rhs = fsol(ptsMFScoll(:,1),ptsMFScoll(:,2)) - uPonBDY;
-    DM_coll = DistanceMatrix(ptsMFScoll,ptsMFSsource);
-    A_coll = Hfs(DM_coll);
-    coefMFS = A_coll\rhs;
+    % Store the approximation length to be used later
+    M_MPS = size(GQR.Marr,2);
     
-    % Evaluate the error
-    uP_eval = gqr_eval(GQR,ptsEVAL);
-    DM_eval = DistanceMatrix(ptsEVAL,ptsMFSsource);
-    A_eval = Hfs(DM_eval);
-    uF_eval = A_eval*coefMFS;
-    errMPS(m) = errcompute(uF_eval+uP_eval,usol);
+    % Now enforce the boundary with MFS
+    uPonBDY_D = gqr_eval(GQR,ptsMFScoll_D);
+    uPonBDY_N = gqr_eval(GQR,ptsMFScoll_N,[0,1]);
+    rhs_D = fsol(ptsMFScoll_D(:,1),ptsMFScoll_D(:,2)) - uPonBDY_D;
+    rhs_N = fsoldy(ptsMFScoll_N(:,1),ptsMFScoll_N(:,2)) - uPonBDY_N;
+    A_coll_D = Hfs(DistanceMatrix(ptsMFScoll_D,ptsMFSsource));
+    A_coll_N = Hdyfs(ptsMFScoll_N,ptsMFSsource);
+    coefMFS = [A_coll_D;A_coll_N]\[rhs_D;rhs_N];
     
     % Consider the problem with just GaussQR for comparison
     % Different boundary points need to be used here than MFS
-    N = floor(.4*N^2/4); % Number of points on each side
+    N = floor(.3*N^2/4); % Number of points on each side
     x = [ [pickpoints(-1,1,N,'cheb'),-ones(N,1)];[-ones(N,1),pickpoints(-1,1,N,'cheb')];[pickpoints(-1,1,N,'cheb'),ones(N,1)];[ones(N,1),pickpoints(-1,1,N,'cheb')] ];
+%     x = pick2Dpoints([-1,-1],[1 1],6);
     x = unique(1e-8*ceil(1e8*x),'rows');
+    x = x(find(any(abs(x)==1,2)),:);
     ib = find((x(:,1)>0) & (x(:,2)==1));
     x(ib,2) = zeros(size(x(ib,2)));
     ib = find((x(:,1)==1) & (x(:,2)>0));
     x(ib,1) = zeros(size(x(ib,1)));
+    bN = find( x(:,2)==-1 );
+    bD = setdiff(1:size(x,1),bN);
+    ptsBDY_D = x(bD,:);
+    ptsBDY_N = x(bN,:);
     ptsBDY = x;
     
     % Solve the system using these different boundary points
     ptsFULL = [ptsGQR;ptsBDY];
-    [ep,alpha,Marr] = gqr_solveprep(1,ptsFULL,ep,alpha);
+    [ep,alpha,Marr] = gqr_solveprep(1,ptsFULL,ep,alpha,M_MPS);
     phiMat = gqr_phi(Marr,ptsGQR,ep,alpha);
-    phiMatBC = gqr_phi(Marr,ptsBDY,ep,alpha);
+    phiMatBC_D = gqr_phi(Marr,ptsBDY_D,ep,alpha);
+    phiMatBC_N = gqr_phi(Marr,ptsBDY_N,ep,alpha,[0,1]);
     phiMat2d = gqr_phi(Marr,ptsGQR,ep,alpha,[2,0])+gqr_phi(Marr,ptsGQR,ep,alpha,[0,2]);
-    A = [phiMat2d - lambda^2*phiMat;phiMatBC];
-    rhs = [f(ptsGQR(:,1),ptsGQR(:,2));fsol(ptsBDY(:,1),ptsBDY(:,2))];
+    A = [phiMat2d - lambda^2*phiMat;phiMatBC_N;phiMatBC_D];
+    rhs_L = f(ptsGQR(:,1),ptsGQR(:,2));
+    rhs_N = fsoldy(ptsBDY_N(:,1),ptsBDY_N(:,2));
+    rhs_D = fsol(ptsBDY_D(:,1),ptsBDY_D(:,2));
+    rhs = [rhs_L;rhs_N;rhs_D];
     coef = A\rhs;
     
     % Fill the GQR object with all the values it needs
@@ -140,11 +155,13 @@ for bN=bvec
     GQRfull.coef = coef;
     
     % Also consider improved MFS with full GaussQR
-    uPonBDY = gqr_eval(GQRfull,ptsMFScoll);
-    rhs = fsol(ptsMFScoll(:,1),ptsMFScoll(:,2)) - uPonBDY;
-    DM_coll = DistanceMatrix(ptsMFScoll,ptsMFSsource);
-    A_coll = Hfs(DM_coll);
-    coefMFSimp = A_coll\rhs;
+    uPonBDY_D = gqr_eval(GQRfull,ptsMFScoll_D);
+    uPonBDY_N = gqr_eval(GQRfull,ptsMFScoll_N,[0,1]);
+    rhs_D = fsol(ptsMFScoll_D(:,1),ptsMFScoll_D(:,2)) - uPonBDY_D;
+    rhs_N = fsoldy(ptsMFScoll_N(:,1),ptsMFScoll_N(:,2)) - uPonBDY_N;
+    A_coll_D = Hfs(DistanceMatrix(ptsMFScoll_D,ptsMFSsource));
+    A_coll_N = Hdyfs(ptsMFScoll_N,ptsMFSsource);
+    coefMFSimp = [A_coll_D;A_coll_N]\[rhs_D;rhs_N];
     
     % Now evaluate the full solution at the error points
     uP_eval = gqr_eval(GQR,ptsEVAL);
