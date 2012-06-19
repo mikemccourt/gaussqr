@@ -13,7 +13,7 @@ global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
 end
-GAUSSQR_PARAMETERS.ERROR_STYLE = 3;
+GAUSSQR_PARAMETERS.ERROR_STYLE = 4;
 GAUSSQR_PARAMETERS.NORM_TYPE = 2;
 
 % This is the wavenumber (maybe) for the Helmholtz problem
@@ -33,13 +33,13 @@ Hfs = @(r) besselk(0,lambda*r)/(2*pi);
 NN = 35;
 
 % The length of the GaussQRr regression
-GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .6;
+GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .5;
 % The global scale parameter for GaussQR
 alpha = 1;
 % The shape parameter commonly associated with RBFs
-ep = 1e-9;
+ep = 1e-5;
 
-bvec = 10:5:70;
+bvec = 10:5:80;
 errMPS = [];
 errMPSimp = [];
 errGQR = [];
@@ -87,14 +87,17 @@ for bN=bvec
     GQR.N = size(ptsGQR,1);
     GQR.coef = coef;
     
+    % Store the size of the Marr for use below, to make it fair
+    M_MPS = size(GQR.Marr,2);
+    
     % Consider the problem with just GaussQR for comparison
     % only a fixed number of boundary points are used here
-    ptsBDY = pick2Dpoints([-1,-1],[1 1],6);
+%     ptsBDY = pick2Dpoints([-1,-1],[1 1],6);
     % This line allows for more boundary points as N increases
-%     ptsBDY = pick2Dpoints([-1,-1],[1 1],sqrt(GQR.N));
+    ptsBDY = pick2Dpoints([-1,-1],[1 1],sqrt(GQR.N));
     ptsBDY = ptsBDY(find(any(abs(ptsBDY)==1,2)),:);
     ptsFULL = [ptsGQR;ptsBDY];
-    [ep,alpha,Marr] = gqr_solveprep(1,ptsFULL,ep,alpha);
+    [ep,alpha,Marr] = gqr_solveprep(1,ptsFULL,ep,alpha,M_MPS);
     phiMat = gqr_phi(Marr,ptsGQR,ep,alpha);
     phiMatBC = gqr_phi(Marr,ptsBDY,ep,alpha);
     phiMat2d = gqr_phi(Marr,ptsGQR,ep,alpha,[2,0])+gqr_phi(Marr,ptsGQR,ep,alpha,[0,2]);
@@ -137,10 +140,21 @@ for bN=bvec
     m = m+1;
 end
 
-% Plot of error with MFS
-loglog(bNvec,[errMPS;errGQR;errMPSimp],'linewidth',3)
-ylabel('RMS error')
-xlabel('Collocation points')
-xlim([min(bNvec),max(bNvec)])
-legend('MPS','GaussQR','MPS+GaussQR','location','southwest')
+% Plot of error with MPSimp
+% loglog(bNvec,[errMPS;errGQR;errMPSimp],'linewidth',3)
+% ylabel('RMS error')
+% xlabel('Collocation points')
+% xlim([min(bNvec),max(bNvec)])
+% legend('MPS','GaussQR','MPS+GaussQR','location','southwest')
 %set(gca,'xtick',bNvec)
+
+% Plot of error with just MPS
+loglog(bNvec,errMPS,'b','linewidth',3),hold on
+loglog(bNvec,errGQR,'r','linewidth',3),hold off
+ylabel('RMS relative 2-norm error')
+xlabel('Number of interior points')
+xlim([min(bNvec),max(bNvec)])
+ylim([1e-13,1e-3])
+legend('MPS','GaussQRr','location','southwest')
+set(gca,'xtick',[36,50,80,140,250])
+set(gca,'ytick',[1e-12,1e-9,1e-6,1e-3])
