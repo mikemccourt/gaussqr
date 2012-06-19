@@ -179,9 +179,11 @@ for bN=bvec
 end
 
 % Plot of error with MFS
-loglog(bNvec,[errMPS;errGQR;errMPSimp],'linewidth',3)
-ylabel('RMS error')
-xlabel('Collocation points')
+loglog(bNvec,[errGQR;errMPS;errMPSimp],'linewidth',3)
+ylabel('Absolute 2-norm error')
+xlabel('Number of interior points')
 xlim([min(bNvec),max(bNvec)])
-legend('MPS','GaussQR','MPS+GaussQR','location','southwest')
-%set(gca,'xtick',bNvec)
+ylim([1e-10,1e2])
+legend('GaussQRr','MPS','MPS+GaussQRr','location','southwest')
+set(gca,'xtick',[36,50,80,140,250])
+set(gca,'ytick',[1e-10,1e-7,1e-4,1e-1,1e2])
