@@ -6,22 +6,26 @@
 % You can read about it, and all the constants, in my thesis
 rbfsetup
 global GAUSSQR_PARAMETERS
+GAUSSQR_PARAMETERS.ERROR_STYLE = 2;
+GAUSSQR_PARAMETERS.NORM_TYPE = inf;
 
 % True solution, also Dirichlet boundary condition
 % usol = @(x,t) exp(-t)*(1-x.^2);
-usol = @(x,t) exp(-t)*cos(pi*x/2);
+% usol = @(x,t) exp(-t)*cos(pi*x/2);
+usol = @(x,t) erf((1-exp(-t))*4*x)+1;
 
 % Choose parameters for the simulation
-dt = .000001;
-T = .01; % Final time (T=dt is one time step)
-ep = 1;
+dt = .1/(2^2);
+T = 1; % Final time (T=dt is one time step)
+ep = 3.7;
+ep = .1; % What do I want to say ...
 alpha = 1;
-N = 20;
+N = 25;
 NN = 100; % Error evaluation points
 
 % Choose when to save the solution
-% t_save = .1:.1:1;
-t_save = .001:.001:.01;
+t_save = .1:.1:1;
+% t_save = .001:.001:.01;
 err_save = zeros(size(t_save));
 save_count = 1;
 
@@ -82,8 +86,10 @@ for t=dt:dt:T
     A([1,end],:) = phi([1,end],:)/dt;
     
     % Compute the source term (need to encapsulate this)
-    S_u_xx = exp(-t)*(-2);
-    S_u_t = -exp(-t)*(1-x.^2);
+%     S_u_xx = exp(-t)*(-2);
+%     S_u_t = -exp(-t)*(1-x.^2);
+    S_u_xx = 256/sqrt(pi)*(exp(-t)-1)^3*x.*exp(-16*x.^2*(1-exp(-t))^2);
+    S_u_t = 8/sqrt(pi)*exp(-t)*x.*exp(-16*x.^2*(1-exp(-t))^2);
     S_f = S_u_t-S_u_xx;
     
     rhs = S_f + uold/dt;
@@ -100,7 +106,8 @@ for t=dt:dt:T
     
     % Try the nonlinear solve, using initial guess from linear solve
 %     c = GQR.coef; % Previous time step solution
-    c = GQRlin.coef; % Current linear solve solution
+%     c = GQRlin.coef; % Current linear solve solution
+    c = GQRtrue.coef;
     newcoef = lsqnonlin(@(coef) ex15_gqr_resBC(coef,GQR,x,uold,dt,BC,t),c,[],[],opts);
     GQR.coef = newcoef;
     
