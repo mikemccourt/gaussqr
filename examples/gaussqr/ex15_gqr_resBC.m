@@ -10,6 +10,16 @@ function fu = ex15_gqr_resBC(coef,GQR,x,uold,dt,BC,t)
 %   BC   - 2-vector of boundary conditions
 %   t    - current time to evaluate at
 
+% Store some stuff so I don't have to recompute it each time
+% We can do this because ep, alpha, x are the same every time
+persistent phi phi1 phi2
+
+if length(phi)==0
+    phi = gqr_phi(GQR.Marr,x,GQR.ep,GQR.alpha);
+    phi1 = gqr_phi(GQR.Marr,x,GQR.ep,GQR.alpha,1);
+    phi2 = gqr_phi(GQR.Marr,x,GQR.ep,GQR.alpha,2);
+end
+
 % Need the true solution for boundary conditions
 %     usol = @(x,t) exp(-t)*(1-x.^2);
 %     usolx = @(x,t) exp(-t)*(-2*x);
@@ -27,9 +37,12 @@ function fu = ex15_gqr_resBC(coef,GQR,x,uold,dt,BC,t)
     
 % This evaluates the residual on the interior
 % The residual is F(u) = u_t - (k(u_x)u_x)_x - f
-    u = gqr_eval(GQR,x);
-    u_x = gqr_eval(GQR,x,1);
-    u_xx = gqr_eval(GQR,x,2);
+%     u = gqr_eval(GQR,x);
+%     u_x = gqr_eval(GQR,x,1);
+%     u_xx = gqr_eval(GQR,x,2);
+    u = phi*coef;
+    u_x = phi1*coef;
+    u_xx = phi2*coef;
     u_t = (u-uold)/dt;
     ku_x = kfunc(GQR,u_x);
     kpu_x = kfunc(GQR,u_x,1);
@@ -39,16 +52,20 @@ function fu = ex15_gqr_resBC(coef,GQR,x,uold,dt,BC,t)
 % Apply the boundary conditions
     switch BC(1)
         case 0 % Dirichlet
-            fu(1) = gqr_eval(GQR,x(1))-usol(x(1),t);
+%             fu(1) = gqr_eval(GQR,x(1))-usol(x(1),t);
+            fu(1) = phi(1,:)*coef-usol(x(1),t);
         case 1 % Neumann
-            fu(1) = gqr_eval(GQR,x(1),1)-usolx(x(1),t);
+%             fu(1) = gqr_eval(GQR,x(1),1)-usolx(x(1),t);
+            fu(1) = phi1(1,:)*coef-usolx(x(1),t);
     end
     
     switch BC(end)
         case 0 % Dirichlet
-            fu(end) = gqr_eval(GQR,x(end))-usol(x(end),t);
+%             fu(end) = gqr_eval(GQR,x(end))-usol(x(end),t);
+            fu(end) = phi(end,:)*coef-usol(x(end),t);
         case 1 % Neumann
-            fu(end) = gqr_eval(GQR,x(end),1)-usolx(x(end),t);
+%             fu(end) = gqr_eval(GQR,x(end),1)-usolx(x(end),t);
+            fu(end) = phi1(end,:)*coef-usolx(x(end),t);
     end
 
 % Used to scale the boundary conditions up to the interior
