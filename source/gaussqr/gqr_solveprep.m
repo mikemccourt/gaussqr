@@ -1,25 +1,37 @@
-function [ep,alpha,Marr,lam] = gqr_solveprep(reg,x,ep,alpha,M)
-% function [ep,alpha,Marr,lam] = gqr_solveprep(reg,x,ep,alpha,M)
-%
+function [ep,alpha,Marr,Rbar] = gqr_solveprep(reg,x,ep,alpha,M)
 % This function takes all the stuff needed to do a GaussQR problem and
 % preps it before the problem starts.  The reason for this is so that I can
 % get some meta-info without calling the whole solve routine.  Also,
 % changes which are the same for both QR and QRr will only need changed at
 % one place rather than multiple files
 %
-% INPUTS: reg - pass a 1 for regression, 0 otherwise
-%         x - input data values
-%         ep - value of epsilon shape parameter
-%         alpha - (optional) value of global scale parameter
-%         M - (optional) truncation value suggested by user
+% function GQR = gqr_solveprep(reg,x,ep)
+% Inputs : reg - pass a 1 for regression, 0 otherwise
+%          x - input data values
+%          ep - value of epsilon shape parameter
+%          alpha - (optional) value of global scale parameter
+%          M - (optional) truncation value suggested by user
+% Outputs : GQR - the GaussQR object, with the needed members
 %
-% Note: for regression, there are only 3 outputs (not lam)
+% function GQR = gqr_solveprep(reg,x,ep,alpha)
+% Inputs : alpha - (optional) value of global scale parameter
 %
-% Consider having this return the GQR object, which could then be passed in
-% the future elsewhere.  The GQR object would return everything except the
-% coef, which it obviously can't know yet.  This would make BVP problems
-% easier to write up.
-% Would require some rewriting ...
+% function GQR = gqr_solveprep(reg,x,ep,alpha,M)
+% Inputs : M - (optional) truncation value suggested by user
+%     If you want to pass an M, but not an alpha, use
+%          GQR = gqr_solveprep(reg,x,ep,[],M)
+%
+% function [ep,alpha,Marr,Rbar] = gqr_solveprep(1,...)
+% Outputs : ep - the acceptable shape parameter
+%           alpha - the acceptable scale parameter
+%           Marr - the GQR index list for interpolation
+%           lam - the eigenvalue base
+%                 lam = ep^2/(ep^2+alpha^2+delta^2)
+%
+% function [ep,alpha,Marr] = gqr_solveprep(0,...)
+% Outputs : ep - the acceptable shape parameter
+%           alpha - the acceptable scale parameter
+%           Marr - the GQR index list for regression
 global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
@@ -27,17 +39,48 @@ end
 Mextramax = GAUSSQR_PARAMETERS.MAX_EXTRA_EFUNC;
 Mdefault = GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC;
 alphaDefault = GAUSSQR_PARAMETERS.ALPHA_DEFAULT;
+alertuser = GAUSSQR_PARAMETERS.WARNINGS_ON;
+storephi = GAUSSQR_PARAMETERS.STORED_PHI_FOR_EVALUATION;
+
+computealpha = 0;
+switch nargin
+    case {0,1,2}
+        error('nargin=%d is too few input arguments',nargin)
+    case 3
+        computealpha = 1;
+    case {4,5}
+        if length(alpha)==0;
+            computealpha = 1;
+        end
+    otherwise
+        error('nargin=%d is too large',nargin)
+end
+
+createGQR = 0;
+switch nargout
+    case 1
+        createGQR = 1;
+        GQR.warnid = '';
+        GQR.warnmsg = '';
+        if storephi
+            GQR.stored_x = [];
+        end
+    case 3
+        if reg==0
+            error('For reg=%g, 3 outputs is unacceptable',reg)
+        end
+    case 4
+        if reg==1
+            error('For reg=%g, 4 outputs is unacceptable',reg)
+        end
+    otherwise
+        error('nargout=%d unacceptable',nargout)
+end
 
 [N,d] = size(x);
 
 % If the user didn't pass alpha, or passed [], then we need to pick an
-% alpha from rbfalphasearch
-computealpha = 0;
-if nargin==3
-    computealpha = 1;
-elseif length(alpha)==0
-    computealpha = 1;
-end
+% alpha from gqr_alphasearch
 if computealpha==1
     xminBound = min(x);
     xmaxBound = max(x);
@@ -67,10 +110,8 @@ end
 
 % This switch changes what we're computing based on if the
 % user wants to do interpolation or regression
-if reg
-    % If we call this function but don't actually want to compute Marr we
-    % can skip the rest of this
-    if nargout==3
+switch reg
+    case 1
         if Mdefault<=1 % Only a percentage of N is considered
             Mdefault = floor(Mdefault*N);
         elseif Mdefault>N
@@ -78,8 +119,6 @@ if reg
         end
 
         % All this figures out what an acceptable Marr is
-        % For now I'm doing Marr+1 to solve for an off-by-one issues in the paper
-        % I'll work on fixing this eventually
         if not(exist('M'))
             M = zeros(d,1);
             Mlim = Mdefault;
@@ -110,35 +149,126 @@ if reg
         end
 
         Marr = gqr_formMarr(M,[],Mlim);
-    end
-else
-    nu = (2*ep/alpha)^2;
-    lam = nu/(2+nu+2*sqrt(1+nu));
-    if Mextramax<0
-        Mextramax = (1-Mextramax/100)*N;
-    end
-    MarrN = gqr_formMarr(zeros(d,1),[],N);
-    Mlim = ceil(size(MarrN,2)+log(eps)/log(lam));
-    Mlim = ceil(N+log(eps)/log(lam));
-    if Mextramax==0
-        Mextramax = inf; % Allow the array to go as long as it wants
-    end
-
-    % This needs to get better
-    % Specifically it needs to handle people passing weird stuff
-    if not(exist('M'))
-        M = zeros(d,1);
-    else
-        [Mr Mc] = size(M);
-        if Mr~=d
-            error('Incorrect M size passed, size(M)=%dx%d d=%d',Mr,Mc,d)
-        elseif M<N
-            error('gqr_solve requires M>N, but M=%g, N=%d',M,N)
-        elseif ceil(M)~=M
-            warning('Noninteger M passed as %g, reset to %d',M,ceil(M))
-            M = ceil(M);
+        
+        % Package everything up, if requested
+        if createGQR
+            GQR.reg   = true;
+            GQR.ep    = ep;
+            GQR.alpha = alpha;
+            GQR.N     = N;
+            GQR.Marr  = Marr;
+            
+            % Change to the first value returned
+            ep = GQR;
         end
-    end
+    case 0
+        % First create Marr
+        % We need the eigenvalues for this
+        nu = (2*ep/alpha)^2;
+        lam = nu/(2+nu+2*sqrt(1+nu));
+        
+        if Mextramax<0
+            Mextramax = (1-Mextramax/100)*N;
+        end
+        MarrN = gqr_formMarr(zeros(d,1),[],N);
+        Mlim = ceil(size(MarrN,2)+log(eps)/log(lam));
+        Mlim = ceil(N+log(eps)/log(lam));
+        if Mextramax==0
+            Mextramax = inf; % Allow the array to go as long as it wants
+        end
 
-    Marr = gqr_formMarr(M,Mlim,Mextramax);
+        % This needs to get better
+        % Specifically it needs to handle people passing weird stuff
+        if not(exist('M'))
+            M = zeros(d,1);
+        else
+            [Mr Mc] = size(M);
+            if Mr~=d
+                error('Incorrect M size passed, size(M)=%dx%d d=%d',Mr,Mc,d)
+            elseif M<N
+                error('gqr_solve requires M>N, but M=%g, N=%d',M,N)
+            elseif ceil(M)~=M
+                warning('Noninteger M passed as %g, reset to %d',M,ceil(M))
+                M = ceil(M);
+            end
+        end
+
+        Marr = gqr_formMarr(M,Mlim,Mextramax);
+        
+        % Now we need to create the Rbar matrix
+        phiMat = gqr_phi(Marr,x,ep,alpha);
+        [Q,R] = qr(phiMat);
+        R1 = R(:,1:N);
+        R2 = R(:,N+1:end);
+
+        lastwarn('')
+        warning off MATLAB:divideByZero
+        iRdiag = diag(1./diag(R1));
+        [warnmsg,msgid] = lastwarn;
+        if strcmp(msgid,'MATLAB:divideByZero')
+            warnid = 'GAUSSQR:zeroQRDiagonal';
+            warnmsg = 'At least one value on the R diagonal was exactly 0';
+            if createGQR
+                GQR.warnid = warnid;
+                GQR.warnmsg = warnmsg;
+            elseif alertuser
+                warning(msgid,warnmsg)
+            end
+        end
+        warning on MATLAB:divideByZero
+
+        R1s = iRdiag*R1;
+        opts.UT = true;
+
+        lastwarn('')
+        warning off MATLAB:singularMatrix
+        if strcmp(GQR.warnid,'GAUSSQR:zeroQRDiagonal')
+            Rhat = linsolve(R1s,iRdiag*R2,opts);
+        else
+            Rhat = linsolve(R1s,iRdiag*R2,opts);
+            [warnmsg,msgid] = lastwarn;
+            if strcmp(msgid,'MATLAB:singularMatrix')
+                warnid = 'GAUSSQR:singularR1invR2';
+                warnmsg = 'Computing inv(R1)R2 ... R1 singular to working precision';
+                if createGQR
+                    GQR.warnid = warnid;
+                    GQR.warnmsg = warnmsg;
+                elseif alertuser
+                    warning(msgid,warnmsg)
+                end
+            end
+        end
+
+        % Here we apply the eigenvalue matrices
+        % Note that the -d term in the power goes away because it
+        % appears in both Lambda_2 and Lambda_1^{-1}
+        Ml = size(Marr,2);
+        D = lam.^(repmat(sum(Marr(:,N+1:end),1)',1,N)-repmat(sum(Marr(:,1:N),1),Ml-N,1));
+        Rbar = D.*Rhat';
+        
+        % Package everything up, if requested
+        if createGQR
+            GQR.reg   = false;
+            GQR.ep    = ep;
+            GQR.alpha = alpha;
+            GQR.N     = N;
+            GQR.Rbar  = Rbar;
+            GQR.Marr  = Marr;
+            if storephi
+                GQR.stored_x = x;
+                GQR.stored_deriv = 0;
+                GQR.stored_phi = phiMat;
+            end
+            
+            % Change to the first value returned
+            ep = GQR;
+        end
+    otherwise
+        error('reg=%g is unacceptable, 1 for regression, 0 for interpolation',reg)
+end
+
+if createGQR
+    if alertuser && ~strcmp(GQR.warnid,'')
+        warning(GQR.warnid,GQR.warnmsg)
+    end
 end

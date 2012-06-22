@@ -32,85 +32,44 @@ end
 alertuser = GAUSSQR_PARAMETERS.WARNINGS_ON;
 storephi = GAUSSQR_PARAMETERS.STORED_PHI_FOR_EVALUATION;
 
-if nargin<3
-    error('Insufficient inputs')
+% Check input stuff, and call solveprep, to create GQR object
+switch nargin
+    case {3,4,5}
+        [N,d] = size(x);
+        if sum(N~=size(y,1))
+            error('Different number of input and output points (x and y)')
+        elseif size(y,2)~=1
+            error('You can only pass a 1D output vector y')
+        end
+        if nargin==3
+            GQR = gqr_solveprep(0,x,ep);
+        elseif nargin==4
+            GQR = gqr_solveprep(0,x,ep,alpha);
+        else
+            GQR = gqr_solveprep(0,x,ep,alpha,M);
+        end
+    otherwise
+        error('Unacceptable inputs, nargin=%d',nargin)
 end
-GQR.warnid = '';
-GQR.warnmsg = '';
-% Resets to allow user to change ep, alpha, or M without accidentally using
-% the old stored phi matrix for the old values
+
+% Create eigenfunction basis, or recall from previous comptuations
 if storephi
-    GQR.stored_x = [];
-end
-
-[N,d] = size(x);
-if sum(N~=size(y,1))
-    error('Different number of input and output points (x and y)')
-elseif size(y,2)~=1
-    error('You can only pass a 1D output vector y')
-end
-
-if nargin==3
-    [ep,alpha,Marr,lam] = gqr_solveprep(0,x,ep);
-elseif nargin==4
-    [ep,alpha,Marr,lam] = gqr_solveprep(0,x,ep,alpha);
+	phi = GQR.stored_phi;
 else
-    [ep,alpha,Marr,lam] = gqr_solveprep(0,x,ep,alpha,M);
-end
-phiMat = gqr_phi(Marr,x,ep,alpha);
-
-[Q,R] = qr(phiMat);
-R1 = R(:,1:N);
-R2 = R(:,N+1:end);
-
-lastwarn('')
-warning off MATLAB:divideByZero
-iRdiag = diag(1./diag(R1));
-[warnmsg,msgid] = lastwarn;
-if strcmp(msgid,'MATLAB:divideByZero')
-    GQR.warnid = 'GAUSSQR:zeroQRDiagonal';
-    GQR.warnmsg = 'At least one value on the R diagonal was exactly 0';
-end
-warning on MATLAB:divideByZero
-
-R1s = iRdiag*R1;
-opts.UT = true;
-
-lastwarn('')
-warning off MATLAB:singularMatrix
-if strcmp(GQR.warnid,'GAUSSQR:zeroQRDiagonal')
-    Rhat = linsolve(R1s,iRdiag*R2,opts);
-else
-    Rhat = linsolve(R1s,iRdiag*R2,opts);
-    [warnmsg,msgid] = lastwarn;
-    if strcmp(msgid,'MATLAB:singularMatrix')
-        GQR.warnid = 'GAUSSQR:singularR1invR2';
-        GQR.warnmsg = 'Computing inv(R1)R2 ... R1 singular to working precision';
-    end
+    phi = gqr_phi(GQR.Marr,x,GQR.ep,GQR.alpha);
 end
 
-% Here we apply the eigenvalue matrices
-% Note that the -d term in the power goes away because it
-% appears in both Lambda_2 and Lambda_1^{-1}
-Ml = size(Marr,2);
-D = lam.^(repmat(sum(Marr(:,N+1:end),1)',1,N)-repmat(sum(Marr(:,1:N),1),Ml-N,1));
-Rbar = D.*Rhat';
-
-[coef,recipcond] = ranksolve(Rhat,Rbar,linsolve(R1s,iRdiag*(Q'*y),opts));
+% Solve in the stable basis
+[coef,recipcond] = linsolve(phi*[eye(N);GQR.Rbar],y);
 if (recipcond<eps || isnan(recipcond)) && strcmp(GQR.warnid,'')
     GQR.warnid = 'GAUSSQR:illConditionedRanksolve';
     GQR.warnmsg = sprintf('ranksolve encountered an ill-conditioned system, rcond=%g',recipcond);
 end
-warning on MATLAB:singularMatrix
 
-GQR.reg   = false;
-GQR.ep    = ep;
-GQR.alpha = alpha;
-GQR.N     = N;
-GQR.coef  = coef;
-GQR.Rbar  = Rbar;
-GQR.Marr  = Marr;
+% Store the solution in the GQR object
+GQR.coef = coef;
 
+% Tell the user if something went wrong along the way
 if alertuser && ~strcmp(GQR.warnid,'')
     warning(GQR.warnid,GQR.warnmsg)
 end
@@ -133,4 +92,13 @@ end
 % there's a better way to do this, I just don't know it yet.
 %
 % I think that the solve may be more stable when the product is computed as
-% opposed to it bing solved using ranksolve.  Need to check this.
+% opposed to it being solved using ranksolve.  Need to check this, and
+% reevaluate appropriateness of ranksolve.
+%
+% Should consider a new approach where the indices are chosen by the rank
+% of the R that is created.  Like we should test at each step whether the
+% next column is going to add to the rank, or whether it is already
+% represented in the space spanned by the earlier columns.  This would
+% require some sort of active QR, which checks each column as it comes in.
+% I feel like this shouldn't cost more, since all we'd be doing is dumping
+% columns that we would otherwise need to be in the solve.
