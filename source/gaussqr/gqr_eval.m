@@ -67,7 +67,9 @@ switch reg
     case 1
         if recompute
             phiEval = gqr_phi(Marr,x,ep,alpha,deriv);
-            GQR.stored_phi = phiEval; % Store the phi for later
+            if storephi
+                GQR.stored_phi = phiEval; % Store the phi for later
+            end
         else
             phiEval = GQR.stored_phi;
         end
@@ -77,8 +79,10 @@ switch reg
         if recompute
             phiEval1 = gqr_phi(Marr(:,1:N),x,ep,alpha,deriv);
             phiEval2 = gqr_phi(Marr(:,N+1:end),x,ep,alpha,deriv);
-            GQR.stored_phi1 = phiEval1; % Store the phi pieces for later
-            GQR.stored_phi2 = phiEval2;
+            if storephi
+                GQR.stored_phi1 = phiEval1; % Store the phi pieces for later
+                GQR.stored_phi2 = phiEval2;
+            end
         else
             phiEval1 = GQR.stored_phi1;
             phiEval2 = GQR.stored_phi2;

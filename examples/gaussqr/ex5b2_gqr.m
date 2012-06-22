@@ -49,7 +49,6 @@ for ep=epvec
     Aeval = rbf(ep,reval);
     D2([1,end],:) = A([1,end],:);
     coef = D2\rhs;
-    fprintf('%g\t%g\n',ep,cond(D2))
     err_Kansa(k) = errcompute(Aeval*coef,uu);
     k = k+1;
 end

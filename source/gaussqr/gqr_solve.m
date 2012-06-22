@@ -54,13 +54,13 @@ end
 
 % Create eigenfunction basis, or recall from previous comptuations
 if storephi
-	phi = GQR.stored_phi;
+    A = GQR.stored_phi1 + GQR.stored_phi2*GQR.Rbar;
 else
-    phi = gqr_phi(GQR.Marr,x,GQR.ep,GQR.alpha);
+    A = gqr_phi(GQR.Marr,x,GQR.ep,GQR.alpha)*[eye(N);GQR.Rbar];
 end
 
 % Solve in the stable basis
-[coef,recipcond] = linsolve(phi*[eye(N);GQR.Rbar],y);
+[coef,recipcond] = linsolve(A,y);
 if (recipcond<eps || isnan(recipcond)) && strcmp(GQR.warnid,'')
     GQR.warnid = 'GAUSSQR:illConditionedRanksolve';
     GQR.warnmsg = sprintf('ranksolve encountered an ill-conditioned system, rcond=%g',recipcond);

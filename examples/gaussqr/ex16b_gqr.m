@@ -58,7 +58,7 @@ b = find(abs(xx)==1 | abs(yy)==1); % Identify boundaries
 
 D2 = D^2;
 I = eye(N);
-L = kron(I,D2) + kron(D2,I)+k^2*kron(I,I);
+L = kron(I,D2) + kron(D2,I) + k^2*kron(I,I);
 rhs = f(xx,yy);
 
 L(b,:) = zeros(4*(N-1),N^2); L(b,b) = eye(4*(N-1));
@@ -85,18 +85,12 @@ m = 1;
 errvecQ1D = [];
 alpha = 1;
 for ep=epvec
-    [ep,alpha,Marr,lam] = gqr_solveprep(0,x,ep,alpha);
-    phiMat = gqr_phi(Marr,x,ep,alpha);
-    phiMat2d = gqr_phi(Marr,x,ep,alpha,2);
-    [Q,R] = qr(phiMat);
-    R1 = R(:,1:N);
-    R2 = R(:,N+1:end);
-    opts.UT = true;
-    Rhat = linsolve(R1,R2,opts);
-    Ml = size(Marr,2);
-    D = lam.^(repmat(sum(Marr(:,N+1:end),1)',1,N)-repmat(sum(Marr(:,1:N),1),Ml-N,1));
-    Rbar = D.*Rhat';
-    D2 = phiMat2d*[I;Rbar]/(phiMat*[I;Rbar]);
+    GQR = gqr_solveprep(0,x,ep,alpha);
+    phiMat_1 = GQR.stored_phi1;
+    phiMat_2 = GQR.stored_phi2;
+    phiMat2d = gqr_phi(GQR.Marr,x,GQR.ep,GQR.alpha,2);
+    Rbar = GQR.Rbar;
+    D2 = phiMat2d*[I;Rbar]/(phiMat_1+phiMat_2*Rbar);
     L = kron(I,D2) + kron(D2,I) + k^2*kron(I,I);
     L(b,:) = zeros(4*(N-1),N^2); L(b,b) = eye(4*(N-1));
     errvecQ1D(m) = errcompute(L\rhs,usol);
@@ -109,6 +103,6 @@ loglog(epvec,err_Trefethen*ones(size(epvec)),'--k','Linewidth',2)
 ylim([1e-13 1e1])
 legend('GaussQR','Fasshauer','Trefethen','location','west'),hold off
 xlabel('\epsilon')
-ylabel('Absolute inf-norm error')
+ylabel('Absolute sup-norm error')
 
 

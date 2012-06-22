@@ -72,19 +72,13 @@ for bN=bvec
     usol = fsol(ptsEVAL(:,1),ptsEVAL(:,2));
     
     % Solve the particular solution problem indirectly
-    [ep,alpha,Marr] = gqr_solveprep(1,ptsGQR,ep,alpha);
-    phiMat = gqr_phi(Marr,ptsGQR,ep,alpha);
-    phiMat2d = gqr_phi(Marr,ptsGQR,ep,alpha,[2,0])+gqr_phi(Marr,ptsGQR,ep,alpha,[0,2]);
+    GQR = gqr_solveprep(1,ptsGQR,ep,alpha);
+    phiMat = gqr_phi(GQR.Marr,ptsGQR,GQR.ep,GQR.alpha);
+    phiMat2d = gqr_phi(GQR.Marr,ptsGQR,GQR.ep,GQR.alpha,[2,0])+gqr_phi(GQR.Marr,ptsGQR,GQR.ep,GQR.alpha,[0,2]);
     A = phiMat2d - lambda^2*phiMat;
     rhs = f(ptsGQR(:,1),ptsGQR(:,2));
-    coef = A\rhs;
     
-    % Fill the GQR object with all the values it needs
-    GQR.reg = 1;
-    GQR.Marr = Marr;
-    GQR.alpha = alpha;
-    GQR.ep = ep;
-    GQR.N = size(ptsGQR,1);
+    coef = A\rhs;
     GQR.coef = coef;
     
     % Store the size of the Marr for use below, to make it fair
@@ -97,20 +91,15 @@ for bN=bvec
     ptsBDY = pick2Dpoints([-1,-1],[1 1],sqrt(GQR.N));
     ptsBDY = ptsBDY(find(any(abs(ptsBDY)==1,2)),:);
     ptsFULL = [ptsGQR;ptsBDY];
-    [ep,alpha,Marr] = gqr_solveprep(1,ptsFULL,ep,alpha,M_MPS);
-    phiMat = gqr_phi(Marr,ptsGQR,ep,alpha);
-    phiMatBC = gqr_phi(Marr,ptsBDY,ep,alpha);
-    phiMat2d = gqr_phi(Marr,ptsGQR,ep,alpha,[2,0])+gqr_phi(Marr,ptsGQR,ep,alpha,[0,2]);
+    
+    GQRfull = gqr_solveprep(1,ptsFULL,ep,alpha,M_MPS);
+    phiMat = gqr_phi(GQRfull.Marr,ptsGQR,GQRfull.ep,GQRfull.alpha);
+    phiMatBC = gqr_phi(GQRfull.Marr,ptsBDY,GQRfull.ep,GQRfull.alpha);
+    phiMat2d = gqr_phi(GQRfull.Marr,ptsGQR,GQRfull.ep,GQRfull.alpha,[2,0])+gqr_phi(GQRfull.Marr,ptsGQR,GQRfull.ep,GQRfull.alpha,[0,2]);
     A = [phiMat2d - lambda^2*phiMat;phiMatBC];
     rhs = [f(ptsGQR(:,1),ptsGQR(:,2));fsol(ptsBDY(:,1),ptsBDY(:,2))];
-    coef = A\rhs;
     
-    % Fill the GQR object with all the values it needs
-    GQRfull.reg = 1;
-    GQRfull.Marr = Marr;
-    GQRfull.alpha = alpha;
-    GQRfull.ep = ep;
-    GQRfull.N = size(ptsFULL,1);
+    coef = A\rhs;
     GQRfull.coef = coef;
     
     % Now enforce the boundary with MFS

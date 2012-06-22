@@ -8,13 +8,15 @@
 %  u^m + dt(u^{m-1}u_x^m - 1/R u_{xx}^m) = u^{m-1}
 %
 % Because N=11 for this problem, we'll use GaussQR
+%
+% Not working yet ...
 rbfsetup
 global GAUSSQR_PARAMETERS
 
 N = 13;
-dt = .001;
+dt = .01;
 T = 1;
-R = 100;
+R = .1;
 t_steps = dt:dt:T;
 coefs = zeros(N,length(t_steps)+1);
 I = eye(N);
@@ -55,11 +57,10 @@ coefs(:,1) = GQR.coef;
 errs(1) = errcompute(u,uold);
 
 % Set up the psi basis
-[ep,alpha,Marr,lam] = gqr_solveprep(0,x,ep,alpha);
+[ep,alpha,Marr,Rbar] = gqr_solveprep(0,x,ep,alpha);
 phi = gqr_phi(Marr,x,ep,alpha);
 phi1 = gqr_phi(Marr,x,ep,alpha,1);
 phi2 = gqr_phi(Marr,x,ep,alpha,2);
-Rbar = GQR.Rbar;
 Lp = phi-dt/R*phi2;
 
 k = 2; % IC takes up first storage spot

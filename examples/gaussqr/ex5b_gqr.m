@@ -52,7 +52,6 @@ for ep=epvec
   Aeval = rbf(ep,reval);
   D2([1,end],:) = A([1,end],:);
   coef = D2\rhs;
-  fprintf('%g\t%g\n',ep,cond(D2))
   err_Kansa(k) = errcompute(Aeval*coef,exact(xx));
   k = k+1;
 end
@@ -60,68 +59,37 @@ end
 % GaussQR interpolation
 err_GQR = [];
 alpha = 1;
-rhs = [exact(t(1));f(t(2:end-1));exact(t(end))];
+rhs = [exact(t([1,end]));f(t(2:end-1))];
 k = 1;
 for ep = epvec
-  nu = (2*ep/alpha)^2;
-  lam = nu/(2+nu+2*sqrt(1+nu));
-  M = ceil(N+log(eps)/log(lam));
-  if Mextramax~=0
-      M = min(M,abs(Mextramax));
-  end
-  Marr = gqr_formMarr(M);
-  phiMat = gqr_phi(Marr,t,ep,alpha);
-  phiMatD2 = gqr_phi(Marr,t(2:end-1),ep,alpha,2);
+    GQR = gqr_solveprep(0,t,ep,alpha);
+    phi = gqr_phi(GQR.Marr,t([1,end]),GQR.ep,GQR.alpha);
+    phi2 = gqr_phi(GQR.Marr,t(2:end-1),GQR.ep,GQR.alpha,2);
+    A = [phi;phi2]*[eye(N);GQR.Rbar];
 
-  [Q,R] = qr(phiMat);
-  R1 = R(:,1:N);
-  R2 = R(:,N+1:end);
-  iRdiag = diag(1./diag(R1));
-  R1s = iRdiag*R1;
-  opts.UT = true;
-  Rhat = linsolve(R1s,iRdiag*R2,opts);
-  D = lam.^(toeplitz(sum(Marr(N+1:end),1),sum(Marr(N+1:-1:2),1)));
-  Rbar = D.*Rhat';
+    coef = A\rhs;
+    GQR.coef  = coef;
 
-  A = [phiMat(1,:);phiMatD2;phiMat(end,:)]*[eye(N);Rbar];
-  coef = A\rhs;
-
-  GQR.reg   = false;
-  GQR.ep    = ep;
-  GQR.alpha = alpha;
-  GQR.N     = N;
-  GQR.coef  = coef;
-  GQR.Rbar  = Rbar;
-  GQR.Marr  = Marr;
-
-  err_GQR(k) = errcompute(gqr_eval(GQR,xx),exact(xx));
-  k = k+1;
+    err_GQR(k) = errcompute(gqr_eval(GQR,xx),exact(xx));
+    k = k+1;
 end
 
 % GaussQR regression
 err_GQRr = [];
-Mfactor = .5;
-M = Mfactor*N;
-Marr = gqr_formMarr(M);
-rhs = [exact(t(1));f(t(2:end-1));exact(t(end))];
+alpha = 1;
+rhs = [exact(t([1,end]));f(t(2:end-1))];
 k = 1;
 for ep=epvec
-%  alpha = gqr_alphasearch(ep,-1,1); % bounds of the problem: [-1,1]
-  alpha = 1;
-  phiMat = gqr_phi(Marr,t,ep,alpha);
-  phiMatD2 = gqr_phi(Marr,t(2:end-1),ep,alpha,2);
-  A = [phiMat(1,:);phiMatD2;phiMat(end,:)];
-  coef = A\rhs;
+    GQR = gqr_solveprep(1,t,ep,alpha);
+    phi = gqr_phi(GQR.Marr,t([1,end]),GQR.ep,GQR.alpha);
+    phi2 = gqr_phi(GQR.Marr,t(2:end-1),GQR.ep,GQR.alpha,2);
+    A = [phi;phi2];
 
-  GQR.reg   = true;
-  GQR.ep    = ep;
-  GQR.alpha = alpha;
-  GQR.N     = N;
-  GQR.coef  = coef;
-  GQR.Marr  = Marr;
+    coef = A\rhs;
+    GQR.coef  = coef;
 
-  err_GQRr(k) = errcompute(gqr_eval(GQR,xx),exact(xx));
-  k = k+1;
+    err_GQRr(k) = errcompute(gqr_eval(GQR,xx),exact(xx));
+    k = k+1;
 end
 
 warning on MATLAB:nearlySingularMatrix

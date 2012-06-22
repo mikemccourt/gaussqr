@@ -212,7 +212,7 @@ switch reg
                 GQR.warnid = warnid;
                 GQR.warnmsg = warnmsg;
             elseif alertuser
-                warning(msgid,warnmsg)
+                warning(warnid,warnmsg)
             end
         end
         warning on MATLAB:divideByZero
@@ -222,22 +222,22 @@ switch reg
 
         lastwarn('')
         warning off MATLAB:singularMatrix
-        if strcmp(GQR.warnid,'GAUSSQR:zeroQRDiagonal')
-            Rhat = linsolve(R1s,iRdiag*R2,opts);
-        else
-            Rhat = linsolve(R1s,iRdiag*R2,opts);
-            [warnmsg,msgid] = lastwarn;
-            if strcmp(msgid,'MATLAB:singularMatrix')
-                warnid = 'GAUSSQR:singularR1invR2';
-                warnmsg = 'Computing inv(R1)R2 ... R1 singular to working precision';
-                if createGQR
-                    GQR.warnid = warnid;
-                    GQR.warnmsg = warnmsg;
-                elseif alertuser
-                    warning(msgid,warnmsg)
-                end
+        Rhat = linsolve(R1s,iRdiag*R2,opts);
+        warning on MATLAB:singularMatrix
+        
+        [warnmsg,msgid] = lastwarn;
+        warnid = 'GAUSSQR:singularR1invR2';
+        warnmsg = 'Computing inv(R1)R2 ... R1 singular to working precision';
+        
+        if createGQR
+            if ~strcmp(GQR.warnid,'GAUSSQR:zeroQRDiagonal') & strcmp(msgid,'MATLAB:singularMatrix')
+                GQR.warnid = warnid;
+                GQR.warnmsg = warnmsg;
             end
+        elseif alertuser
+            warning(warnid,warnmsg)
         end
+        
 
         % Here we apply the eigenvalue matrices
         % Note that the -d term in the power goes away because it
@@ -257,7 +257,8 @@ switch reg
             if storephi
                 GQR.stored_x = x;
                 GQR.stored_deriv = 0;
-                GQR.stored_phi = phiMat;
+                GQR.stored_phi1 = phiMat(:,1:N);
+                GQR.stored_phi2 = phiMat(:,N+1:end);
             end
             
             % Change to the first value returned
