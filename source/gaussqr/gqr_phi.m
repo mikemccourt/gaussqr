@@ -1,18 +1,45 @@
 function p = gqr_phi(Marr,x,ep,alpha,deriv)
-% function p = gqr_phi(Marr,x,ep,alpha,deriv)
-% This function should in general be used in the following form
-%   function p = gqr_phi(Marr,x,ep,alpha)
-% which lets you pass inputs to produce the needed eigenfunctions
+% This function evaluates the Gaussian eigenfunctions
+% They are uniquely defined given an epsilon, and alpha
+% You can choose which indices you want evaluated
+% You can also evaluate derivatives of these eigenfunctions
 %
-% Marr - array of exponential values for the eigenfunction
-%        [Marr1,Marr2,...,MarrM]
-%        Marr1 are the index values for determining the eigenfunctions
-%        This should be produced by rbfformMarr
-% x - vector of RBF centers
-% ep - traditional RBF shape parameter
-% alpha - GaussQR global scale parameter
-% deriv - <optional> row vector of derivatives in each dimension
-%         only derivatives of up to 4th order are available
+% Example: To evaluate the y derivative of the 
+%          [1,1] and [1,2] eigenfunctions within 0<1<x, 2<y<3
+%     x = pick2Dpoints([0,2],[1,3],5);
+%     GQR.ep = .1;
+%     GQR.alpha = 1;
+%     GQR.Marr = [[1;1],[1;2]];
+%     deriv = [0,1];
+%     phi_y = gqr_phi(GQR,x,deriv);
+%
+% function p = gqr_phi(GQR,x)
+% This is the preferred way of calling the phi function
+% Inputs : GQR - The GaussQR object created by gqr_solveprep
+%                This should contain at least the members
+%                GQR.Marr - row array of multiindices
+%                GQR.ep - Gaussian shape parameter
+%                GQR.alpha - GaussQR global scale parameter
+%          x - The location to evaluate the eigenfunctions at
+% Outputs : p - The eigenfunction values
+%
+% function p = gqr_phi(GQR,x,deriv)
+% This is used to evaluate derivatives of the eigenfunctions
+% Inputs : deriv - array of derivative values
+% Outputs : p - The eigenfunction derivative values
+%
+% function p = gqr_phi(Marr,x,ep,alpha)
+% The same idea as before, but now without the GQR object
+% Inputs : Marr - row array of multiindices
+%          ep - Gaussian shape parameter
+%          alpha - GaussQR global scale parameter
+%          x - The location to evaluate the eigenfunctions at
+% Outputs : p - The eigenfunction values
+%
+% function p = gqr_phi(Marr,x,ep,alpha,deriv)
+% The same idea as before, but now without the GQR object
+% Inputs : deriv - array of derivative values
+% Outputs : p - The eigenfunction derivative values
 %
 % Note: if you pass alpha<0 or ep<0 or m<1, this will error out
 %
@@ -29,24 +56,40 @@ end
 asympttol = GAUSSQR_PARAMETERS.RBFPHI_EXP_TOL;
 fastphi = GAUSSQR_PARAMETERS.FAST_PHI_EVALUATION;
 
+switch nargin
+    case {2,3}
+        if nargin==3
+            deriv = ep;
+        end
+        GQR = Marr;
+        if not(all(isfield(GQR,{'Marr','ep','alpha'})))
+            error('GQR object must have fields Marr, ep, alpha')
+        else
+            Marr = GQR.Marr;
+            ep = GQR.ep;
+            alpha = GQR.alpha;
+        end
+    case {4,5}
+    otherwise
+        error('nargin=%d unacceptable')
+end
+
 % Here we define: n as the number of data points
 %                 s as the dimension of the data
 [Mr Mc] = size(Marr);
 [n xc] = size(x);
 if Mr~=xc
-    error(sprintf('dimension mismatch: Mr=%d, xc=%d',Mr,xc))
+    error(sprintf('dimension mismatch: size(Marr,1)=%d, size(x,2)=%d',Mr,xc))
 else
     s=xc;
 end
 
-if nargin<4
-    error('Insufficient parameters passed')
-elseif nargin==4
+if not(exist('deriv'))
     deriv = zeros(1,s); % Default to no derivatives being used
 else
     [dr dc] = size(deriv);
     if dc~=s
-        error('dimension mismatch: s=%d, dc=%d',s,dc)
+        error('dimension mismatch: size(x,2)=%d, size(deriv,2)=%d',s,dc)
     elseif min(deriv)<0
         error('negative derivative requested, %d',min(deriv))
     elseif dr~=1
@@ -58,7 +101,7 @@ else
     end
 end
 
-if alpha<=0 || ep<=0 || imag(alpha)~=0 || imag(ep)~=0
+if abs(real(alpha))~=alpha || abs(real(ep))~=ep
     error('alpha=%g or ep=%g unacceptable; must be real and positive',alpha,ep)
 end
 
