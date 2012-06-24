@@ -17,6 +17,8 @@ function alpha = gqr_alphasearch(ep,a,b)
 % If this function cannot find an alpha up to what was requested, it will
 % try to get as high as possible.  The index up to which orthogonality was
 % maintained is returned as k.
+%
+% Should change the way this is called, to a symmetric interval
 
 % Import global parameters from rbfsetup
 global GAUSSQR_PARAMETERS

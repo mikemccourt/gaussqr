@@ -27,6 +27,27 @@ x = pick2Dpoints([-1,-1],[1,1],N);
 % Set up initial conditions and mass matrix
 [u0,M] = ex5e_gqr_RBF_ode_rhs(x);
 
+xx = pick2Dpoints([-1,-1],[1,1],3*N);
+uu = ex5e_gqr_RBF_ode_rhs(xx);
+
+% Test ability for GaussQR to reproduce initial conditions
+alpha = 1;
+global GAUSSQR_PARAMETERS
+GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = ceil(.1*N*N);
+epvec = logspace(-1,1,25);
+errvec = zeros(size(epvec));
+y = u0(N*N+1:end);
+yy = uu(9*N*N+1:end);
+k = 1;
+for ep=epvec
+    GQR = gqr_rsolve(x,y,ep,alpha);
+    yp = gqr_eval(GQR,xx);
+    errvec(k) = errcompute(yp,yy);
+    k = k+1;
+end
+loglog(epvec,errvec)
+pause
+
 % X = reshape(x(:,1),N,N);
 % Y = reshape(x(:,2),N,N);
 % A = reshape(u0(1:N*N),N,N);
@@ -58,7 +79,7 @@ for t_step=2:length(t_store);
     for k=1:20
         rhs = ex5e_gqr_RBF_ode_rhs(x,u,t);
         Fu = M*(u-uold)/dt - rhs;
-        delta_u = gmres(@(b)M*b/dt - (ex5e_gqr_RBF_ode_rhs(x,u+h*b,t) - ex5e_gqr_RBF_ode_rhs(x,u,t))/h,-Fu);
+        delta_u = gmres(@(b)M*b/dt - (ex5e_gqr_RBF_ode_rhs(x,u+h*b,t) - rhs)/h,-Fu);
         u = u + .4*delta_u;
         fprintf('\tnorm(Fu)=%g, norm(delta_u)=%g\n',norm(Fu),norm(delta_u));
     end

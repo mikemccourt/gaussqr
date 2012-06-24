@@ -76,20 +76,15 @@ for N=5:10
     bi = setdiff(1:size(x,1),b)';
     Nvec(m) = size(x,1);
     
-    [ep,alpha,Marr] = gqr_solveprep(1,x,ep,alpha);
-    phiMat = gqr_phi(Marr,x(b,:),ep,alpha);
-    phiMat2d = gqr_phi(Marr,x(bi,:),ep,alpha,[2,0])+gqr_phi(Marr,x(bi,:),ep,alpha,[0,2]);
+    GQR = gqr_solveprep(1,x,ep,alpha);
+    phiMat = gqr_phi(GQR.Marr,x(b,:),GQR.ep,GQR.alpha);
+    phiMat2d = gqr_phi(GQR.Marr,x(bi,:),GQR.ep,GQR.alpha,[2,0])+gqr_phi(GQR.Marr,x(bi,:),GQR.ep,GQR.alpha,[0,2]);
     A = [phiMat2d;phiMat];
     rhs = zeros(length(x),1);
     rhs(1:length(bi)) = f(x(bi,1),x(bi,2));
     rhs(1+length(bi):end) = fsol(x(b,1),x(b,2));
-    coef = A\rhs;
     
-    GQR.reg = 1;
-    GQR.Marr = Marr;
-    GQR.alpha = alpha;
-    GQR.ep = ep;
-    GQR.N = length(x);
+    coef = A\rhs;
     GQR.coef = coef;
     
     uGQR = gqr_eval(GQR,ptsEVAL);
@@ -184,21 +179,16 @@ for N=5:12
     b = find( abs(x(:,1))==1 | abs(x(:,2))==1 | (x(:,1)==0 & x(:,2)>=0) | (x(:,1)>=0 & x(:,2)==0));
     bi = setdiff(1:size(x,1),b)';
     Nvec(m) = size(x,1);
-
-    [ep,alpha,Marr] = gqr_solveprep(1,x,ep,alpha);
-    phiMat = gqr_phi(Marr,x(b,:),ep,alpha);
-    phiMat2d = gqr_phi(Marr,x(bi,:),ep,alpha,[2,0])+gqr_phi(Marr,x(bi,:),ep,alpha,[0,2]);
+    
+    GQR = gqr_solveprep(1,x,ep,alpha);
+    phiMat = gqr_phi(GQR.Marr,x(b,:),GQR.ep,GQR.alpha);
+    phiMat2d = gqr_phi(GQR.Marr,x(bi,:),GQR.ep,GQR.alpha,[2,0])+gqr_phi(GQR.Marr,x(bi,:),GQR.ep,GQR.alpha,[0,2]);
     A = [phiMat2d;phiMat];
     rhs = zeros(length(x),1);
     rhs(1:length(bi)) = f(x(bi,1),x(bi,2));
     rhs(1+length(bi):end) = fsol(x(b,1),x(b,2));
+    
     coef = A\rhs;
-
-    GQR.reg = 1;
-    GQR.Marr = Marr;
-    GQR.alpha = alpha;
-    GQR.ep = ep;
-    GQR.N = Nvec(m);
     GQR.coef = coef;
 
     uGQR = gqr_eval(GQR,ptsEVAL);
@@ -312,24 +302,20 @@ for N=5:12
     bi = setdiff(1:Nvec(m),[bN;bD])';
 
     % Get the preliminary RBF-QR stuff (namely Marr)
-    [ep,alpha,Marr] = gqr_solveprep(1,x,ep,alpha);
+    GQR = gqr_solveprep(1,x,ep,alpha);
     % Build the collocation matrix
-    phiMat2d = gqr_phi(Marr,x(bi,:),ep,alpha,[2,0])+gqr_phi(Marr,x(bi,:),ep,alpha,[0,2]);
-    phiMat = gqr_phi(Marr,x(bD,:),ep,alpha);
-    phiMat1dy = gqr_phi(Marr,x(bN,:),ep,alpha,[0,1]);
+    phiMat1dy = gqr_phi(GQR.Marr,x(bN,:),GQR.ep,GQR.alpha,[0,1]);
+    phiMat = gqr_phi(GQR.Marr,x(bD,:),GQR.ep,GQR.alpha);
+    phiMat2d = gqr_phi(GQR.Marr,x(bi,:),GQR.ep,GQR.alpha,[2,0])+gqr_phi(GQR.Marr,x(bi,:),GQR.ep,GQR.alpha,[0,2]);
+    
     A = [phiMat2d;phiMat;phiMat1dy];
     % Build the RHS
     rhs_interior = f(x(bi,1),x(bi,2));
     rhs_dirichlet = fsol(x(bD,1),x(bD,2));
     rhs_neumann = fdysol(x(bN,1),x(bN,2));
     rhs = [rhs_interior;rhs_dirichlet;rhs_neumann];
+    
     coef = A\rhs;
-
-    GQR.reg = 1;
-    GQR.Marr = Marr;
-    GQR.alpha = alpha;
-    GQR.ep = ep;
-    GQR.N = Nvec(m);
     GQR.coef = coef;
 
     uGQR = gqr_eval(GQR,ptsEVAL);
@@ -489,26 +475,23 @@ for N=5:12
 
     % Get the preliminary RBF-QR stuff (namely Marr)
     % Note that to get the right size, I need to account for the double BC
-    [ep,alpha,Marr] = gqr_solveprep(1,[x;x(bD,:)],ep,alpha);
+    GQR = gqr_solveprep(1,[x;x(bD,:)],ep,alpha);
+    
     % Build the collocation matrix
-    phiMat4d = gqr_phi(Marr,x(bi,:),ep,alpha,[4,0])+gqr_phi(Marr,x(bi,:),ep,alpha,[0,4])+gqr_phi(Marr,x(bi,:),ep,alpha,[2,2]);
-    phiMat2d = gqr_phi(Marr,x(bL,:),ep,alpha,[2,0])+gqr_phi(Marr,x(bL,:),ep,alpha,[0,2]);
-    phiMat = gqr_phi(Marr,x(bD,:),ep,alpha);
-    phiMat1dy = gqr_phi(Marr,x(bN,:),ep,alpha,[0,1]);
+    phiMat4d = gqr_phi(GQR.Marr,x(bi,:),GQR.ep,GQR.alpha,[4,0])+gqr_phi(GQR.Marr,x(bi,:),GQR.ep,GQR.alpha,[0,4])+gqr_phi(GQR.Marr,x(bi,:),GQR.ep,GQR.alpha,[2,2]);
+    phiMat2d = gqr_phi(GQR.Marr,x(bL,:),GQR.ep,GQR.alpha,[2,0])+gqr_phi(GQR.Marr,x(bL,:),GQR.ep,GQR.alpha,[0,2]);
+    phiMat1dy = gqr_phi(GQR.Marr,x(bN,:),GQR.ep,GQR.alpha,[0,1]);
+    phiMat = gqr_phi(GQR.Marr,x(bD,:),GQR.ep,GQR.alpha);
     A = [phiMat4d;phiMat2d;phiMat;phiMat1dy];
+    
     % Build the RHS
     rhs_interior = f(x(bi,1),x(bi,2));
     rhs_dirichlet = fsol(x(bD,1),x(bD,2));
     rhs_neumann = fdysol(x(bN,1),x(bN,2));
     rhs_laplacian = lapfsol(x(bL,1),x(bL,1));
     rhs = [rhs_interior;rhs_laplacian;rhs_dirichlet;rhs_neumann];
+    
     coef = A\rhs;
-
-    GQR.reg = 1;
-    GQR.Marr = Marr;
-    GQR.alpha = alpha;
-    GQR.ep = ep;
-    GQR.N = size([x;x(bD,:)],1); % Double BC
     GQR.coef = coef;
 
     uGQR = gqr_eval(GQR,ptsEVAL);

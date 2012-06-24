@@ -13,6 +13,11 @@ fopt = 'KXY';
 %fopt = 'KSA2';
 rbf = @(ep,x) exp(-(ep*x).^2);
 
+% This is just a guess
+% In reality, alpha should decrease as ep increases
+%   and it should reach a limit as ep->0
+alpha = 1;
+
 [yf,fstr] = pickfunc(fopt,2);
 
 %aa = [-1 -1];bb = [1 1];
@@ -58,7 +63,8 @@ for N=Nvec
     y = yf(x);
     k = 1;
     for ep=epvecr
-        GQR = gqr_rsolve(x,y,ep);
+        % Remove alpha for an automated orth-based alpha guess
+        GQR = gqr_rsolve(x,y,ep,alpha);
         yp = gqr_eval(GQR,xx);
         errvecr(j,k) = errcompute(yp,yy);
         k = k+1;

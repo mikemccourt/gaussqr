@@ -59,79 +59,49 @@ end
 % GaussQR interpolation
 err_GQR = [];
 alpha = 1;
-rhs = [exact(t(1));f(t(2:end-1));exact(t(end))];
+rhs = [exact(t([1,end]));f(t(2:end-1))];
 k = 1;
 for ep = epvec
-  nu = (2*ep/alpha)^2;
-  lam = nu/(2+nu+2*sqrt(1+nu));
-  M = ceil(N+log(eps)/log(lam));
-  if Mextramax~=0
-      M = min(M,abs(Mextramax));
-  end
-  Marr = gqr_formMarr(M);
-  phiMat = gqr_phi(Marr,t,ep,alpha);
-  phiMatD2 = gqr_phi(Marr,t(2:end-1),ep,alpha,2);
+    GQR = gqr_solveprep(0,t,ep,alpha);
+    phi = gqr_phi(GQR.Marr,t([1,end]),GQR.ep,GQR.alpha);
+    phi2 = gqr_phi(GQR.Marr,t(2:end-1),GQR.ep,GQR.alpha,2);
+    A = [phi;phi2]*[eye(N);GQR.Rbar];
 
-  [Q,R] = qr(phiMat);
-  R1 = R(:,1:N);
-  R2 = R(:,N+1:end);
-  iRdiag = diag(1./diag(R1));
-  R1s = iRdiag*R1;
-  opts.UT = true;
-  Rhat = linsolve(R1s,iRdiag*R2,opts);
-  D = lam.^(toeplitz(sum(Marr(N+1:end),1),sum(Marr(N+1:-1:2),1)));
-  Rbar = D.*Rhat';
+    coef = A\rhs;
+    GQR.coef  = coef;
 
-  A = [phiMat(1,:);phiMatD2;phiMat(end,:)]*[eye(N);Rbar];
-  coef = A\rhs;
-
-  GQR.reg   = false;
-  GQR.ep    = ep;
-  GQR.alpha = alpha;
-  GQR.N     = N;
-  GQR.coef  = coef;
-  GQR.Rbar  = Rbar;
-  GQR.Marr  = Marr;
-
-  err_GQR(k) = errcompute(gqr_eval(GQR,xx),exact(xx));
-  k = k+1;
+    err_GQR(k) = errcompute(gqr_eval(GQR,xx),exact(xx));
+    k = k+1;
 end
 
 % GaussQR regression
 err_GQRr = [];
-Mfactor = .5;
-M = Mfactor*N;
-Marr = gqr_formMarr(M);
-rhs = [exact(t(1));f(t(2:end-1));exact(t(end))];
+alpha = 1;
+rhs = [exact(t([1,end]));f(t(2:end-1))];
 k = 1;
 for ep=epvec
-%  alpha = gqr_alphasearch(ep,-1,1); % bounds of the problem: [-1,1]
-  alpha = 1;
-  phiMat = gqr_phi(Marr,t,ep,alpha);
-  phiMatD2 = gqr_phi(Marr,t(2:end-1),ep,alpha,2);
-  A = [phiMat(1,:);phiMatD2;phiMat(end,:)];
-  coef = A\rhs;
+    GQR = gqr_solveprep(1,t,ep,alpha);
+    phi = gqr_phi(GQR.Marr,t([1,end]),GQR.ep,GQR.alpha);
+    phi2 = gqr_phi(GQR.Marr,t(2:end-1),GQR.ep,GQR.alpha,2);
+    A = [phi;phi2];
 
-  GQR.reg   = true;
-  GQR.ep    = ep;
-  GQR.alpha = alpha;
-  GQR.N     = N;
-  GQR.coef  = coef;
-  GQR.Marr  = Marr;
+    coef = A\rhs;
+    GQR.coef  = coef;
 
-  err_GQRr(k) = errcompute(gqr_eval(GQR,xx),exact(xx));
-  k = k+1;
+    err_GQRr(k) = errcompute(gqr_eval(GQR,xx),exact(xx));
+    k = k+1;
 end
 
 warning on MATLAB:nearlySingularMatrix
 
 % Plot the results
-loglog(epvec,err_Kansa,'b','LineWidth',3),hold on
-loglog(epvec,err_GQR,'r','LineWidth',3)
-loglog(epvec,err_GQRr,'g','LineWidth',3)
+loglog(epvec,err_GQR,'r','LineWidth',3),hold on
+loglog(epvec,err_Kansa,'b','LineWidth',2)
+%loglog(epvec,err_GQRr,'g','LineWidth',3)
 loglog(epvec,err_Trefethen*ones(size(epvec)),'--k','LineWidth',2)
 hold off
 xlabel('\epsilon')
-ylabel('absolute error')
+ylabel('absolute 2-norm error')
 title(sprintf('Collocation for a 2-pt BVP, N=%d',N))
-legend('Kansa','GaussQR','GaussQRr (M=.5N)','Direct','Location','East')
+% legend('Kansa','GaussQR','GaussQRr (M=.5N)','Direct','Location','East')
+legend('True Gauss Solution','Direct Gauss Collocation','Polynomial Collocation','Location','SouthEast')

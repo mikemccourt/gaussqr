@@ -14,8 +14,9 @@ global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
 end
-Mextramax = GAUSSQR_PARAMETERS.MAX_EXTRA_EFUNC;
-Mfactor = GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC;
+
+% This might get carried over from other examples
+clear opts
 
 epvec = logspace(-1,1,30);
 N = 25;
@@ -25,6 +26,7 @@ spaceopt = 'cheb';
 [x,spacestr] = pickpoints(0,1,N,spaceopt);
 
 truesol = @(x)cosh(x);
+f = @(x)cosh(x);
 y = truesol(x);
 xx = pickpoints(0,1,NN);
 yy = truesol(xx);
@@ -36,69 +38,41 @@ alpha = 2;
 
 ie = 1;
 for ep=epvec
-    nu = (2*ep/alpha)^2;
-    lam = nu/(2+nu+2*sqrt(1+nu));
-    M = ceil(N+log(eps)/log(lam));
-    if Mextramax~=0
-        M = min(M,abs(Mextramax));
-    end
-    Marr = gqr_formMarr(M);
-    phiMat = gqr_phi(Marr,x,ep,alpha);
-    phiMatD2 = gqr_phi(Marr,x(2:end-1),ep,alpha,2); % Only interior derivatives needed
-
-    [Q,R] = qr(phiMat);
-    R1 = R(:,1:N);
-    R2 = R(:,N+1:end);
-    iRdiag = diag(1./diag(R1));
-    R1s = iRdiag*R1;
-    opts.UT = true;
-    Rhat = linsolve(R1s,iRdiag*R2,opts);
-    D = lam.^(toeplitz(sum(Marr(N+1:end),1),sum(Marr(N+1:-1:2),1)));
-    Rbar = D.*Rhat';
+    % Compute the 2-pt BVP solution
+    GQR = gqr_solveprep(0,x,ep,alpha);
+    phiMat = gqr_phi(GQR.Marr,x([1,end]),GQR.ep,GQR.alpha);
+    phiMatD2 = gqr_phi(GQR.Marr,x([2:end-1]),GQR.ep,GQR.alpha,2);
+    A = [phiMat;phiMatD2]*[eye(N);GQR.Rbar];
+    rhs = [truesol(x([1,end]));f(x([2:end-1]))];
     
-    A = [phiMat(1,:);phiMatD2;phiMat(end,:)]*[eye(N);Rbar];
-    rhs = [1;cosh(x(2:end-1));cosh(1)];
     warning off MATLAB:nearlySingularMatrix
     coef = A\rhs;
     warning on MATLAB:nearlySingularMatrix
-    
-    GQR.reg   = false;
-    GQR.ep    = ep;
-    GQR.alpha = alpha;
-    GQR.N     = N;
     GQR.coef  = coef;
-    GQR.Rbar  = Rbar;
-    GQR.Marr  = Marr;
     
     yp = gqr_eval(GQR,xx);
     errvec(ie) = errcompute(yp,yy);
     
-    M = Mfactor*N;
-    Marr = gqr_formMarr(M);
-    phiMat = gqr_phi(Marr,x,ep,alpha);
-    phiMatD2 = gqr_phi(Marr,x(2:end-1),ep,alpha,2); % Only interior derivatives needed
+    % Consider the regression solution for comparison
+    GQRreg = gqr_solveprep(1,x,ep,alpha);
+    phiMat = gqr_phi(GQRreg.Marr,x([1,end]),GQRreg.ep,GQRreg.alpha);
+    phiMatD2 = gqr_phi(GQRreg.Marr,x(2:end-1),GQRreg.ep,GQRreg.alpha,2);
+    A = [phiMat;phiMatD2];
+    rhs = [truesol(x([1,end]));f(x([2:end-1]))];
     
-    A = [phiMat(1,:);phiMatD2;phiMat(end,:)];
-    rhs = [1;cosh(x(2:end-1));cosh(1)];
     warning off MATLAB:nearlySingularMatrix
     coef = A\rhs;
     warning on MATLAB:nearlySingularMatrix
+    GQRreg.coef  = coef;
     
-    GQR.reg   = true;
-    GQR.ep    = ep;
-    GQR.alpha = alpha;
-    GQR.N     = N;
-    GQR.coef  = coef;
-    GQR.Marr  = Marr;
-    
-    yp = gqr_eval(GQR,xx);
+    yp = gqr_eval(GQRreg,xx);
     errvecREG(ie) = errcompute(yp,yy);
     
     ie = ie + 1;
 end
 
 clf reset
-loglog(epvec,[errvec;errvecREG])
+loglog(epvec,[errvec;errvecREG],'linewidth',3)
 title(sprintf('Collocation for u_{xx}=cosh(x), Dirichlet BC, N=%d',N))
 ylabel('Relative Error')
 xlabel('\epsilon')

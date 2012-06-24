@@ -22,38 +22,34 @@ if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
 end
 alertuser = GAUSSQR_PARAMETERS.WARNINGS_ON;
-storephi = GAUSSQR_PARAMETERS.STORED_PHI_FOR_EVALUATION;
 
-if nargin<3
-    error('Insufficient inputs')
-end
-GQR.warnid = '';
-GQR.warnmsg = '';
-% Resets to allow user to change ep, alpha, or M without accidentally using
-% the old stored phi matrix for the old values
-if storephi
-    GQR.stored_x = [];
+% Check input stuff, and call solveprep, to create GQR object
+switch nargin
+    case {3,4,5}
+        [N,d] = size(x);
+        if sum(N~=size(y,1))
+            error('Different number of input and output points (x and y)')
+        elseif size(y,2)~=1
+            error('You can only pass a 1D output vector y')
+        end
+        if nargin==3
+            GQR = gqr_solveprep(1,x,ep);
+        elseif nargin==4
+            GQR = gqr_solveprep(1,x,ep,alpha);
+        else
+            GQR = gqr_solveprep(1,x,ep,alpha,M);
+        end
+    otherwise
+        error('Unacceptable inputs, nargin=%d',nargin)
 end
 
-[N,d] = size(x);
-if N~=size(y,1)
-    error('Different numbers of inputs and outputs')
-elseif sum(size(y,2)~=1)
-    error('Output vector y must have only one column')
-end
+% Form the linear system
+phi = gqr_phi(GQR.Marr,x,GQR.ep,GQR.alpha);
 
-if nargin==3
-    [ep,alpha,Marr] = gqr_solveprep(1,x,ep);
-elseif nargin==4
-    [ep,alpha,Marr] = gqr_solveprep(1,x,ep,alpha);
-else
-    [ep,alpha,Marr] = gqr_solveprep(1,x,ep,alpha,M);
-end
-phiMat = gqr_phi(Marr,x,ep,alpha);
-
+% Solve the least squares problem
 lastwarn('')
 warning off MATLAB:rankDeficientMatrix
-[coef,lsqrrank] = linsolve(phiMat,y);
+[coef,lsqrrank] = linsolve(phi,y);
 [warnmsg,msgid] = lastwarn;
 if strcmp(msgid,'MATLAB:rankDeficientMatrix')
     GQR.warnid = 'GAUSSQR:lowRankRegression';
@@ -61,13 +57,10 @@ if strcmp(msgid,'MATLAB:rankDeficientMatrix')
 end
 warning on MATLAB:rankDeficientMatrix
 
-GQR.reg   = true;
-GQR.ep    = ep;
-GQR.alpha = alpha;
-GQR.N     = N;
+% Store the solution
 GQR.coef  = coef;
-GQR.Marr  = Marr;
 
+% Tell the user if something went wrong.
 if alertuser && ~strcmp(GQR.warnid,'')
     warning(GQR.warnid,GQR.warnmsg)
 end

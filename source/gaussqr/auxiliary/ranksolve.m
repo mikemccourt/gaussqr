@@ -7,6 +7,16 @@ function [X,R] = ranksolve(U,VT,B)
 % the product U*VT and solve I+U*VT directly.  The value
 % GAUSSQR_PARAMETERS.RANKSOLVE_PROPORTION set in rbfsetup can choose the
 % transition point.
+%
+% function X = ranksolve(U,VT,B)
+% Inputs : U - column matrix
+%          VT - row matrix
+%          B - right hand side, or matrix with multiple RHS
+% Outputs : X - solution
+%
+% function [X,R] = ranksolve(U,VT,B)
+% Outputs : R - conditioning value from the linear solve
+
 
 % Import global parameters from rbfsetup
 global GAUSSQR_PARAMETERS

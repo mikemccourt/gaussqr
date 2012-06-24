@@ -17,6 +17,10 @@ end
 alertuser = GAUSSQR_PARAMETERS.WARNINGS_ON;
 storephi = GAUSSQR_PARAMETERS.STORED_PHI_FOR_EVALUATION;
 
+if ~isfield(GQR,'coef')
+    error('no coef field - gqr_eval called before a solve')
+end
+
 ep    = GQR.ep;
 alpha = GQR.alpha;
 coef  = GQR.coef;
@@ -38,44 +42,52 @@ if alreadystored & ~storephi
     end
 end
 
-if reg
-    if storephi
-        if alreadystored % Check if an x was already stored
-            if sum(any(x~=GQR.stored_x)) | any(deriv~=GQR.stored_deriv)
-                GQR.stored_x = x;
-                GQR.stored_deriv = deriv;
-                GQR.stored_phi = gqr_phi(Marr,x,ep,alpha,deriv);
-            end
-        else % If not, store for the first time
-            GQR.stored_x = x;
-            GQR.stored_deriv = deriv;
-            GQR.stored_phi = gqr_phi(Marr,x,ep,alpha,deriv);
+% Check to see if we need to recompute phi or if we may have already stored
+% that matrix earlier
+recompute = 0;
+if storephi
+    if alreadystored % Check if an x was already stored
+        if any(size(x)~=size(GQR.stored_x)) | any(size(deriv)~=size(GQR.stored_deriv))
+            recompute = 1;
+        elseif sum(any(x~=GQR.stored_x)) | any(deriv~=GQR.stored_deriv)
+            recompute = 1;
         end
-        y = GQR.stored_phi*coef;
-    else
-        phiEval = gqr_phi(Marr,x,ep,alpha,deriv);
-        y = phiEval*coef;
+    else % If not, store for the first time
+        recompute = 1;
+    end
+    if recompute
+        GQR.stored_x = x;
+        GQR.stored_deriv = deriv;
     end
 else
-    Rbar = GQR.Rbar;
-    if storephi
-        if alreadystored % Check if an x was already stored
-            if sum(any(x~=GQR.stored_x)) | any(deriv~=GQR.stored_deriv)
-                GQR.stored_x = x;
-                GQR.stored_deriv = deriv;
-                GQR.stored_phi1 = gqr_phi(Marr(:,1:N),x,ep,alpha,deriv);
-                GQR.stored_phi2 = gqr_phi(Marr(:,N+1:end),x,ep,alpha,deriv);
+    recompute = 1;
+end
+
+switch reg
+    case 1
+        if recompute
+            phiEval = gqr_phi(Marr,x,ep,alpha,deriv);
+            if storephi
+                GQR.stored_phi = phiEval; % Store the phi for later
             end
-        else % If not, store for the first time
-            GQR.stored_x = x;
-            GQR.stored_deriv = deriv;
-            GQR.stored_phi1 = gqr_phi(Marr(:,1:N),x,ep,alpha,deriv);
-            GQR.stored_phi2 = gqr_phi(Marr(:,N+1:end),x,ep,alpha,deriv);
+        else
+            phiEval = GQR.stored_phi;
         end
-        y = GQR.stored_phi1*coef + GQR.stored_phi2*Rbar*coef;
-    else
-        phiEval1 = gqr_phi(Marr(:,1:N),x,ep,alpha,deriv);
-        phiEval2 = gqr_phi(Marr(:,N+1:end),x,ep,alpha,deriv);
+        y = phiEval*coef;
+    case 0
+        Rbar = GQR.Rbar;
+        if recompute
+            phiEval1 = gqr_phi(Marr(:,1:N),x,ep,alpha,deriv);
+            phiEval2 = gqr_phi(Marr(:,N+1:end),x,ep,alpha,deriv);
+            if storephi
+                GQR.stored_phi1 = phiEval1; % Store the phi pieces for later
+                GQR.stored_phi2 = phiEval2;
+            end
+        else
+            phiEval1 = GQR.stored_phi1;
+            phiEval2 = GQR.stored_phi2;
+        end
         y = phiEval1*coef + phiEval2*Rbar*coef;
-    end
+    otherwise
+        error('reg=%g unacceptable, 0 for interpolation, 1 for regression',reg)
 end

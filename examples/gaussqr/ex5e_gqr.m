@@ -3,7 +3,7 @@
 % difference solution
 rbfsetup
 global GAUSSQR_PARAMETERS
-GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = 15;
+GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = 55;
 
 clear functions % reset persistent variables
 
@@ -31,7 +31,7 @@ end
 % Compute the GaussQR solution
 GAUSSQR_PARAMETERS.MY_EPSILON = 1e-4;
 GAUSSQR_PARAMETERS.MY_ALPHA = 1;
-N = 5;
+N = 20;
 gmRBFsols_file = 'rbfsols.mat';
 
 [computing_time,time_steps] = ex5e_gqr_RBF_ode(N,t_store,gmRBFsols_file);

@@ -3,7 +3,6 @@
 rbfsetup
 global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .5;
-GAUSSQR_PARAMETERS.ORTH_INDEX_REQUESTED = 4;
 
 epvecd = logspace(-1,1,20);
 epvecr = logspace(-1,1,20);
@@ -22,6 +21,8 @@ yy = yf(xx);
 errvecr = zeros(size(Nvec,2),length(epvecr));
 errvecd = zeros(size(Nvec,2),length(epvecd));
 
+alpha = 1;
+
 status = 'Performing RBF-QRr'
 j = 1;
 for N=Nvec
@@ -29,7 +30,7 @@ for N=Nvec
     y = yf(x);
     k = 1;
     for ep=epvecr
-        GQR = gqr_rsolve(x,y,ep);
+        GQR = gqr_rsolve(x,y,ep,alpha);
         yp = gqr_eval(GQR,xx);
         errvecr(j,k) = errcompute(yp,yy);
         k = k+1;
@@ -66,7 +67,7 @@ loglog(epvecr,errvecr,'LineWidth',3)
 hold off
 xlabel('\epsilon')
 ylabel('average error')
-ylim([1e-16,1])
+ylim([1e-18,.1])
 ptsstr=strcat(', x\in[',num2str(aa),',',num2str(bb),'],');
 title(strcat(fstr,ptsstr,spacestr))
 legend('N=11^2 (Direct)','N=15^2 (Direct)','N=19^2 (Direct)','N=11^2 (QR)','N=15^2 (QR)','N=19^2 (QR)','Location','SouthEast')
