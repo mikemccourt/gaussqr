@@ -155,7 +155,6 @@ switch reg
             GQR.reg   = true;
             GQR.ep    = ep;
             GQR.alpha = alpha;
-            GQR.N     = N;
             GQR.Marr  = Marr;
             
             % Change to the first value returned
@@ -251,7 +250,6 @@ switch reg
             GQR.reg   = false;
             GQR.ep    = ep;
             GQR.alpha = alpha;
-            GQR.N     = N;
             GQR.Rbar  = Rbar;
             GQR.Marr  = Marr;
             if storephi

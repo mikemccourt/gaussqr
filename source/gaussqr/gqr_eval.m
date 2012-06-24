@@ -25,7 +25,6 @@ ep    = GQR.ep;
 alpha = GQR.alpha;
 coef  = GQR.coef;
 Marr  = GQR.Marr;
-N     = GQR.N;
 reg   = GQR.reg;
 
 if nargin==2
@@ -76,6 +75,7 @@ switch reg
         y = phiEval*coef;
     case 0
         Rbar = GQR.Rbar;
+        N = size(Rbar,2);
         if recompute
             phiEval1 = gqr_phi(Marr(:,1:N),x,ep,alpha,deriv);
             phiEval2 = gqr_phi(Marr(:,N+1:end),x,ep,alpha,deriv);

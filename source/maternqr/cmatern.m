@@ -8,7 +8,7 @@ function [s,M] = cmatern(x,z,L,ep,beta,deriv,Mfix)
 %    u(0)=u(L)=0, D^2u(0)=D^2u(L)=0, ..., D^{2beta}u(0)=D^{2beta}u(L)=0
 % We are calling this function the Compact Matern
 %
-% When beta=1, we can evaluate a closed form.
+% When beta=1 or beta=2, we can evaluate a closed form.
 % For other parameter values, we can only evaluate it with the summation
 %
 % NOTE: The accuracy of this summation is chosen at 
@@ -109,10 +109,19 @@ else
     M = Mfix;
 end
 
-% For beta=1 we have the closed form of the function
+% For beta=1 and beta=2 we have the closed form of the function
 % Otherwise we need to compute the series
 if beta==1 && Mfix==0
     s = sinh(ep*min(x,z)).*sinh(ep*(L-max(x,z)))./(ep*sinh(L*ep));
+elseif beta==2 && Mfix==0
+    minvals = min(x,z);
+    maxvals = max(x,z);
+    % The kernel function below is piecewise-defined, with two pieces; one
+    % defined for x < z and the other for x >= z.
+    % minvals(i) always <= maxvals(i), so we can use a single form for
+    % the function: the piece that applies when x < z, but with x replaced 
+    % with minvals and z replaced with maxvals
+    s = (sinh(2*L)+cosh(2*L)-1)^(-2).*(sinh(2*L)+cosh(2*L)).*(2.*minvals.*sinh(L).*cosh(minvals).*sinh(L-maxvals)-sinh(minvals).*(maxvals.*sinh(2*L-maxvals)-2*L*sinh(maxvals)+cosh(2*L-maxvals)+maxvals.*sinh(maxvals)-cosh(maxvals)));
 else
     % Should come up with a way to automate this so that it will check for
     % allocation issues and work around it.  Maybe it could be optimized to
