@@ -54,7 +54,6 @@ for ep=epvec
 end
 
 % Solve the GQRr collocation problem
-GQR = gqr_rsolve(t,exact(t),1,1); % Setup GQR
 err_GQR = [];
 % err_GQR_int = [];
 alpha = 1;
@@ -64,15 +63,14 @@ for ep = epvec
 %     GQR = gqr_rsolve(t,exact(t),ep,alpha);
 %     err_GQR_int(k) = errcompute(gqr_eval(GQR,xx),uu);
     
-    [ep,alpha,Marr] = gqr_solveprep(1,t,ep,alpha);
-    GQR.ep = ep;
-    phiMat = gqr_phi(Marr,t([1,end]),ep,alpha);
-    phiMatD2 = gqr_phi(Marr,t(2:end-1),ep,alpha,2);
+    GQRr = gqr_solveprep(1,t,ep,alpha);
+    phiMat = gqr_phi(GQRr,t([1,end]));
+    phiMatD2 = gqr_phi(GQRr,t(2:end-1),2);
     
     A = [phiMat(1,:);phiMatD2;phiMat(end,:)];
-    GQR.coef = A\rhs;
+    GQRr.coef = A\rhs;
 
-    err_GQR(k) = errcompute(gqr_eval(GQR,xx),uu);
+    err_GQR(k) = errcompute(gqr_eval(GQRr,xx),uu);
     k = k+1;
 end
 
@@ -86,22 +84,24 @@ loglog(epvec,err_Trefethen*ones(size(epvec)),'--k','LineWidth',2)
 hold off
 xlabel('\epsilon')
 ylabel('absolute 2-norm error')
-ylim([1e-13 1e8])
+ylim([1e-15 1e8])
 % title(sprintf('Collocation for a 2-pt BVP, N=%d',N))
-legend(sprintf('GaussQRr (M=%d)',size(GQR.Marr,2)),'Direct Gauss Collocation','Polynomial Collocation','Location','NorthEast')
+legend(sprintf('GaussQRr (M=%d)',size(GQRr.Marr,2)),'Direct Gauss Collocation','Polynomial Collocation','Location','NorthEast')
 
 figure
 
+[D,t] = cheb(N);
+D2 = D^2;
+D2([1,end],:) = [1,zeros(1,N-1);zeros(1,N-1),1];
 rhs = [exact(t(1));f(t(2:end-1));exact(t(end))];
 u = D2\rhs;
 [pcoef,S,mu] = polyfit(t,u,N-1);
 uT = polyval(pcoef,xx,S,mu);
 
 ep = 1;
-[ep,alpha,Marr] = gqr_solveprep(1,t,ep,alpha);
-GQR.ep = ep;
-phiMat = gqr_phi(Marr,t([1,end]),ep,alpha);
-phiMatD2 = gqr_phi(Marr,t(2:end-1),ep,alpha,2);
+GQR = gqr_solveprep(1,t,ep,alpha);
+phiMat = gqr_phi(GQR,t([1,end]));
+phiMatD2 = gqr_phi(GQR,t(2:end-1),2);
 A = [phiMat(1,:);phiMatD2;phiMat(end,:)];
 GQR.coef = A\rhs;
 uG = gqr_eval(GQR,xx);

@@ -53,13 +53,13 @@ for ep=epvec
     [uI,GQR] = gqr_eval(GQR,xx); % Store phi_eval to save flops later
     errvecI2D(m) = errcompute(uI,uu);
     
-    [ep,alpha,Marr] = gqr_solveprep(1,x,ep,alpha);
-    phiMat = gqr_phi(Marr,xb,ep,alpha);
-    phiMat2d = gqr_phi(Marr,xi,ep,alpha,[2,0])+gqr_phi(Marr,xi,ep,alpha,[0,2]);
+    GQRr = gqr_solveprep(1,x,ep,alpha);
+    phiMat = gqr_phi(GQRr,xb);
+    phiMat2d = gqr_phi(GQRr,xi,[2,0])+gqr_phi(GQRr,xi,[0,2]);
     A = [phiMat;phiMat2d];
     rhs = [exact(xb);f(xi)];
-    GQR.coef = A\rhs;
-    errvecR2D(m) = errcompute(gqr_eval(GQR,xx),uu);
+    GQRr.coef = A\rhs;
+    errvecR2D(m) = errcompute(gqr_eval(GQRr,xx),uu);
 
     fprintf('%d\n',m)
     m = m+1;

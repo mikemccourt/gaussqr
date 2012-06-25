@@ -77,8 +77,8 @@ for N=5:10
     Nvec(m) = size(x,1);
     
     GQR = gqr_solveprep(1,x,ep,alpha);
-    phiMat = gqr_phi(GQR.Marr,x(b,:),GQR.ep,GQR.alpha);
-    phiMat2d = gqr_phi(GQR.Marr,x(bi,:),GQR.ep,GQR.alpha,[2,0])+gqr_phi(GQR.Marr,x(bi,:),GQR.ep,GQR.alpha,[0,2]);
+    phiMat = gqr_phi(GQR,x(b,:));
+    phiMat2d = gqr_phi(GQR,x(bi,:),[2,0])+gqr_phi(GQR,x(bi,:),[0,2]);
     A = [phiMat2d;phiMat];
     rhs = zeros(length(x),1);
     rhs(1:length(bi)) = f(x(bi,1),x(bi,2));
@@ -181,8 +181,8 @@ for N=5:12
     Nvec(m) = size(x,1);
     
     GQR = gqr_solveprep(1,x,ep,alpha);
-    phiMat = gqr_phi(GQR.Marr,x(b,:),GQR.ep,GQR.alpha);
-    phiMat2d = gqr_phi(GQR.Marr,x(bi,:),GQR.ep,GQR.alpha,[2,0])+gqr_phi(GQR.Marr,x(bi,:),GQR.ep,GQR.alpha,[0,2]);
+    phiMat = gqr_phi(GQR,x(b,:),);
+    phiMat2d = gqr_phi(GQR,x(bi,:),[2,0])+gqr_phi(GQR,x(bi,:),[0,2]);
     A = [phiMat2d;phiMat];
     rhs = zeros(length(x),1);
     rhs(1:length(bi)) = f(x(bi,1),x(bi,2));
@@ -304,9 +304,9 @@ for N=5:12
     % Get the preliminary RBF-QR stuff (namely Marr)
     GQR = gqr_solveprep(1,x,ep,alpha);
     % Build the collocation matrix
-    phiMat1dy = gqr_phi(GQR.Marr,x(bN,:),GQR.ep,GQR.alpha,[0,1]);
-    phiMat = gqr_phi(GQR.Marr,x(bD,:),GQR.ep,GQR.alpha);
-    phiMat2d = gqr_phi(GQR.Marr,x(bi,:),GQR.ep,GQR.alpha,[2,0])+gqr_phi(GQR.Marr,x(bi,:),GQR.ep,GQR.alpha,[0,2]);
+    phiMat1dy = gqr_phi(GQR,x(bN,:),[0,1]);
+    phiMat = gqr_phi(GQR,x(bD,:));
+    phiMat2d = gqr_phi(GQR,x(bi,:),[2,0])+gqr_phi(GQR,x(bi,:),[0,2]);
     
     A = [phiMat2d;phiMat;phiMat1dy];
     % Build the RHS
@@ -478,10 +478,10 @@ for N=5:12
     GQR = gqr_solveprep(1,[x;x(bD,:)],ep,alpha);
     
     % Build the collocation matrix
-    phiMat4d = gqr_phi(GQR.Marr,x(bi,:),GQR.ep,GQR.alpha,[4,0])+gqr_phi(GQR.Marr,x(bi,:),GQR.ep,GQR.alpha,[0,4])+gqr_phi(GQR.Marr,x(bi,:),GQR.ep,GQR.alpha,[2,2]);
-    phiMat2d = gqr_phi(GQR.Marr,x(bL,:),GQR.ep,GQR.alpha,[2,0])+gqr_phi(GQR.Marr,x(bL,:),GQR.ep,GQR.alpha,[0,2]);
-    phiMat1dy = gqr_phi(GQR.Marr,x(bN,:),GQR.ep,GQR.alpha,[0,1]);
-    phiMat = gqr_phi(GQR.Marr,x(bD,:),GQR.ep,GQR.alpha);
+    phiMat4d = gqr_phi(GQR,x(bi,:),[4,0])+gqr_phi(GQR,x(bi,:),[0,4])+gqr_phi(GQR,x(bi,:),[2,2]);
+    phiMat2d = gqr_phi(GQR,x(bL,:),[2,0])+gqr_phi(GQR,x(bL,:),[0,2]);
+    phiMat1dy = gqr_phi(GQR,x(bN,:),[0,1]);
+    phiMat = gqr_phi(GQR,x(bD,:));
     A = [phiMat4d;phiMat2d;phiMat;phiMat1dy];
     
     % Build the RHS

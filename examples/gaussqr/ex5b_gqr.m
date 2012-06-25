@@ -63,8 +63,8 @@ rhs = [exact(t([1,end]));f(t(2:end-1))];
 k = 1;
 for ep = epvec
     GQR = gqr_solveprep(0,t,ep,alpha);
-    phi = gqr_phi(GQR.Marr,t([1,end]),GQR.ep,GQR.alpha);
-    phi2 = gqr_phi(GQR.Marr,t(2:end-1),GQR.ep,GQR.alpha,2);
+    phi = gqr_phi(GQR,t([1,end]));
+    phi2 = gqr_phi(GQR,t(2:end-1),2);
     A = [phi;phi2]*[eye(N);GQR.Rbar];
 
     coef = A\rhs;
@@ -81,8 +81,8 @@ rhs = [exact(t([1,end]));f(t(2:end-1))];
 k = 1;
 for ep=epvec
     GQR = gqr_solveprep(1,t,ep,alpha);
-    phi = gqr_phi(GQR.Marr,t([1,end]),GQR.ep,GQR.alpha);
-    phi2 = gqr_phi(GQR.Marr,t(2:end-1),GQR.ep,GQR.alpha,2);
+    phi = gqr_phi(GQR,t([1,end]));
+    phi2 = gqr_phi(GQR,t(2:end-1),2);
     A = [phi;phi2];
 
     coef = A\rhs;

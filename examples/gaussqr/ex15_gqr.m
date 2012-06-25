@@ -79,9 +79,9 @@ for t=dt:dt:T
     
     % Consider the linear version, with k(u_x) = 1
     % This provides an initial guess for the nonlinear solver
-    [ep,alpha,Marr] = gqr_solveprep(1,x,ep,alpha);
-    phi = gqr_phi(Marr,x,ep,alpha);
-    phixx = gqr_phi(Marr,x,ep,alpha,2);
+    GQR = gqr_solveprep(1,x,ep,alpha);
+    phi = gqr_phi(GQR,x);
+    phixx = gqr_phi(GQR,x,2);
     A = phi/dt - phixx;
     A([1,end],:) = phi([1,end],:)/dt;
     

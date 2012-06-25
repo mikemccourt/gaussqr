@@ -40,8 +40,8 @@ ie = 1;
 for ep=epvec
     % Compute the 2-pt BVP solution
     GQR = gqr_solveprep(0,x,ep,alpha);
-    phiMat = gqr_phi(GQR.Marr,x([1,end]),GQR.ep,GQR.alpha);
-    phiMatD2 = gqr_phi(GQR.Marr,x([2:end-1]),GQR.ep,GQR.alpha,2);
+    phiMat = gqr_phi(GQR,x([1,end]));
+    phiMatD2 = gqr_phi(GQR,x([2:end-1]),2);
     A = [phiMat;phiMatD2]*[eye(N);GQR.Rbar];
     rhs = [truesol(x([1,end]));f(x([2:end-1]))];
     
@@ -55,8 +55,8 @@ for ep=epvec
     
     % Consider the regression solution for comparison
     GQRreg = gqr_solveprep(1,x,ep,alpha);
-    phiMat = gqr_phi(GQRreg.Marr,x([1,end]),GQRreg.ep,GQRreg.alpha);
-    phiMatD2 = gqr_phi(GQRreg.Marr,x(2:end-1),GQRreg.ep,GQRreg.alpha,2);
+    phiMat = gqr_phi(GQRreg,x([1,end]));
+    phiMatD2 = gqr_phi(GQRreg,x(2:end-1),2);
     A = [phiMat;phiMatD2];
     rhs = [truesol(x([1,end]));f(x([2:end-1]))];
     

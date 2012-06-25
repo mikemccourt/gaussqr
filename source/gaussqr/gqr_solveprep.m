@@ -56,22 +56,17 @@ switch nargin
         error('nargin=%d is too large',nargin)
 end
 
-createGQR = 0;
+returnGQR = 0;
 switch nargout
     case 1
-        createGQR = 1;
-        GQR.warnid = '';
-        GQR.warnmsg = '';
-        if storephi
-            GQR.stored_x = [];
-        end
+        returnGQR = 1;
     case 3
         if reg==0
-            error('For reg=%g, 3 outputs is unacceptable',reg)
+            error('For reg=%g (interpolation), 3 outputs is unacceptable',reg)
         end
     case 4
         if reg==1
-            error('For reg=%g, 4 outputs is unacceptable',reg)
+            error('For reg=%g (regression), 4 outputs is unacceptable',reg)
         end
     otherwise
         error('nargout=%d unacceptable',nargout)
@@ -106,6 +101,16 @@ if abs(real(alpha))~=alpha
 end
 if ep==0 || alpha==0
     error(sprintf('Parameters cannot be zero: epsilon=%g, alpha=%g',ep,alpha))
+end
+
+% Set up GQR object for evaluating eigenfunctions if necessary
+GQR.reg = reg;
+GQR.ep = ep;
+GQR.alpha = alpha;
+GQR.warnid = '';
+GQR.warnmsg = '';
+if storephi
+    GQR.stored_x = [];
 end
 
 % This switch changes what we're computing based on if the
@@ -149,17 +154,7 @@ switch reg
         end
 
         Marr = gqr_formMarr(M,[],Mlim);
-        
-        % Package everything up, if requested
-        if createGQR
-            GQR.reg   = true;
-            GQR.ep    = ep;
-            GQR.alpha = alpha;
-            GQR.Marr  = Marr;
-            
-            % Change to the first value returned
-            ep = GQR;
-        end
+        GQR.Marr = Marr;
     case 0
         % First create Marr
         % We need the eigenvalues for this
@@ -193,9 +188,10 @@ switch reg
         end
 
         Marr = gqr_formMarr(M,Mlim,Mextramax);
+        GQR.Marr = Marr;
         
         % Now we need to create the Rbar matrix
-        phiMat = gqr_phi(Marr,x,ep,alpha);
+        phiMat = gqr_phi(GQR,x);
         [Q,R] = qr(phiMat);
         R1 = R(:,1:N);
         R2 = R(:,N+1:end);
@@ -205,14 +201,8 @@ switch reg
         iRdiag = diag(1./diag(R1));
         [warnmsg,msgid] = lastwarn;
         if strcmp(msgid,'MATLAB:divideByZero')
-            warnid = 'GAUSSQR:zeroQRDiagonal';
-            warnmsg = 'At least one value on the R diagonal was exactly 0';
-            if createGQR
-                GQR.warnid = warnid;
-                GQR.warnmsg = warnmsg;
-            elseif alertuser
-                warning(warnid,warnmsg)
-            end
+            GQR.warnid = 'GAUSSQR:zeroQRDiagonal';
+            GQR.warnmsg = 'At least one value on the R diagonal was exactly 0';
         end
         warning on MATLAB:divideByZero
 
@@ -228,15 +218,10 @@ switch reg
         warnid = 'GAUSSQR:singularR1invR2';
         warnmsg = 'Computing inv(R1)R2 ... R1 singular to working precision';
         
-        if createGQR
-            if ~strcmp(GQR.warnid,'GAUSSQR:zeroQRDiagonal') & strcmp(msgid,'MATLAB:singularMatrix')
-                GQR.warnid = warnid;
-                GQR.warnmsg = warnmsg;
-            end
-        elseif alertuser
-            warning(warnid,warnmsg)
+        if ~strcmp(GQR.warnid,'GAUSSQR:zeroQRDiagonal') & strcmp(msgid,'MATLAB:singularMatrix')
+            GQR.warnid = warnid;
+            GQR.warnmsg = warnmsg;
         end
-        
 
         % Here we apply the eigenvalue matrices
         % Note that the -d term in the power goes away because it
@@ -245,29 +230,21 @@ switch reg
         D = lam.^(repmat(sum(Marr(:,N+1:end),1)',1,N)-repmat(sum(Marr(:,1:N),1),Ml-N,1));
         Rbar = D.*Rhat';
         
-        % Package everything up, if requested
-        if createGQR
-            GQR.reg   = false;
-            GQR.ep    = ep;
-            GQR.alpha = alpha;
-            GQR.Rbar  = Rbar;
-            GQR.Marr  = Marr;
-            if storephi
-                GQR.stored_x = x;
-                GQR.stored_deriv = 0;
-                GQR.stored_phi1 = phiMat(:,1:N);
-                GQR.stored_phi2 = phiMat(:,N+1:end);
-            end
-            
-            % Change to the first value returned
-            ep = GQR;
+        GQR.Rbar = Rbar;
+        if storephi & returnGQR
+            GQR.stored_x = x;
+            GQR.stored_deriv = 0;
+            GQR.stored_phi1 = phiMat(:,1:N);
+            GQR.stored_phi2 = phiMat(:,N+1:end);
         end
     otherwise
         error('reg=%g is unacceptable, 1 for regression, 0 for interpolation',reg)
 end
+        
+if returnGQR
+    ep = GQR;
+end
 
-if createGQR
-    if alertuser && ~strcmp(GQR.warnid,'')
-        warning(GQR.warnid,GQR.warnmsg)
-    end
+if alertuser && ~strcmp(GQR.warnid,'')
+    warning(GQR.warnid,GQR.warnmsg)
 end

@@ -69,23 +69,23 @@ errvecQ1d = [];
 k = 1;
 alpha = 3;
 for ep=epvec
-  [ep,alpha,Marr,Rbar] = gqr_solveprep(0,x,ep,alpha);
-  phiMat = gqr_phi(Marr,x,ep,alpha);
-  phiMat2d = gqr_phi(Marr,x,ep,alpha,2);
-  D2 = phiMat2d*[I;Rbar]/(phiMat*[I;Rbar]);
+  GQR = gqr_solveprep(0,x,ep,alpha);
+  phiMat = gqr_phi(GQR,x);
+  phiMat2d = gqr_phi(GQR,x,2);
+  D2 = phiMat2d*[I;GQR.Rbar]/(phiMat*[I;GQR.Rbar]);
   L = kron(I,D2) + kron(D2,I);
   errvecQ1d(k) = errcompute(L*u,Lfu);
   
-  [ep,alpha,Marr] = gqr_solveprep(1,x,ep,alpha);
-  phiMat = gqr_phi(Marr,x,ep,alpha);
-  phiMat2d = gqr_phi(Marr,x,ep,alpha,2);
+  GQRr = gqr_solveprep(1,x,ep,alpha);
+  phiMat = gqr_phi(GQRr,x);
+  phiMat2d = gqr_phi(GQRr,x,2);
   D2 = phiMat2d/phiMat;
   L = kron(I,D2) + kron(D2,I);
   errvecR1d(k) = errcompute(L*u,Lfu);
   
   % Note that alpha was defined earlier in gqr_solveprep
-  GQR = gqr_rsolve(pts,u,ep,alpha);
-  Lu = gqr_eval(GQR,pts,[2,0]) + gqr_eval(GQR,pts,[0,2]);
+  GQRs = gqr_rsolve(pts,u,ep,alpha);
+  Lu = gqr_eval(GQRs,pts,[2,0]) + gqr_eval(GQRs,pts,[0,2]);
   errvecR2d(k) = errcompute(Lu,Lfu);
   
   k = k + 1;

@@ -51,30 +51,30 @@ if nargin<4
     error('Insufficient arguments passed')
 else
     [N,c] = size(x);
-    if M~=floor(M)
-        M = floor(M);
-        warning('Noninteger M passed, reset to M=%d',M)
-    end
+%     if M~=floor(M)
+%         M = floor(M);
+%         warning('Noninteger M passed, reset to M=%d',M)
+%     end
+%     
+%     if M>=N
+%         error('May only consider M<N for QR factorization, M=%g',M)
+%     elseif M<1
+%         error('Invalid value for M=%g',M)
+%     elseif c>1
+%         error('May only consider 1D problems, size(x,2)=%d',c)
+%     end
     
-    if M>=N
-        error('May only consider M<N for QR factorization, M=%g',M)
-    elseif M<1
-        error('Invalid value for M=%g',M)
-    elseif c>1
-        error('May only consider 1D problems, size(x,2)=%d',c)
-    end
-    
-    [ep,alpha] = gqr_solveprep(1,x,ep,alpha);
+    GQR = gqr_solveprep(1,x,ep,alpha,M);
     
 % If the size of the problem is too small, the recurrence doesn't make
 % sense, so direct evaluation is computed
     if nargin==4
         if M<4
-            [Q,R] = qr(gqr_phi(gqr_formMarr(M),x,ep,alpha),0);
+            [Q,R] = qr(gqr_phi(GQR,x),0);
             Svec = diag(R);
             invU = triu(inv(diag(1./Svec)*R));
         else
-            [invU,Svec,Q] = computeQRfactorization(M,x,ep,alpha);
+            [invU,Svec,Q] = computeQRfactorization(GQR,x);
         end
     elseif nargin==5
         r = size(rhs,1);
@@ -84,9 +84,9 @@ else
             error('Only one output returned when rhs is passed')
         end
         if M<4
-            invU = linsolve(gqr_phi(gqr_formMarr(M),x,ep,alpha),rhs);
+            invU = linsolve(gqr_phi(GQR,x),rhs);
         else
-            invU = computeQRsolve(M,x,ep,alpha,rhs);
+            invU = computeQRsolve(GQR,x,rhs);
         end
     end
 end
@@ -96,15 +96,16 @@ end
 %%%%%%%%%%%
 % This computes the actual factorization, and shouldn't be called directly
 % from outside this file
-function [invU,Svec,Q] = computeQRfactorization(M,x,ep,alpha)
+function [invU,Svec,Q] = computeQRfactorization(GQR,x)
 N = size(x,1);
+M = GQR.Marr(end);
 invU = zeros(M);
 Svec = zeros(M,1);
 Q = zeros(N,M);
 
-Dx = (1+(2*ep/alpha)^2)^.25*alpha*x;
+Dx = (1+(2*GQR.ep/GQR.alpha)^2)^.25*GQR.alpha*x;
 
-phi = gqr_phi(1:M,x,ep,alpha);
+phi = gqr_phi(GQR,x);
 
 tmp = phi'*phi(:,[1,M-1:M]);
 d = tmp(:,2)*sqrt(M-1)/sqrt(2) - ApplyTM(tmp(:,3));
@@ -161,14 +162,15 @@ end
 % This private function computes the actual solution without storing the
 % full factorization.  That allows for less storage.  Do not call this
 % function from outside this file
-function sol = computeQRsolve(M,x,ep,alpha,rhs)
+function sol = computeQRsolve(GQR,x,rhs)
 N = size(x,1); % Size of input data
+M = GQR.Marr(end);
 r = size(rhs,2); % Number of right hand sides to consider
 sol = zeros(M,r);
 
-Dx = (1+(2*ep/alpha)^2)^.25*alpha*x;
+Dx = (1+(2*GQR.ep/GQR.alpha)^2)^.25*GQR.alpha*x;
 
-phi = gqr_phi(1:M,x,ep,alpha);
+phi = gqr_phi(GQR,x);
 
 tmp = phi'*phi(:,[1,M-1:M]);
 d = tmp(:,2)*sqrt(M-1)/sqrt(2) - ApplyTM(tmp(:,3));

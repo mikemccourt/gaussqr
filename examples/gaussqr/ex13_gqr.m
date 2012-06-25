@@ -73,8 +73,8 @@ for bN=bvec
     
     % Solve the particular solution problem indirectly
     GQR = gqr_solveprep(1,ptsGQR,ep,alpha);
-    phiMat = gqr_phi(GQR.Marr,ptsGQR,GQR.ep,GQR.alpha);
-    phiMat2d = gqr_phi(GQR.Marr,ptsGQR,GQR.ep,GQR.alpha,[2,0])+gqr_phi(GQR.Marr,ptsGQR,GQR.ep,GQR.alpha,[0,2]);
+    phiMat = gqr_phi(GQR,ptsGQR);
+    phiMat2d = gqr_phi(GQR,ptsGQR,[2,0])+gqr_phi(GQR,ptsGQR,[0,2]);
     A = phiMat2d - lambda^2*phiMat;
     rhs = f(ptsGQR(:,1),ptsGQR(:,2));
     
@@ -88,14 +88,14 @@ for bN=bvec
     % only a fixed number of boundary points are used here
 %     ptsBDY = pick2Dpoints([-1,-1],[1 1],6);
     % This line allows for more boundary points as N increases
-    ptsBDY = pick2Dpoints([-1,-1],[1 1],sqrt(GQR.N));
+    ptsBDY = pick2Dpoints([-1,-1],[1 1],sqrt(size(ptsGQR,1)));
     ptsBDY = ptsBDY(find(any(abs(ptsBDY)==1,2)),:);
     ptsFULL = [ptsGQR;ptsBDY];
     
     GQRfull = gqr_solveprep(1,ptsFULL,ep,alpha,M_MPS);
-    phiMat = gqr_phi(GQRfull.Marr,ptsGQR,GQRfull.ep,GQRfull.alpha);
-    phiMatBC = gqr_phi(GQRfull.Marr,ptsBDY,GQRfull.ep,GQRfull.alpha);
-    phiMat2d = gqr_phi(GQRfull.Marr,ptsGQR,GQRfull.ep,GQRfull.alpha,[2,0])+gqr_phi(GQRfull.Marr,ptsGQR,GQRfull.ep,GQRfull.alpha,[0,2]);
+    phiMat = gqr_phi(GQRfull,ptsGQR);
+    phiMatBC = gqr_phi(GQRfull,ptsBDY);
+    phiMat2d = gqr_phi(GQRfull,ptsGQR,[2,0])+gqr_phi(GQRfull,ptsGQR,[0,2]);
     A = [phiMat2d - lambda^2*phiMat;phiMatBC];
     rhs = [f(ptsGQR(:,1),ptsGQR(:,2));fsol(ptsBDY(:,1),ptsBDY(:,2))];
     

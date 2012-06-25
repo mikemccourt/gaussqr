@@ -21,14 +21,8 @@ if ~isfield(GQR,'coef')
     error('no coef field - gqr_eval called before a solve')
 end
 
-ep    = GQR.ep;
-alpha = GQR.alpha;
-coef  = GQR.coef;
-Marr  = GQR.Marr;
-reg   = GQR.reg;
-
 if nargin==2
-    deriv = zeros(1,size(Marr,1));
+    deriv = zeros(1,size(x,2));
 end
 
 alreadystored = isfield(GQR,'stored_phi');
@@ -62,23 +56,24 @@ else
     recompute = 1;
 end
 
-switch reg
+switch GQR.reg
     case 1
         if recompute
-            phiEval = gqr_phi(Marr,x,ep,alpha,deriv);
+            phiEval = gqr_phi(GQR,x,deriv);
             if storephi
                 GQR.stored_phi = phiEval; % Store the phi for later
             end
         else
             phiEval = GQR.stored_phi;
         end
-        y = phiEval*coef;
+        y = phiEval*GQR.coef;
     case 0
         Rbar = GQR.Rbar;
         N = size(Rbar,2);
         if recompute
-            phiEval1 = gqr_phi(Marr(:,1:N),x,ep,alpha,deriv);
-            phiEval2 = gqr_phi(Marr(:,N+1:end),x,ep,alpha,deriv);
+            phiEval = gqr_phi(GQR,x,deriv);
+            phiEval1 = phiEval(:,1:N);
+            phiEval2 = phiEval(:,N+1:end);
             if storephi
                 GQR.stored_phi1 = phiEval1; % Store the phi pieces for later
                 GQR.stored_phi2 = phiEval2;
@@ -87,7 +82,7 @@ switch reg
             phiEval1 = GQR.stored_phi1;
             phiEval2 = GQR.stored_phi2;
         end
-        y = phiEval1*coef + phiEval2*Rbar*coef;
+        y = phiEval1*GQR.coef + phiEval2*Rbar*GQR.coef;
     otherwise
         error('reg=%g unacceptable, 0 for interpolation, 1 for regression',reg)
 end

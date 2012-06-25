@@ -29,11 +29,9 @@ errorth_Sfnew = zeros(size(Mvec));
 m = 1;
 for M=Mvec
     I = eye(M);
-    GQR = gqr_rsolve(x,y,ep,alpha,M);
+    GQR = gqr_solveprep(1,x,ep,alpha,M);
     
-    Marr = gqr_formMarr(M);
-    phi = gqr_phi(Marr,x,ep,alpha);
-    [Q,R] = qr(phi,0);
+    [Q,R] = qr(gqr_phi(GQR,x),0);
     errorth_true(m) = errcompute(Q'*Q,I);
     GQR.coef = R\(Q'*y);
     [yp,GQR] = gqr_eval(GQR,xx);

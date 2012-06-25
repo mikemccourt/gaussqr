@@ -1,16 +1,12 @@
-% ex13b_gqr.m
-% Comparing GaussQR to MFS for a couple problems
+% ex13d_gqr.m
+% Incorporating GaussQR into MPS
 % In honor of Graeme Fairweather's 70th birthday
 % The first problem we'll be looking at is 
-%     Lap(u) = 0
-%   solution: u(x,y) = exp(x)cos(y)
-%   domain: L-shaped domain between (0,0)->(1,pi/2)
-%   fictitious boundary: Circle, radius 2, center (.5,pi/4)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% The boundary conditions are chosen to be more difficult
-%   On x=0, we use the Neumann BC
-%   Everywhere else, we use the Dirichlet BC
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%     Lap(u) - lambda^2*u = f   -on- interior
+%     u = g                     -on- boundary
+%   solution: u(x,y) = sin(x^2+y)
+%   domain: L shaped region (-1<x<0 & -1<y<1)+(-1<x<1 & -1<y<0)
+%   fictitious boundary: 1.1 times real boundary
 
 global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
@@ -18,45 +14,37 @@ if ~isstruct(GAUSSQR_PARAMETERS)
 end
 GAUSSQR_PARAMETERS.ERROR_STYLE = 2;
 GAUSSQR_PARAMETERS.NORM_TYPE = inf;
-fsol = @(x,y) exp(x).*cos(y);
-fdysol = @(x,y) -exp(x).*sin(y);
-Lfs = @(r) -1/(2*pi)*log(r);
-Ldyfs = @(x,y) -1./(2*pi*DistanceMatrix(x,y).^2).*DifferenceMatrix(x(:,2),y(:,2));
 
-% First, we're gonna look at the Finite Difference solution
-bvec = 9:20;
+% This is the wavenumber (maybe) for the Helmholtz problem
+lambda = 3;
+
+% This is the true solution of the problem
+fsol = @(x,y) sin(x.^2+y);
+fsoldy = @(x,y) cos(x.^2+y);
+% The source associated with the true solution
+f = @(x,y) 2*cos(x.^2+y)-4*x.^2.*sin(x.^2+y)-sin(x.^2+y)-lambda^2*fsol(x,y);
+
+% fsol = @(x,y) exp(x+y);
+% f = @(x,y) (2-lambda^2)*exp(x+y);
+% The fundamental solution of the Helmholtz problem
+Hfs = @(r) besselk(0,lambda*r)/(2*pi);
+Hdyfs = @(x,y) -lambda*DifferenceMatrix(x(:,2),y(:,2)).*besselk(1,lambda*DistanceMatrix(x,y))./DistanceMatrix(x,y);
+
+% The number of error evalution points in each dimension
+NN = 30;
+
+% The length of the GaussQRr regression
+GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .5;
+% The global scale parameter for GaussQR
+alpha = 1;
+% The shape parameter commonly associated with RBFs
+ep = 1e-6;
+
+bvec = 10:5:70;
+errMPS = [];
+errMPSimp = [];
+errGQR = [];
 bNvec = [];
-errFD = [];
-
-m = 1;
-for bN=bvec
-    % Find the computational grid
-    L = numgrid('L',bN)';
-    N = max(max(L));
-    bNvec(m) = N
-    A = delsq(L);
-    BCpts = find(full(sum(delsq(L)~=0,2))<5);
-    BCNpts = L(end-1,2:end-1);
-    BCDpts = setdiff(BCpts,BCNpts);
-    INTpts = setdiff(1:N,BCpts);
-    
-    % Fill in the solution matrix
-    dx = pi/2/(N-1);
-    dy = 1/(N-1);
-    for k=INTpts
-        xk = find(L==k);
-        Lc = ceil(xk/bN);
-        Lr = mod(xk,bN);
-        A(xk*ones(1,5),[L(Lr-1,Lc),L(Lr,Lc-1),L(Lr,Lc),L(Lr,Lc+1),L(Lr+1,Lc)]) = ...
-             [-1/dy^2,-1/dx^2,2/dy^2+2/dx^2,-1/dx^2,-1/dy^2];
-    end
-end
-
-pause
-
-bvec = 5:10:55;
-bNvec = [];
-errMFS = [];
 
 m = 1;
 for bN=bvec
@@ -64,150 +52,138 @@ for bN=bvec
     x = [pick2Dpoints([-1 -1],[1 1],bN);pick2Dpoints([0 0],[1 1],ceil(bN/2))];
     bx = find( x(:,1)==-1 | x(:,2)==-1 | (x(:,1)==1 & x(:,2)<=0) | (x(:,2)==1 & x(:,1)<=0) | (x(:,1)>=0 & x(:,2)==0) | (x(:,2)>=0 & x(:,1)==0) );
     x = unique(1e-8*ceil(1e8*x(bx,:)),'rows');
-    ptsMFScoll = x*diag([.5 pi/4]) + ones(size(x,1),1)*[.5 pi/4];
-    bNvec(m) = size(ptsMFScoll,1);
-
-    % Find the points which are Neumann BC instead of Dirichlet
-    b = find( ptsMFScoll(:,2)==0 );
+    bNvec(m) = size(x,1);
+    bN = find( x(:,2)==-1 );
+    bD = setdiff(1:bNvec(m),bN);
+    ptsMFScoll_D = x(bD,:);
+    ptsMFScoll_N = x(bN,:);
+    ptsMFScoll = [ptsMFScoll_D;ptsMFScoll_N];
+    N = ceil(sqrt(bNvec(m)));
     
-    % Choose the source points, just the standard circle
-    ptsMFSsource = 2*[cos(linspace(-pi,pi,bNvec(m)))',sin(linspace(-pi,pi,bNvec(m)))'] + ones(bNvec(m),1)*[.5,pi/4];
-
-    % Find some sample points at which to evaluate the error
+    % Find the MFS source points
+    ptsMFSsource = 1/(lambda^2+N)*(ptsMFScoll.*(abs(ptsMFScoll)==1) + (ptsMFScoll==0)) + ptsMFScoll;
+%     tv = linspace(0,2*pi,9)';
+%     rv = [l2,1+l2,sqrt(2)+l2,1+l2,sqrt(2)+l2,1+l2,sqrt(2)+l2,1+l2,l2]';
+%     tt = linspace(0,2*pi,bNvec(m))';
+%     rr = interp1(tv,rv,tt);
+%     ptsMFSsource = [rr.*cos(tt+pi/4),rr.*sin(tt+pi/4)];
+    
+    % Find some sample points to evaluate the error at
     x = pick2Dpoints([-1 -1],[1 1],NN);
     bx = find( x(:,1)<=0 | x(:,2)<=0 );
-    ptsEVAL = x(bx,:)*diag([.5 pi/4]) + ones(size(bx,1),1)*[.5 pi/4];
+    ptsEVAL = x(bx,:);
     % Evaluate the true solution at the sample points
     usol = fsol(ptsEVAL(:,1),ptsEVAL(:,2));
-
-    % Solve the system with MFS
-    DM_coll = DistanceMatrix(ptsMFScoll,ptsMFSsource);
-    % Handle the Dirichlet BC
-    A_coll = Lfs(DM_coll);
-    rhs = fsol(ptsMFScoll(:,1),ptsMFScoll(:,2));
-    % Handle the Neumann BC
-    A_coll(b,:) = Ldyfs(ptsMFScoll(b,:),ptsMFSsource);
-    rhs(b) = fdysol(ptsMFScoll(b,1),ptsMFScoll(b,2));
-
-    coefMFS = A_coll\rhs;
+    
+    % Choose the GaussQR interpolation points
+    possible_x = [pick2Dpoints([-1 -1],[1 1],N,'cheb');pick2Dpoints([-1 -1],[1 1],N,'halton')];
+    % Get rid of duplicate points, which can happen
+    x = unique(1e-8*ceil(1e8*possible_x),'rows');
+    bx = find( x(:,1)<=0 | x(:,2)<=0 );
+    x = x(bx,:);
+    % Determine which points are boundary points, and which are interior
+    b = find( abs(x(:,1))==1 | abs(x(:,2))==1 | (x(:,1)==0 & x(:,2)>=0) | (x(:,1)>=0 & x(:,2)==0) );
+    bi = setdiff(1:size(x,1),b)';
+    ptsGQR = x(bi,:);
+    Nvec(m) = size(ptsGQR,1);
+    
+    % Solve the particular solution problem indirectly
+    [ep,alpha,Marr] = gqr_solveprep(1,ptsGQR,ep,alpha);
+    phiMat = gqr_phi(Marr,ptsGQR,ep,alpha);
+    phiMat2d = gqr_phi(Marr,ptsGQR,ep,alpha,[2,0])+gqr_phi(Marr,ptsGQR,ep,alpha,[0,2]);
+    A = phiMat2d - lambda^2*phiMat;
+    rhs = f(ptsGQR(:,1),ptsGQR(:,2));
+    coef = A\rhs;
+    
+    % Fill the GQR object with all the values it needs
+    GQR.reg = 1;
+    GQR.Marr = Marr;
+    GQR.alpha = alpha;
+    GQR.ep = ep;
+    GQR.N = size(ptsGQR,1);
+    GQR.coef = coef;
+    
+    % Store the approximation length to be used later
+    M_MPS = size(GQR.Marr,2);
+    
+    % Now enforce the boundary with MFS
+    uPonBDY_D = gqr_eval(GQR,ptsMFScoll_D);
+    uPonBDY_N = gqr_eval(GQR,ptsMFScoll_N,[0,1]);
+    rhs_D = fsol(ptsMFScoll_D(:,1),ptsMFScoll_D(:,2)) - uPonBDY_D;
+    rhs_N = fsoldy(ptsMFScoll_N(:,1),ptsMFScoll_N(:,2)) - uPonBDY_N;
+    A_coll_D = Hfs(DistanceMatrix(ptsMFScoll_D,ptsMFSsource));
+    A_coll_N = Hdyfs(ptsMFScoll_N,ptsMFSsource);
+    coefMFS = [A_coll_D;A_coll_N]\[rhs_D;rhs_N];
+    
+    % Consider the problem with just GaussQR for comparison
+    % Different boundary points need to be used here than MFS
+    N = floor(.3*N^2/4); % Number of points on each side
+    x = [ [pickpoints(-1,1,N,'cheb'),-ones(N,1)];[-ones(N,1),pickpoints(-1,1,N,'cheb')];[pickpoints(-1,1,N,'cheb'),ones(N,1)];[ones(N,1),pickpoints(-1,1,N,'cheb')] ];
+%     x = pick2Dpoints([-1,-1],[1 1],6);
+    x = unique(1e-8*ceil(1e8*x),'rows');
+    x = x(find(any(abs(x)==1,2)),:);
+    ib = find((x(:,1)>0) & (x(:,2)==1));
+    x(ib,2) = zeros(size(x(ib,2)));
+    ib = find((x(:,1)==1) & (x(:,2)>0));
+    x(ib,1) = zeros(size(x(ib,1)));
+    bN = find( x(:,2)==-1 );
+    bD = setdiff(1:size(x,1),bN);
+    ptsBDY_D = x(bD,:);
+    ptsBDY_N = x(bN,:);
+    ptsBDY = x;
+    
+    % Solve the system using these different boundary points
+    ptsFULL = [ptsGQR;ptsBDY];
+    [ep,alpha,Marr] = gqr_solveprep(1,ptsFULL,ep,alpha,M_MPS);
+    phiMat = gqr_phi(Marr,ptsGQR,ep,alpha);
+    phiMatBC_D = gqr_phi(Marr,ptsBDY_D,ep,alpha);
+    phiMatBC_N = gqr_phi(Marr,ptsBDY_N,ep,alpha,[0,1]);
+    phiMat2d = gqr_phi(Marr,ptsGQR,ep,alpha,[2,0])+gqr_phi(Marr,ptsGQR,ep,alpha,[0,2]);
+    A = [phiMat2d - lambda^2*phiMat;phiMatBC_N;phiMatBC_D];
+    rhs_L = f(ptsGQR(:,1),ptsGQR(:,2));
+    rhs_N = fsoldy(ptsBDY_N(:,1),ptsBDY_N(:,2));
+    rhs_D = fsol(ptsBDY_D(:,1),ptsBDY_D(:,2));
+    rhs = [rhs_L;rhs_N;rhs_D];
+    coef = A\rhs;
+    
+    % Fill the GQR object with all the values it needs
+    GQRfull.reg = 1;
+    GQRfull.Marr = Marr;
+    GQRfull.alpha = alpha;
+    GQRfull.ep = ep;
+    GQRfull.N = size(ptsFULL,1);
+    GQRfull.coef = coef;
+    
+    % Also consider improved MFS with full GaussQR
+    uPonBDY_D = gqr_eval(GQRfull,ptsMFScoll_D);
+    uPonBDY_N = gqr_eval(GQRfull,ptsMFScoll_N,[0,1]);
+    rhs_D = fsol(ptsMFScoll_D(:,1),ptsMFScoll_D(:,2)) - uPonBDY_D;
+    rhs_N = fsoldy(ptsMFScoll_N(:,1),ptsMFScoll_N(:,2)) - uPonBDY_N;
+    A_coll_D = Hfs(DistanceMatrix(ptsMFScoll_D,ptsMFSsource));
+    A_coll_N = Hdyfs(ptsMFScoll_N,ptsMFSsource);
+    coefMFSimp = [A_coll_D;A_coll_N]\[rhs_D;rhs_N];
+    
+    % Now evaluate the full solution at the error points
+    uP_eval = gqr_eval(GQR,ptsEVAL);
     DM_eval = DistanceMatrix(ptsEVAL,ptsMFSsource);
-    A_eval = Lfs(DM_eval);
-    uMFS = A_eval*coefMFS;
-    errMFS(m) = errcompute(uMFS,usol);
-    m = m + 1;
+    A_eval = Hfs(DM_eval);
+    uF_eval = A_eval*coefMFS;
+    uPi_eval = gqr_eval(GQRfull,ptsEVAL);
+    uFi_eval = A_eval*coefMFSimp;
+    errMPS(m) = errcompute(uF_eval+uP_eval,usol);
+    errGQR(m) = errcompute(gqr_eval(GQRfull,ptsEVAL),usol);
+    errMPSimp(m) = errcompute(uFi_eval+uPi_eval,usol);
+    
+    fprintf('%d ',m)
+    m = m+1;
 end
 
-
-% GaussQR solution
-fsol = @(x,y) exp(.5*x+.5).*cos(pi/4*(y+1));
-fdysol = @(x,y) -pi/4*exp(.5*x+.5).*sin(pi/4*(y+1));
-f = @(x,y) (1/4-pi^2/16)*fsol(x,y);
-
-ptsEVAL = pick2Dpoints([-1 -1],[1 1],NN);
-ptsEVAL = ptsEVAL(find( ptsEVAL(:,1)<=0 | ptsEVAL(:,2)<=0 ),:);
-usol = fsol(ptsEVAL(:,1),ptsEVAL(:,2));
-
-alpha = 1;
-ep = 1e-9;
-
-m = 1;
-errvecR2D = [];
-Nvec = [];
-for N=5:12
-    % Determine the collocation points
-    x = [pick2Dpoints([-1 -1],[1 1],N,'cheb');pick2Dpoints([-1 -1],[1 1],N,'halton');pick2Dpoints([0 0],[1 1],ceil(N/2))];
-    x = unique(1e-8*ceil(1e8*x),'rows');
-    bx = find( x(:,1)<=0 | x(:,2)<=0 );
-    x = x(bx,:);
-    Nvec(m) = size(x,1);
-
-    % Find out which points are on the Dirichlet boundary
-    bD = find( abs(x(:,1))==1 | x(:,2)==1 | (x(:,1)==0 & x(:,2)>=0) | (x(:,1)>=0 & x(:,2)==0));
-    % Find out which points are on the Neumann boundary
-    bN = find( x(:,2)==-1 &  abs(x(:,1))~=1 );
-    % Find out which points are on the interior
-    bi = setdiff(1:Nvec(m),[bN;bD])';
-
-    % Get the preliminary RBF-QR stuff (namely Marr)
-    [ep,alpha,Marr] = gqr_solveprep(1,x,ep,alpha);
-    % Build the collocation matrix
-    phiMat2d = gqr_phi(Marr,x(bi,:),ep,alpha,[2,0])+gqr_phi(Marr,x(bi,:),ep,alpha,[0,2]);
-    phiMat = gqr_phi(Marr,x(bD,:),ep,alpha);
-    phiMat1dy = gqr_phi(Marr,x(bN,:),ep,alpha,[0,1]);
-    A = [phiMat2d;phiMat;phiMat1dy];
-    % Build the RHS
-    rhs_interior = f(x(bi,1),x(bi,2));
-    rhs_dirichlet = fsol(x(bD,1),x(bD,2));
-    rhs_neumann = fdysol(x(bN,1),x(bN,2));
-    rhs = [rhs_interior;rhs_dirichlet;rhs_neumann];
-    coef = A\rhs;
-
-    GQR.reg = 1;
-    GQR.Marr = Marr;
-    GQR.alpha = alpha;
-    GQR.ep = ep;
-    GQR.N = Nvec(m);
-    GQR.coef = coef;
-
-    uGQR = gqr_eval(GQR,ptsEVAL);
-    errvecR2D(m) = errcompute(uGQR,usol);
-    m = m + 1;
-end
-
-
-%Finite Difference solution
-fsol = @(x,y) exp(.5*x+.5).*cos(pi/4*(y+1));
-fdysol = @(x,y) -pi/4*exp(.5*x+.5).*sin(pi/4*(y+1));
-f = @(x,y) (1/4-pi^2/16)*fsol(x,y);
-
-ptsEVAL = pick2Dpoints([-1 -1],[1 1],NN);
-ptsEVAL = ptsEVAL(find( ptsEVAL(:,1)<=0 | ptsEVAL(:,2)<=0 ),:);
-usol = fsol(ptsEVAL(:,1),ptsEVAL(:,2));
-
-alpha = 1;
-ep = 1e-9;
-
-m = 1;
-errvecR2D = [];
-Nvec = [];
-for N=5:12
-    % Determine the collocation points
-    x = [pick2Dpoints([-1 -1],[1 1],N,'cheb');pick2Dpoints([-1 -1],[1 1],N,'halton');pick2Dpoints([0 0],[1 1],ceil(N/2))];
-    x = unique(1e-8*ceil(1e8*x),'rows');
-    bx = find( x(:,1)<=0 | x(:,2)<=0 );
-    x = x(bx,:);
-    Nvec(m) = size(x,1);
-
-    % Find out which points are on the Dirichlet boundary
-    bD = find( abs(x(:,1))==1 | x(:,2)==1 | (x(:,1)==0 & x(:,2)>=0) | (x(:,1)>=0 & x(:,2)==0));
-    % Find out which points are on the Neumann boundary
-    bN = find( x(:,2)==-1 &  abs(x(:,1))~=1 );
-    % Find out which points are on the interior
-    bi = setdiff(1:Nvec(m),[bN;bD])';
-
-    % Get the preliminary RBF-QR stuff (namely Marr)
-    [ep,alpha,Marr] = gqr_solveprep(1,x,ep,alpha);
-    % Build the collocation matrix
-    phiMat2d = gqr_phi(Marr,x(bi,:),ep,alpha,[2,0])+gqr_phi(Marr,x(bi,:),ep,alpha,[0,2]);
-    phiMat = gqr_phi(Marr,x(bD,:),ep,alpha);
-    phiMat1dy = gqr_phi(Marr,x(bN,:),ep,alpha,[0,1]);
-    A = [phiMat2d;phiMat;phiMat1dy];
-    % Build the RHS
-    rhs_interior = f(x(bi,1),x(bi,2));
-    rhs_dirichlet = fsol(x(bD,1),x(bD,2));
-    rhs_neumann = fdysol(x(bN,1),x(bN,2));
-    rhs = [rhs_interior;rhs_dirichlet;rhs_neumann];
-    coef = A\rhs;
-
-    GQR.reg = 1;
-    GQR.Marr = Marr;
-    GQR.alpha = alpha;
-    GQR.ep = ep;
-    GQR.N = Nvec(m);
-    GQR.coef = coef;
-
-    uGQR = gqr_eval(GQR,ptsEVAL);
-    errvecR2D(m) = errcompute(uGQR,usol);
-    m = m + 1;
-end
-
+% Plot of error with MFS
+loglog(bNvec,[errGQR;errMPS;errMPSimp],'linewidth',3)
+ylabel('Absolute 2-norm error')
+xlabel('Number of interior points')
+xlim([min(bNvec),max(bNvec)])
+ylim([1e-10,1e2])
+legend('GaussQRr','MPS','MPS+GaussQRr','location','southwest')
+set(gca,'xtick',[36,50,80,140,250])
+set(gca,'ytick',[1e-10,1e-7,1e-4,1e-1,1e2])

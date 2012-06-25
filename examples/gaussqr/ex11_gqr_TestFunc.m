@@ -1,6 +1,7 @@
 function errval = ex11c_gqr_TestFunc(ep,epstruct)
-    Marr = epstruct.Marr;
-    alpha = epstruct.alpha;
+% Note that in this function, epstruct can get passed to gqr_phi
+% This is because gqr_phi only looks for the fields Marr, alpha and ep,
+%  which epstruct has after I add ep below
     AMFpts = epstruct.AMFpts;
     BMFpts = epstruct.BMFpts;
     FmatMF = epstruct.FmatMF;
@@ -17,11 +18,12 @@ function errval = ex11c_gqr_TestFunc(ep,epstruct)
     catch
         FmatFD = [];
     end
+    epstruct.ep = ep;
 
-    phiA = gqr_phi(Marr,AMFpts,ep,alpha);
-    phiAx = gqr_phi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
-    phiB = gqr_phi(Marr,BMFpts,ep,alpha);
-    phiBx = gqr_phi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
+    phiA = gqr_phi(epstruct,AMFpts);
+    phiAx = gqr_phi(epstruct,Fx(FBifa,:),[1 0]);
+    phiB = gqr_phi(epstruct,BMFpts);
+    phiBx = gqr_phi(epstruct,Fx(FBifa,:),[1 0]);
 
     FmatMF(FBifa,:) = zeros(size(FmatMF(FBifa,:)));
     FmatMF(FBifa,[FAcou,FAifa]) = phiAx/phiA;

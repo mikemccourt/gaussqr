@@ -1,108 +1,88 @@
-% ex5c.m
+% ex16b_gqr.m
 % Comparing various methods of 2D BVP solvers
+% These methods all employ a tensor product structure
+% differentiation matrix
+%
+% The methods we consider are
 %  Trefethen's cheb matrix
 %  Kansa's nonsymmetric
-%  GaussQR regression
-
+%  GaussQR collocation
+%
 % The problem we are interested in solving is the Helmholtz equation:
 %    Lap(u)+k^2 u = f
 %    (x,y)=[-1,1]^2     Dirichlet BC
-%    f = exp(-10*((yy-1).^2+(xx-.5).^2));
+%
+% Unlike ex16_gqr, this considers a range of ep and alpha values and that
+% allows you to see the effect of both on the accuracy
 
 global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
 end
 GAUSSQR_PARAMETERS.ERROR_STYLE = 2; % Use absolute error
-GAUSSQR_PARAMETERS.NORM_TYPE = inf; % Use absolute error
+GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .5;
 
-k = 7; % Helmholtz parameter
-
-% f = @(x,y) exp(-10*((y-1).^2+(x-.5).^2));
-% Solution below is u = (1-y^2)sin(pi*x)cosh(x+y)
-% fsol = @(x,y) (1-y.^2).*sin(pi*x).*cosh(x+y);
-% f = @(x,y) cosh(x+y).*((2+k^2-pi^2)*(1-y.^2).*sin(pi*x)-2*sin(pi*x)) + ...
-%            sinh(x+y).*(2*pi*(1-y.^2).*cos(pi*x)-4*y.*sin(pi*x));
-% fsol = @(x,y) (1-y.^2).*sin(pi*x).*(1-exp(-10*((x-.5).^2+(y-.5).^2)));
-% f = @(x,y) (y.^2-1).*sin(pi*x)*pi^2-2*sin(pi*x)+...
-%     exp(-10*((x-.5).^2+(y-.5).^2)).*...
-%     ((2*y.^2-2).*cos(pi*x)*pi.*(10-20*x)+...
-%      40*(1-y.^2).*sin(pi*x)+...
-%      (y.^2-1).*sin(pi*x).*(10-20*x).^2+...
-%      (1-y.^2).*sin(pi*x)*pi^2+2*sin(pi*x)+...
-%      4*y.*sin(pi*x).*(10-20*y)+...
-%      (y.^2-1).*sin(pi*x).*(10-20*y).^2)
-%     + k^2*fsol(x,y);
-% fsol = @(x,y) 1./(1+x.^2+y.^2);
-% f = @(x,y) 8*(x.^2+y.^2).*fsol(x,y).^3-4*fsol(x,y).^2+k^2*fsol(x,y);
-fsol = @(x,y) besselj(0,6*sqrt(x.^2+y.^2));
-f = @(x,y) (k^2-36)*besselj(0,6*sqrt(x.^2+y.^2));
+f = @(x) -100*besselj(0,10*sqrt(x(:,1).^2+x(:,2).^2));
+exact = @(x) besselj(0,10*sqrt(x(:,1).^2+x(:,2).^2));
+f = @(x) -36*besselj(0,6*sqrt(x(:,1).^2+x(:,2).^2));
+exact = @(x) besselj(0,6*sqrt(x(:,1).^2+x(:,2).^2));
+% r24 = @(x) sqrt(x(:,1).^2+x(:,2).^4+eps);
+% f = @(x) -36*(x(:,1).^2+4*x(:,2).^6)./r24(x).^2.*besselj(0,6*r24(x)) - 6*(6*x(:,1).^2.*x(:,2).^2-x(:,1).^2-2*x(:,2).^6+x(:,2).^4)./r24(x).^3.*besselj(1,6*r24(x));
+% exact = @(x) besselj(0,6*r24(x));
 
 rbf = @(e,r) exp(-(e*r).^2);
-drbf = @(e,r,dx) -2*e^2*dx.*exp(-(e*r).^2);
-d2rbf = @(e,r) 2*e^2*(2*(e*r).^2-1).*exp(-(e*r).^2);
-
-% These are the functions needed for the Laplacian
 Lrbf = @(e,r) 4*e^2*((e*r).^2-1).*exp(-(e*r).^2);
 
-N = 20;
-epvec = logspace(-1,1,35);
+N = 17;
+x = pick2Dpoints([-1,-1],[1,1],N,'cheb');
+u = exact(x);
+NN = 30;
+xx = pick2Dpoints([-1,-1],[1,1],NN);
+uu = exact(xx);
 
-% Trefethen method first
-[D,x] = cheb(N);
-y = x;
-[xx,yy] = meshgrid(x,y);
-xx = xx(:); yy = yy(:);
-usol = fsol(xx,yy);
-b = find(abs(xx)==1 | abs(yy)==1); % Identify boundaries
+% Identify the boundary points and interior points
+ib = find((abs(x(:,1))==1) + (abs(x(:,2))==1));
+xb = x(ib,:);
+ii = setdiff(1:size(x,1),ib);
+xi = x(ii,:);
 
-D2 = D^2;
-I = eye(N);
-L = kron(I,D2) + kron(D2,I) + k^2*kron(I,I);
-rhs = f(xx,yy);
+alphavec = logspace(-2,1,17);
+epvec = logspace(-2,1,16);
 
-L(b,:) = zeros(4*(N-1),N^2); L(b,b) = eye(4*(N-1));
-rhs(b) = zeros(4*(N-1),1);rhs(b) = usol(b);
-u = L\rhs;
-err_Trefethen = errcompute(u,usol)
 
-% Kansa unsymmetric collocation with 1D kronecker products
-r = DistanceMatrix(x,x);
-errvec1D = [];
+errmatR2D = zeros(length(alphavec),length(epvec));
+errmatI2D = zeros(length(alphavec),length(epvec));
 m = 1;
 for ep=epvec
-    A = rbf(ep,r);
-    D2A = d2rbf(ep,r);
-    D2 = D2A/A;
-    L = kron(I,D2) + kron(D2,I) + k^2*kron(I,I);
-    L(b,:) = zeros(4*(N-1),N^2); L(b,b) = eye(4*(N-1));
-    u = L\rhs;
-    errvec1D(m) = errcompute(u,usol);
+    k = 1;
+    for alpha=alphavec
+        GQR = gqr_rsolve(x,u,ep,alpha);
+        [uI,GQR] = gqr_eval(GQR,xx);
+        errmatI2D(k,m) = errcompute(uI,uu);
+    
+        GQRr = gqr_solveprep(1,x,ep,alpha);
+        phiMat = gqr_phi(GQRr,xb);
+        phiMat2d = gqr_phi(GQRr,xi,[2,0])+gqr_phi(GQRr,xi,[0,2]);
+        A = [phiMat;phiMat2d];
+        rhs = [exact(xb);f(xi)];
+warning off MATLAB:rankDeficientMatrix
+        GQRr.coef = A\rhs;
+warning on MATLAB:rankDeficientMatrix
+        errmatR2D(k,m) = errcompute(gqr_eval(GQRr,xx),uu);
+        
+        fprintf('%d ',k)
+        k = k+1;
+    end
+    fprintf('%d\n',m)
     m = m+1;
 end
 
-m = 1;
-errvecQ1D = [];
-alpha = 1;
-for ep=epvec
-    GQR = gqr_solveprep(0,x,ep,alpha);
-    phiMat_1 = GQR.stored_phi1;
-    phiMat_2 = GQR.stored_phi2;
-    phiMat2d = gqr_phi(GQR.Marr,x,GQR.ep,GQR.alpha,2);
-    Rbar = GQR.Rbar;
-    D2 = phiMat2d*[I;Rbar]/(phiMat_1+phiMat_2*Rbar);
-    L = kron(I,D2) + kron(D2,I) + k^2*kron(I,I);
-    L(b,:) = zeros(4*(N-1),N^2); L(b,b) = eye(4*(N-1));
-    errvecQ1D(m) = errcompute(L\rhs,usol);
-    m = m+1;
-end
 
-loglog(epvec,errvecQ1D,'r','Linewidth',3),hold on
-loglog(epvec,errvec1D,'b','Linewidth',2)
-loglog(epvec,err_Trefethen*ones(size(epvec)),'--k','Linewidth',2)
-ylim([1e-13 1e1])
-legend('GaussQR','Fasshauer','Trefethen','location','west'),hold off
-xlabel('\epsilon')
-ylabel('Absolute sup-norm error')
-
-
+% Plot the results
+[A,E] = meshgrid(alphavec,epvec);
+% surf(A,E,log10(min(errmatI2D',1e5)));
+surf(A,E,log10(min(errmatR2D',1e5)));
+set(gca,'yscale','log')
+set(gca,'xscale','log')
+xlabel('\alpha')
+ylabel('\epsilon')

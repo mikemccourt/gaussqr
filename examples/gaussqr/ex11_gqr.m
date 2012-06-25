@@ -1,52 +1,90 @@
 % ex11
 % This example is meshfree coupling between domains
+%
+% The problem we are considering is
+%   u_t - u_xx = f
+% with Dirichlet BC and second order interface conditions
+% f is determined by the solution given
 rbfsetup
 global GAUSSQR_PARAMETERS
-GAUSSQR_PARAMETERS.ERROR_STYLE = 2; % Absolute error
+GAUSSQR_PARAMETERS.ERROR_STYLE = 4;
+regfrac = GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC;
 
-epvecd = logspace(-1,1,20);
-epvecr = logspace(-1,1,20);
 AN = [4,8,16,32,64,128];
 BN = [4,8,16,32,64,128];
+epopt1 = [.989,.9886,1.0512,.9267,.8861,.8030];
+rfrac1 = [.9,.5,.3,.3,.2,.1];
+ind = 2; % Handles the number of points
+count = 1; % Handles the number of time steps
+restart = 30; % GMRES restart value
+
+% Number of points included in the coupling region
+couplewidth = 1;
+% Technique used for coupling
+% 1 - Traditional finite difference
+% 2 - Meshfree
+% 3 - Both
+Fcstyle = 3;
+
+% This is needed for RBF direct
+% I guess it isn't really needed, but I'll keep it for now
+% This is the Gaussian and its x derivative
 rbf = @(ep,r) exp(-(ep*r).^2);
 rbfdx = @(ep,r,dx) -2*ep^2*dx.*exp(-(ep*r).^2);
-
+% The Gaussian shape parameter
+epv = 1e-3;
+% The global scale parameter for GaussQR
 alpha = 1;
-FM = 21;
-epvec = logspace(-2,1,FM);
-%epvec = [];
-epv = .8;%epv = 1e-5;
-ind = 3;
 
+% This allows you to test multiple epsilon values
+%  and see which is the best for error
+% The number of epsilon points to consider
+FM = 21;
+epvec = [];
+% Uncomment this line to use fminbnd to find an 
+%  optimal choice of epsilon using those values
+%  as the bounds of a search interval
+%epvec = [.5,1.3];
+% Uncomment this line as well to evaluate the error
+%  all the epsilons in epvec.  The results are stored
+%  in the vector Fapx
+%epvec = logspace(-.5,.5,FM);
+
+% True solution and source
+testopt = 1;
+switch testopt
+    case 1
+        testname = 'polynomial';
+        yf = @(x,t) exp(-t)*(1-0.5*(x(:,1).^2+x(:,2).^2));
+        ff = @(x,t) exp(-t)*(1+0.5*(x(:,1).^2+x(:,2).^2));
+    case 2
+        testname = 'sinh';
+        yf = @(x,t) exp(-t)*sinh(x(:,1)+x(:,2));
+        ff = @(x,t) -3*yf(x,t);
+end
+
+% I may turn this back on eventually
 warning off
 
-if not(exist('ind')) % Consider the first index (looping only)
-  ind = 1;
-end
-
-if not(exist('count')) % Work with the basic time step
-  count = 1;
-end
-
+% Setting up the boundary value problem discretization
 dt = 0.01/(2^(count-1));
 nsteps = 2*(2^(count-1));
+FDerrt = zeros(1,nsteps);
+MFerrt = zeros(1,nsteps);
+
+% This is the 4th order finite difference stencil
 stencil9 = [1/6 2/3 1/6  2/3 -10/3 2/3  1/6 2/3 1/6];
-errt = zeros(1,nsteps);
-couplebuffer = 0.1/(2^(ind-1)); % accounts for fuzzy math
-couplewidth = 1; % How many points included in coupling
-Fcstyle = 2; % 1 = Finite difference or 2 = meshfree
+% A small fudge factor to allow for fuzzy math
+%  in computing the grid
+couplebuffer = 0.1/(2^(ind-1));
 
-yf = @(x,t) exp(-t)*(1-0.5*(x(:,1).^2+x(:,2).^2));
-ff = @(x,t) exp(-t)*(1+0.5*(x(:,1).^2+x(:,2).^2));
-
-% yf = @(x,t) exp(-t)*sinh(x(:,1)+x(:,2));
-% ff = @(x,t) -3*yf(x,t);
-
+% Set up the grid of the problem
 Ald = [-1 0];Aud = [0 1];
 Bld = [0 0];Bud = [1 1];
 AM = AN(ind);
 BM = BN(ind);
 
+% Just an evenly spaced grid, for now
 Ax = pick2Dpoints(Ald,Aud,AN(ind)*ones(2,1));
 Bx = pick2Dpoints(Bld,Bud,BN(ind)*ones(2,1));
 AMM = size(Ax,1);
@@ -114,75 +152,17 @@ Bboupts = setdiff(1:BMM,Bintpts);
 [temp,order] = sort(Bsten(:,ceil(length(Bstenoff9)/2)));
 Bsten = Bsten(order,:);
 
-% Set the initial conditions, provided by the true solution
-Aunew = yf(Ax,0);
-Bunew = yf(Bx,0);
-Aerrt = zeros(1,nsteps);
-Berrt = zeros(1,nsteps);
-
-% Step through time
-for tn=1:nsteps
-  t = tn*dt;
-
-  % Initialize the values of the matrix and RHS
-  Amat = 1/dt*speye(AMM);
-  Arhs = zeros(AMM,1);
-  
-  % This is the source term evaluated on the grid
-  Arf = ff(Ax,t);
-  % The boundary conditions are derived from the true solution
-  Aubc = yf(Ax,t);
-  % Store the old time step for use below
-  Auold = Aunew;
-
-  % First consider only the PDE part
-  m = 1;
-  for k=Aintpts
-      Amat(k,Asten(m,:)) = Amat(k,Asten(m,:)) - stencil9/(Adeltax^2);
-      Arhs(k) = Arf(k) + 1/dt*Auold(k);
-      m = m + 1;
-  end
-  % Now consider the boundary condition part
-  for k=Aboupts
-      Amat(k,k) = 1.0;
-      Arhs(k) = Aubc(k);
-  end
-  
-  % Solve the system and compute the error on the grid
-  Aunew = Amat\Arhs;
-  Aerrt(tn) = errcompute(Aunew,Aubc);
 
 
-  % Do the same thing with the B system
-  Bmat = 1/dt*speye(BMM);
-  Brhs = zeros(BMM,1);
-  Brf = ff(Bx,t);
-  Bubc = yf(Bx,t);
-  Buold = Bunew;
-
-  m = 1;
-  for k=Bintpts
-      Bmat(k,Bsten(m,:)) = Bmat(k,Bsten(m,:)) - stencil9/(Bdeltax^2);
-      Brhs(k) = Brf(k) + 1/dt*Buold(k);
-      m = m + 1;
-  end
-  for k=Bboupts
-      Bmat(k,k) = 1.0;
-      Brhs(k) = Bubc(k);
-  end
-
-  Bunew = Bmat\Brhs;
-  Berrt(tn) = errcompute(Bunew,Bubc);
-end
-
-% Now that we've considered the result of solving the systems individually,
-% we want to determine what effect is caused by solving them with a
-% specific coupling strategy.
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Now we need to form the coupled system, under the assumption
+%  that both models can pass info back and forth as needed
+%
 % We need to determine what the ordering is going to be
-% [Aonly,Bonly,Acoupling,Ainterface,Bcoupling,Binterface]
+%  [Aonly,Bonly,Acoupling,Ainterface,Bcoupling,Binterface]
 % The shuffle described below would occur if the matrix were ordered
-% Fmat = [Amat,zeros(BMM,AMM);zeros(AMM,BMM),Bmat];
+%  Fmat = [Amat,zeros(BMM,AMM);zeros(AMM,BMM),Bmat];
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Fshuffle = [Aonlpts,Bonlpts+AMM,Acoupts,Aifapts,Bcoupts+AMM,Bifapts+AMM];
 [temp,Funshuffle] = sort(Fshuffle);
 k = 0;
@@ -198,18 +178,21 @@ FBcou = k+1:k+length(Bcoupts);
 k = k + length(Bcoupts);
 FBifa = k+1:k+length(Bifapts);
 
-% The coupling style just matches values and derivatives
-Ferrt = zeros(1,nsteps);
-
+% Set up the points needed for the problem
 Fx = [Ax;Bx];
 Fx = Fx(Fshuffle,:);
+FMM = AMM + BMM;
+
+% Set the initial conditions, provided by the true solution
 Aunew = yf(Ax,0);
 Bunew = yf(Bx,0);
-FMM = AMM + BMM;
+
+% Create the GQR object for use soon.
+GQR.alpha = 1;
 
 for tn=1:nsteps
     t = tn*dt;
-    Fsol  = yf(Fx,t);
+    Fsol  = yf(Fx,t); % true solution, for computing error
 
     Amat = 1.0/dt*speye(AMM);
     Arhs = zeros(AMM,1);
@@ -250,123 +233,126 @@ for tn=1:nsteps
     Frhs = Frhs(Fshuffle);
     
     % Make the replacements associated with the coupling
-    if Fcstyle==1
-        Fmat(FAifa,:) = zeros(size(Fmat(FAifa,:)));
+    % Then solve the system and compute the error
+    if Fcstyle==1 | Fcstyle==3
+        % Copy the existing non-coupled matrix
+        FmatFD = Fmat;
+
+        FmatFD(FAifa,:) = zeros(size(FmatFD(FAifa,:)));
         for k=1:length(FAifa)
-            Fmat(FAifa(k),[FAifa(k),FBifa(k)]) = [1 -1];
+            FmatFD(FAifa(k),[FAifa(k),FBifa(k)]) = [1 -1];
         end
         Frhs(FAifa) = zeros(size(FAifa));
         
-        Fmat(FBifa,:) = zeros(size(Fmat(FBifa,:)));
+        FmatFD(FBifa,:) = zeros(size(FmatFD(FBifa,:)));
         for k=1:length(FBifa)
             if couplewidth==1
-                Fmat(FBifa(k),[FAcou(k),FAifa(k),FBcou(k),FBifa(k)]) = [[-1 1]/Adeltax [-1 1]/Bdeltax];
+                FmatFD(FBifa(k),[FAcou(k),FAifa(k),FBcou(k),FBifa(k)]) = [[-1 1]/Adeltax [-1 1]/Bdeltax];
             elseif couplewidth==2
-                Fmat(FBifa(k),[FAcou(2*k-[1,0]),FAifa(k),FBcou(2*k-[0,1]),FBifa(k)]) = [[-1 4 -3]/(2*Adeltax) [-1 4 -3]/(2*Bdeltax)];
+                FmatFD(FBifa(k),[FAcou(2*k-[1,0]),FAifa(k),FBcou(2*k-[0,1]),FBifa(k)]) = [[-1 4 -3]/(2*Adeltax) [-1 4 -3]/(2*Bdeltax)];
             else
                 error('couplewidth should be 1 or 2')
             end
         end
         Frhs(FBifa) = zeros(size(FBifa));
-    elseif Fcstyle==2 % Meshfree coupling
-        Fmat(FAifa,:) = zeros(size(Fmat(FAifa,:)));
+
+        % Solve the system and compute the error on the grid
+        Funew = FmatFD\Frhs;
+        FDerrt(tn) = errcompute(Funew,Fsol);
+    end
+    if Fcstyle==2 | Fcstyle==3 % Meshfree coupling
+        % Copy the existing non-coupled matrix
+        FmatMF = Fmat;
+        if not(exist('FmatFD'))
+            FmatFD = [];
+        end
+
+        % This couples the values at the interface
+        % Need to work on mismatched mesh eventually
+        FmatMF(FAifa,:) = zeros(size(FmatMF(FAifa,:)));
         for k=1:length(FAifa)
-            Fmat(FAifa(k),[FAifa(k),FBifa(k)]) = [1 -1];
+            FmatMF(FAifa(k),[FAifa(k),FBifa(k)]) = [1 -1];
         end
         Frhs(FAifa) = zeros(size(FAifa));
-        Frhs(FBifa) = zeros(size(FBifa));
-        
-        AMFpts = Fx([FAcou,FAifa],:);
-        ADM_int = DistanceMatrix(AMFpts,AMFpts);
-        ADMdx_int = DistanceMatrix(Fx(FAifa,:),AMFpts);
-        ADMdx_diff = DifferenceMatrix(Fx(FAifa,1),AMFpts(:,1));
 
+        AMFpts = Fx([FAcou,FAifa],:);
         BMFpts = Fx([FBcou,FBifa],:);
-        BDM_int = DistanceMatrix(BMFpts,BMFpts);
-        BDMdx_int = DistanceMatrix(Fx(FBifa,:),BMFpts);
-        BDMdx_diff = DifferenceMatrix(Fx(FBifa,1),BMFpts(:,1));
+        ap = length(AMFpts);
         
-        Fval = zeros(FM,1);
-        Fdir = zeros(FM,1);
+        % This section couples the derivatives at the interface
+        % If requested, this will do a parameter search
+        % Otherwise, skip this for loop
+        if not(isempty(epvec))
+            Marr = gqr_formMarr([couplewidth+1;ap],[],floor(regfrac*ap));
+            epstruct.Marr = Marr;
+            epstruct.alpha = alpha;
+            epstruct.AMFpts = AMFpts;
+            epstruct.BMFpts = BMFpts;
+            epstruct.FmatMF = FmatMF;
+            epstruct.FAcou = FAcou;
+            epstruct.FAifa = FAifa;
+            epstruct.FBcou = FBcou;
+            epstruct.FBifa = FBifa;
+            epstruct.Frhs = Frhs;
+            epstruct.restart = restart;
+            epstruct.Fsol = Fsol;
+            epstruct.Fx = Fx;
+            epstruct.FmatFD = FmatFD;
+
+            epv = fminbnd(@(ep)ex11_gqr_TestFunc(ep,epstruct),min(epvec),max(epvec));
+        end
+
+        % This will loop over all the values in epvec and
+        % compute the error to let you know which is the best
         Fapx = zeros(FM,1);
         k = 1;
-        for ep=epvec
-            A_int = rbf(ep,ADM_int);
-            A_x = rbfdx(ep,ADMdx_int,ADMdx_diff);
-            B_int = rbf(ep,BDM_int);
-            B_x = rbfdx(ep,BDMdx_int,BDMdx_diff);
+        if length(epvec)>2
+            for ep=epvec
+                GQR.ep = ep;
+                GQR.Marr = gqr_formMarr([couplewidth+1;ap],[],floor(regfrac*ap));
+                phiA = gqr_phi(GQR,AMFpts);
+                phiAx = gqr_phi(GQR,Fx(FBifa,:),[1 0]);
+                phiB = gqr_phi(GQR,BMFpts);
+                phiBx = gqr_phi(GQR,Fx(FBifa,:),[1 0]);
+    
+                FmatMF(FBifa,:) = zeros(size(FmatMF(FBifa,:)));
+                FmatMF(FBifa,[FAcou,FAifa]) = phiAx/phiA;
+                FmatMF(FBifa,[FBcou,FBifa]) = -phiBx/phiB;
+                Frhs(FBifa) = zeros(size(FBifa));
+                
+                [Funew,cnvg] = gmres(FmatMF,Frhs,restart,[],[],FmatFD);
+                Fapx(k) = errcompute(Funew,Fsol);
 
-            Fmat(FBifa,:) = zeros(size(Fmat(FBifa,:)));
-            Fmat(FBifa,[FAcou,FAifa]) = A_x/A_int;
-            Fmat(FBifa,[FBcou,FBifa]) = -B_x/B_int;
-            Funew = Fmat\Frhs;
-            Fdir(k) = errcompute(Funew,Fsol);
-            
-            ap = length(AMFpts);
-%             Marr = gqr_formMarr([0;0],[],2*ap);
-%             Marr = [1 1 2 1 2 1 2 2  3 2 3 2 3 3 4 3;1 2 2 3 3 4 4 5  5 6 6 7 7 8 8 9];
-%             Marr = [1 1 2 1 2 1 2 2  1 2 3 1 2 3 1 2;1 2 2 3 3 4 4 5  7 6 5 8 7 6 9 8];
-%            Marr = gqr_formMarr([couplewidth+1;ap]);
-%            beta = (1+(2*ep/alpha)^2)^.25;
-%            delta2 = .5*alpha^2*(beta^2-1);
-%            Lvec = (alpha^2/(alpha^2+delta2+ep^2))* ...
-%                      (ep^2/(alpha^2+delta2+ep^2)).^(sum(Marr)-2);
-%            L1 = diag(Lvec(1:ap));
-%            L2 = diag(Lvec(ap+1:end));
-%            phiFull = gqr_phi(Marr,AMFpts,ep,alpha);
-%            phi1 = phiFull(:,1:ap);
-%            phi2 = phiFull(:,ap+1:end);
-%            phix = gqr_phi(Marr,Fx(FAifa,:),ep,alpha,[1 0]);
-%            phix1 = phix(:,1:ap);
-%            phix2 = phix(:,ap+1:end);
-%            A_psi = phiFull*[eye(ap);L2*(phi2'*pinv(phi1'))/L1];
-%            A_psi_x = phix*[eye(ap);L2*(phi2'*pinv(phi1'))/L1];
-%            
-%            Fmat(FBifa,[FAcou,FAifa]) = A_psi_x*pinv(A_psi);
-%            Fmat(FBifa,[FBcou,FBifa]) = A_psi_x*pinv(A_psi);
-%            
-%            Funew = Fmat\Frhs;
-%            Fval(k) = errcompute(Funew,Fsol);
-            
-%             Marr = gqr_formMarr([couplewidth+1;ap],[],floor(.7*ap));
-            Marr = gqr_formMarr([couplewidth+1;ap],[],ap);
-            phiA = gqr_phi(Marr,AMFpts,ep,alpha);
-            phiAx = gqr_phi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
-            phiB = gqr_phi(Marr,BMFpts,ep,alpha);
-            phiBx = gqr_phi(Marr,Fx(FBifa,:),ep,alpha,[1 0]);
-
-            Fmat(FBifa,[FAcou,FAifa]) = phiAx/phiA;
-            Fmat(FBifa,[FBcou,FBifa]) = -phiBx/phiB;
-            
-            Funew = Fmat\Frhs;
-%            Funew = pinv(full(Fmat))*Frhs;
-            Fapx(k) = errcompute(Funew,Fsol);
-
-            fprintf('%d\t%g\t%g\t%g\n',k,ep,Fdir(k),Fapx(k))
-            k = k+1;
-        end
-        if not(isempty(epvec)) % If we did a search for the best alpha
+%                fprintf('%d\t%g\t%g\n',k,ep,Fapx(k))
+                k = k+1;
+            end
             [err,epi] = min(Fapx);
             epv = epvec(epi);
         end
 
-        Marr = gqr_formMarr([couplewidth+1;ap],[],ap);
-        phiA = gqr_phi(Marr,AMFpts,epv,alpha);
-        phiAx = gqr_phi(Marr,Fx(FBifa,:),epv,alpha,[1 0]);
-        phiB = gqr_phi(Marr,BMFpts,epv,alpha);
-        phiBx = gqr_phi(Marr,Fx(FBifa,:),epv,alpha,[1 0]);
+        GQR.ep = epv;
+        GQR.Marr = gqr_formMarr([couplewidth+1;ap],[],floor(regfrac*ap));
+        phiA = gqr_phi(GQR,AMFpts);
+        phiAx = gqr_phi(GQR,Fx(FBifa,:),[1 0]);
+        phiB = gqr_phi(GQR,BMFpts);
+        phiBx = gqr_phi(GQR,Fx(FBifa,:),[1 0]);
 
-        Fmat(FBifa,[FAcou,FAifa]) = phiAx/phiA;
-        Fmat(FBifa,[FBcou,FBifa]) = -phiBx/phiB;
+        FmatMF(FBifa,:) = zeros(size(FmatMF(FBifa,:)));
+        FmatMF(FBifa,[FAcou,FAifa]) = phiAx/phiA;
+        FmatMF(FBifa,[FBcou,FBifa]) = -phiBx/phiB;
+        Frhs(FBifa) = zeros(size(FBifa));
+
+        % Solve the system and compute the error on the grid
+        [Funew,cnvg] = gmres(FmatMF,Frhs,restart,[],[],FmatFD);
+        MFerrt(tn) = errcompute(Funew,Fsol);
     end
-    
-    % Solve the system and compute the error on the grid
-    Funew = Fmat\Frhs;
-    Ferrt(tn) = errcompute(Funew,Fsol);
-    
+   
     % Unscatter the components back to A and B
     temp = Funew(Funshuffle);
     Aunew = temp(1:AMM);
     Bunew = temp(AMM+1:end);
 end
 warning on
+
+
+

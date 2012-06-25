@@ -15,9 +15,9 @@ function fu = ex15_gqr_resBC(coef,GQR,x,uold,dt,BC,t)
 persistent phi phi1 phi2
 
 if length(phi)==0
-    phi = gqr_phi(GQR.Marr,x,GQR.ep,GQR.alpha);
-    phi1 = gqr_phi(GQR.Marr,x,GQR.ep,GQR.alpha,1);
-    phi2 = gqr_phi(GQR.Marr,x,GQR.ep,GQR.alpha,2);
+    phi = gqr_phi(GQR,x);
+    phi1 = gqr_phi(GQR,x,1);
+    phi2 = gqr_phi(GQR,x,2);
 end
 
 % Need the true solution for boundary conditions

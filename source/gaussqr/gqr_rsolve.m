@@ -44,7 +44,7 @@ switch nargin
 end
 
 % Form the linear system
-phi = gqr_phi(GQR.Marr,x,GQR.ep,GQR.alpha);
+phi = gqr_phi(GQR,x);
 
 % Solve the least squares problem
 lastwarn('')

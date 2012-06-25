@@ -102,9 +102,9 @@ function du = ApplyDerivative(x,u)
     
     if nargin==1
         % Set up Marr, and check if nonsensical ep or alpha passed
-        [ep,alpha,Marr] = gqr_solveprep(1,x,ep,alpha);
+        GQR = gqr_solveprep(1,x,ep,alpha);
         
-        phi = gqr_phi(Marr,x,ep,alpha);
+        phi = gqr_phi(GQR,x);
         [phi_Q,phi_R] = qr(phi,0);
         
         ix_dx_right_BC = find(x(:,1)==max(x(:,1)))';
@@ -113,11 +113,11 @@ function du = ApplyDerivative(x,u)
         ix_dy_bottom_BC = setdiff(find(x(:,2)==min(x(:,2)))',[ix_dx_right_BC,ix_dx_left_BC]);
         ix_INT = setdiff(1:N2,[ix_dx_right_BC,ix_dx_left_BC,ix_dy_top_BC,ix_dy_bottom_BC]); % Interior
         
-        phiDxR = gqr_phi(Marr,x(ix_dx_right_BC,:),ep,alpha,[1 0]);
-        phiDxL = gqr_phi(Marr,x(ix_dx_left_BC,:),ep,alpha,[1 0]);
-        phiDyT = gqr_phi(Marr,x(ix_dy_top_BC,:),ep,alpha,[0 1]);
-        phiDyB = gqr_phi(Marr,x(ix_dy_bottom_BC,:),ep,alpha,[0 1]);
-        phiL = gqr_phi(Marr,x(ix_INT,:),ep,alpha,[2 0]) + gqr_phi(Marr,x(ix_INT,:),ep,alpha,[0 2]);
+        phiDxR = gqr_phi(GQR,x(ix_dx_right_BC,:),[1 0]);
+        phiDxL = gqr_phi(GQR,x(ix_dx_left_BC,:),[1 0]);
+        phiDyT = gqr_phi(GQR,x(ix_dy_top_BC,:),[0 1]);
+        phiDyB = gqr_phi(GQR,x(ix_dy_bottom_BC,:),[0 1]);
+        phiL = gqr_phi(GQR,x(ix_INT,:),[2 0]) + gqr_phi(GQR,x(ix_INT,:),[0 2]);
         
         du = ix_INT; % Return value
     elseif nargin==2

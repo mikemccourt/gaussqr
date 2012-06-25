@@ -1,19 +1,25 @@
-% ex5c.m
+% ex16_gqr.m
 % Comparing various methods of 2D BVP solvers
+% These methods all employ a tensor product structure
+% differentiation matrix
+%
+% The methods we consider are
 %  Trefethen's cheb matrix
 %  Kansa's nonsymmetric
-%  GaussQR regression
-
+%  GaussQR collocation
+%
 % The problem we are interested in solving is the Helmholtz equation:
 %    Lap(u)+k^2 u = f
 %    (x,y)=[-1,1]^2     Dirichlet BC
-%    f = exp(-10*((yy-1).^2+(xx-.5).^2));
+%
+% There are a few different f choices we consider below
 
 global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
 end
 GAUSSQR_PARAMETERS.ERROR_STYLE = 2; % Use absolute error
+GAUSSQR_PARAMETERS.NORM_TYPE = inf; % Use absolute error
 
 k = 7; % Helmholtz parameter
 
@@ -44,10 +50,10 @@ d2rbf = @(e,r) 2*e^2*(2*(e*r).^2-1).*exp(-(e*r).^2);
 % These are the functions needed for the Laplacian
 Lrbf = @(e,r) 4*e^2*((e*r).^2-1).*exp(-(e*r).^2);
 
-epvec = logspace(-1,1,15);
+N = 20;
+epvec = logspace(-1,1,35);
 
 % Trefethen method first
-N = 19;
 [D,x] = cheb(N);
 y = x;
 [xx,yy] = meshgrid(x,y);
@@ -57,7 +63,7 @@ b = find(abs(xx)==1 | abs(yy)==1); % Identify boundaries
 
 D2 = D^2;
 I = eye(N);
-L = kron(I,D2) + kron(D2,I)+k^2*kron(I,I);
+L = kron(I,D2) + kron(D2,I) + k^2*kron(I,I);
 rhs = f(xx,yy);
 
 L(b,:) = zeros(4*(N-1),N^2); L(b,b) = eye(4*(N-1));
@@ -80,69 +86,28 @@ for ep=epvec
     m = m+1;
 end
 
-pts = [xx,yy];
-r = DistanceMatrix(pts,pts);
-errvec2D = [];
-m = 1;
-for ep=epvec
-    A = rbf(ep,r);
-    LA = Lrbf(ep,r);
-    L = LA/A + k^2*kron(I,I);
-    L(b,:) = zeros(4*(N-1),N^2); L(b,b) = eye(4*(N-1));
-    errvec2D(m) = errcompute(L\rhs,usol);
-    m = m+1;
-end
-
 m = 1;
 errvecQ1D = [];
 alpha = 1;
 for ep=epvec
     GQR = gqr_solveprep(0,x,ep,alpha);
-    phiMat = gqr_phi(GQR,x);
+    phiMat_1 = GQR.stored_phi1;
+    phiMat_2 = GQR.stored_phi2;
     phiMat2d = gqr_phi(GQR,x,2);
-    D2 = phiMat2d*[I;GQR.Rbar]/(phiMat*[I;GQR.Rbar]);
+    Rbar = GQR.Rbar;
+    D2 = phiMat2d*[I;Rbar]/(phiMat_1+phiMat_2*Rbar);
     L = kron(I,D2) + kron(D2,I) + k^2*kron(I,I);
     L(b,:) = zeros(4*(N-1),N^2); L(b,b) = eye(4*(N-1));
     errvecQ1D(m) = errcompute(L\rhs,usol);
     m = m+1;
 end
 
-GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .9;
-m = 1;
-errvecR1D = [];
-for ep=epvec
-    GQR = gqr_solveprep(1,x,ep,alpha);
-    phiMat = gqr_phi(GQR,x);
-    phiMat2d = gqr_phi(GQR,x,2);
-    D2 = phiMat2d/phiMat;
-    L = kron(I,D2) + kron(D2,I) + k^2*kron(I,I);
-    L(b,:) = zeros(4*(N-1),N^2); L(b,b) = eye(4*(N-1));
-    errvecR1D(m) = errcompute(L\rhs,usol);
-    m = m+1;
-end
-
-GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .5;
-m = 1;
-errvecR2D = [];
-for ep=epvec
-    GQR = gqr_solveprep(1,pts,ep,alpha);
-    phiMat = gqr_phi(GQR,pts);
-    phiMat2d = gqr_phi(GQR,pts,[2,0])+gqr_phi(GQR,pts,[0,2]);
-    L = phiMat2d/phiMat + k^2*kron(I,I);
-    L(b,:) = zeros(4*(N-1),N^2); L(b,b) = eye(4*(N-1));
-    errvecR2D(m) = errcompute(L\rhs,usol);
-    m = m+1;
-end
-
-loglog(epvec,errvec1D,'--b','Linewidth',2),hold on
-loglog(epvec,errvec2D,'--g','Linewidth',2)
-loglog(epvec,errvecR1D,'b','Linewidth',3)
-loglog(epvec,errvecR2D,'g','Linewidth',3)
-loglog(epvec,errvecQ1D,'r','Linewidth',3)
+loglog(epvec,errvecQ1D,'r','Linewidth',3),hold on
+loglog(epvec,errvec1D,'b','Linewidth',2)
 loglog(epvec,err_Trefethen*ones(size(epvec)),'--k','Linewidth',2)
-legend('kron collocation','2D collocation','kron regression','2D regression','kron QRsolve','Trefethen'),hold off
+ylim([1e-13 1e1])
+legend('GaussQR','Fasshauer','Trefethen','location','west'),hold off
 xlabel('\epsilon')
-ylabel(sprintf('error(%d)',GAUSSQR_PARAMETERS.ERROR_STYLE))
-title(sprintf('\\alpha=%g',alpha))
+ylabel('Absolute sup-norm error')
 
 

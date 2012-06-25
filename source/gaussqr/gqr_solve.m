@@ -11,7 +11,7 @@ function GQR = gqr_solve(x,y,ep,alpha,M)
 % orthogonality enjoyed by the eigenfunctions
 % The default is set in rbfsetup, which can be used by passing []
 % For the time being alpha is only a single value
-% In the future we may allow for different alpha in each dimension
+% In the future we may allow for gdifferent alpha in each dimension
 %
 % Note that only positive values of ep and alpha are used
 %
@@ -56,7 +56,7 @@ end
 if storephi
     A = GQR.stored_phi1 + GQR.stored_phi2*GQR.Rbar;
 else
-    A = gqr_phi(GQR.Marr,x,GQR.ep,GQR.alpha)*[eye(N);GQR.Rbar];
+    A = gqr_phi(GQR,x)*[eye(N);GQR.Rbar];
 end
 
 % Solve in the stable basis
