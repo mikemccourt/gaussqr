@@ -24,7 +24,7 @@ NN = 100;
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 3;
+fopt = 8;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -58,6 +58,15 @@ switch fopt
         yf = @(x) cos(x)+exp(-(x-1).^2)-exp(-(x+1).^2) - ((L-x)/L + (cos(L)+exp(-(L-1).^2)-exp(-(L+1).^2))*x/L);
         embed = embed_cushion;
         embed = 0;
+    %--------------------------------
+    % Casey and Will's rando functors
+    case 8
+        testfuncN = 4;
+        
+        yf = @(x) 10^(testfuncN+1).*(max(0,x-(1/4))).^testfuncN.*(max(0,(3/4)-x)).^testfuncN;
+        fstr = ['y(x) = 10^{(',num2str(testfuncN+1),'} (max(0,x-(1/4)))^{',num2str(testfuncN),'}(max(0,(3/4)-x)^{',num2str(testfuncN),'}'];
+        embed = 0;
+    %---------------------------------
     otherwise
         error('This function does not exist')
 end
@@ -130,25 +139,47 @@ for N=Nvec
     i = i+1;
 end
 
-
-loglog(epvec,errvecd(1,:),'-bx')
+% Direct method plots:
+hdLowN = loglog(epvec,errvecd(1,:),'-bx')
 hold on
-loglog(epvec,errvecd(2,:),'-g+')
-hd = loglog(epvec,errvecd(3,:),'-r^');
-loglog(epvec,errvec(1,:),'b','LineWidth',3)
-loglog(epvec,errvec(2,:),'g','LineWidth',3)
-hq = loglog(epvec,errvec(3,:),'r','LineWidth',3);
+hdMedN = loglog(epvec,errvecd(2,:),'-g+')
+hdHighN = loglog(epvec,errvecd(3,:),'-r^');
+% MaternQR plots:
+hqLowN = loglog(epvec,errvec(1,:),'b','LineWidth',3)
+hqMedN = loglog(epvec,errvec(2,:),'g','LineWidth',3)
+hqHighN = loglog(epvec,errvec(3,:),'r','LineWidth',3);
+
 % loglog(epvec,errvecs(1)*ones(size(epvec)),'-ob','LineWidth',1)
 % loglog(epvec,errvecs(2)*ones(size(epvec)),'-og','LineWidth',1)
 % hs = loglog(epvec,errvecs(3)*ones(size(epvec)),'-or','LineWidth',1);
-loglog(epvec,errvecp(1)*ones(size(epvec)),'--b','LineWidth',2)
-loglog(epvec,errvecp(2)*ones(size(epvec)),'--g','LineWidth',2)
-hp = loglog(epvec,errvecp(3)*ones(size(epvec)),'--r','LineWidth',2);
+
+% PP Spline plots:
+hpLowN = loglog(epvec,errvecp(1)*ones(size(epvec)),'--b','LineWidth',2)
+hpMedN = loglog(epvec,errvecp(2)*ones(size(epvec)),'--g','LineWidth',2)
+hpHighN = loglog(epvec,errvecp(3)*ones(size(epvec)),'--r','LineWidth',2);
 hold off
+
 xlabel('\epsilon')
 ylabel('absolute error, inf-norm')
+
 ptsstr=strcat(', x\in[',num2str(aa),',',num2str(bb),'],');
 title(strcat(fstr,ptsstr,spacestr))
+
 % legend('N=10 (Direct)','N=20 (Direct)','N=40 (Direct)','N=10 (QR)','N=20 (QR)','N=40 (QR)', 'Location', 'NorthWest');
 % legend([hd hq hs hp],'Direct','MaternQR','Cubic Natural Spline','PP Spline Kernel','location','northwest')
-legend([hd hq hp],'Direct','MaternQR','PP Spline Kernel','location','southwest')
+
+% Plot labels:
+hdHighNLabel = ['Direct (N = ',num2str(Nvec(3)),')'];
+hqHighNLabel = ['MaternQR (N = ',num2str(Nvec(3)),')'];
+hpHighNLabel = ['PP Spline (N = ',num2str(Nvec(3)),')'];
+hdMedNLabel = ['Direct (N = ',num2str(Nvec(2)),')'];
+hqMedNLabel = ['MaternQR (N = ',num2str(Nvec(2)),')'];
+hpMedNLabel = ['PP Spline (N = ',num2str(Nvec(2)),')'];
+hdLowNLabel = ['Direct (N = ',num2str(Nvec(1)),')'];
+hqLowNLabel = ['MaternQR (N = ',num2str(Nvec(1)),')'];
+hpLowNLabel = ['PP Spline (N = ',num2str(Nvec(1)),')'];
+
+legend([hdHighN hqHighN hpHighN hdMedN hqMedN hpMedN hdLowN hqLowN hpLowN ], hdHighNLabel, hqHighNLabel, hpHighNLabel, hdMedNLabel, hqMedNLabel, hpMedNLabel, hdLowNLabel, hqLowNLabel, hpLowNLabel, 'location','Best')
+
+
+
