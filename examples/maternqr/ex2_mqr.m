@@ -59,12 +59,12 @@ switch fopt
         embed = embed_cushion;
         embed = 0;
     %--------------------------------
-    % Casey and Will's rando functors
-    case 8
-        testfuncN = 4;
-        
+    % Casey and Will's test functions
+    case 8 % this family is from the Hubbert-Muller paper on thin plate spline interpolation
+        % meant to be used on the unit interval
+        testfuncN = 10;
         yf = @(x) 10^(testfuncN+1).*(max(0,x-(1/4))).^testfuncN.*(max(0,(3/4)-x)).^testfuncN;
-        fstr = ['y(x) = 10^{(',num2str(testfuncN+1),'} (max(0,x-(1/4)))^{',num2str(testfuncN),'}(max(0,(3/4)-x)^{',num2str(testfuncN),'}'];
+        fstr = ['y(x) = 10^{',num2str(testfuncN+1),'}F (max(0,x-(1/4)))^{',num2str(testfuncN),'}(max(0,(3/4)-x)^{',num2str(testfuncN),'}'];
         embed = 0;
     %---------------------------------
     otherwise
@@ -145,8 +145,8 @@ hold on
 hdMedN = loglog(epvec,errvecd(2,:),'-g+')
 hdHighN = loglog(epvec,errvecd(3,:),'-r^');
 % MaternQR plots:
-hqLowN = loglog(epvec,errvec(1,:),'b','LineWidth',3)
-hqMedN = loglog(epvec,errvec(2,:),'g','LineWidth',3)
+hqLowN = loglog(epvec,errvec(1,:),'b','LineWidth',3);
+hqMedN = loglog(epvec,errvec(2,:),'g','LineWidth',3);
 hqHighN = loglog(epvec,errvec(3,:),'r','LineWidth',3);
 
 % loglog(epvec,errvecs(1)*ones(size(epvec)),'-ob','LineWidth',1)
@@ -154,8 +154,8 @@ hqHighN = loglog(epvec,errvec(3,:),'r','LineWidth',3);
 % hs = loglog(epvec,errvecs(3)*ones(size(epvec)),'-or','LineWidth',1);
 
 % PP Spline plots:
-hpLowN = loglog(epvec,errvecp(1)*ones(size(epvec)),'--b','LineWidth',2)
-hpMedN = loglog(epvec,errvecp(2)*ones(size(epvec)),'--g','LineWidth',2)
+hpLowN = loglog(epvec,errvecp(1)*ones(size(epvec)),'--b','LineWidth',2);
+hpMedN = loglog(epvec,errvecp(2)*ones(size(epvec)),'--g','LineWidth',2);
 hpHighN = loglog(epvec,errvecp(3)*ones(size(epvec)),'--r','LineWidth',2);
 hold off
 
