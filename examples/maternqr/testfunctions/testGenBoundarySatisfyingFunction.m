@@ -1,4 +1,5 @@
-f = exp(x);
+syms x
+f = sym(franke(x,0.5));
 beta = 5;
 lbound = 0;
 ubound = 1;

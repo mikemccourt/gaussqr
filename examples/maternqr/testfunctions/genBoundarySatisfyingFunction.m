@@ -34,18 +34,18 @@ xtwo = sym(ubound);
 
 m = (ytwo-yone)/(xtwo-xone); % find the slope of the adjustment line
 
-% Construct (symbolic) adjustment line:
-adjustmentTerm = m *(x - xone) + yone;
+% Construct (polynomial-vector representation of) adjustment line:
+adjustmentTerm = sym2poly( m *(x - xone) + yone );
 %--------------------------------------------------------------------------
 
 % symbollically integrate the adjustment line 2*beta times to find the term
 % we must add to f so that its highest derivative satisfyies the boundary
 % conditions
 for i = 1:2*beta
-    adjustmentTerm = int(adjustmentTerm);
+    adjustmentTerm = polyint(adjustmentTerm);
 end
 
-newf = f - adjustmentTerm;  % this new function's (2*beta)th derivative
+newf = f - poly2sym(adjustmentTerm);  % this new function's (2*beta)th derivative
                             % satisfies the boundary conditions
                             
 if beta == 0
