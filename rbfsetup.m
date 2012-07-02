@@ -17,6 +17,7 @@ if(strfind(thisOS,'Windows')>0) % We are in Windows
     examplesDir = strcat(thisDir,'\examples');
       gqrexamplesDir = strcat(examplesDir,'\gaussqr');
       mqrexamplesDir = strcat(examplesDir,'\maternqr');
+        testfunctionsDir = strcat(mqrexamplesDir,'\testfunctions');
     otherDir = strcat(thisDir,'\fromothers');
 else % We are in Unix
     sourceDir = strcat(thisDir,'/source');
@@ -29,9 +30,10 @@ else % We are in Unix
     examplesDir = strcat(thisDir,'/examples');
       gqrexamplesDir = strcat(examplesDir,'/gaussqr');
       mqrexamplesDir = strcat(examplesDir,'/maternqr');
+        testfunctionsDir = strcat(mqrexamplesDir,'/testfunctions');
     otherDir = strcat(thisDir,'/fromothers');
 end
-addpath(sourceDir,gaussqrDir,genpath(examplesDir),gqrauxiliaryDir,mqrauxiliaryDir,utilitiesDir,otherDir,maternqrDir,gqrexamplesDir,mqrexamplesDir,1);
+addpath(sourceDir,gaussqrDir,gqrauxiliaryDir,mqrauxiliaryDir,utilitiesDir,otherDir,maternqrDir,gqrexamplesDir,mqrexamplesDir,testfunctionsDir,1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Setup global constants and parameters

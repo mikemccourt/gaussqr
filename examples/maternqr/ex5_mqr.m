@@ -12,6 +12,8 @@
 %   version of the solve.  Need to think about that because one may be
 %   better/faster than the other in different conditions
 rbfsetup
+global GAUSSQR_PARAMETERS
+symavail = GAUSSQR_PARAMETERS.SYMBOLIC_TOOLBOX_AVAILABLE;
 
 % The range of N values to consider
 Nvec = 10:5:100;
@@ -38,7 +40,7 @@ lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 9;
+fopt = 3;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -77,17 +79,21 @@ switch fopt
         fstr = ['y(x) = 10^{',num2str(testfuncN+1),'} (max(0,x-(1/4)))^{',num2str(testfuncN),'}(max(0,(3/4)-x)^{',num2str(testfuncN),'}'];
         embed = 0;
     case 9
-        bSatTestFunc = sym(franke(sym('x'),0.5)); % this must be a symbolic expression
-        % the test function will satisfy boundary conditions for all *even*
-        % derivatives up to the (2*bSatDegree)th derivative:
+        if symavail
+            bSatTestFunc = sym(franke(sym('x'),0.5)); % this must be a symbolic expression
+            % the test function will satisfy boundary conditions for all *even*
+            % derivatives up to the (2*bSatDegree)th derivative:
             bSatDegree = 5; % a value of -1 here doesn't force any conditions to be satisfied
-        % specify desired boundary values here:
+            % specify desired boundary values here:
             lbval = 0;
             ubval = 0;
-        symyf = genBoundarySatisfyingFunction(bSatTestFunc,bSatDegree,0,L,lbval,ubval);
-        yf = matlabFunction(symyf);
-        fstr = char(simplify(symyf));
-        embed = 0;
+            symyf = genBoundarySatisfyingFunction(bSatTestFunc,bSatDegree,0,L,lbval,ubval);
+            yf = matlabFunction(symyf);
+            fstr = char(simplify(symyf));
+            embed = 0;
+        else
+            error('Cannot call this function without the symbolic toolkit available')
+        end
  %--------------------------------------------------------------
     otherwise
         error('This function does not exist')
