@@ -31,7 +31,7 @@ else % We are in Unix
       mqrexamplesDir = strcat(examplesDir,'/maternqr');
     otherDir = strcat(thisDir,'/fromothers');
 end
-addpath(sourceDir,gaussqrDir,examplesDir,gqrauxiliaryDir,mqrauxiliaryDir,utilitiesDir,otherDir,maternqrDir,gqrexamplesDir,mqrexamplesDir,1);
+addpath(sourceDir,gaussqrDir,genpath(examplesDir),gqrauxiliaryDir,mqrauxiliaryDir,utilitiesDir,otherDir,maternqrDir,gqrexamplesDir,mqrexamplesDir,1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Setup global constants and parameters
