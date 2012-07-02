@@ -38,7 +38,7 @@ lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 8;
+fopt = 9;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -68,15 +68,27 @@ switch fopt
         fstr = 'y(x)=cos(x)+e^{-(x-1)^2}-e^{-(x+1)^2}';
         yf = @(x) cos(x)+exp(-(x-1).^2)-exp(-(x+1).^2);
         embed = embed_cushion;
-    %--------------------------------
-    % Casey and Will's test functions
+ %--------------------------------------------------------------
+ % Casey and Will's test functions
     case 8 % this family is from the Hubbert-Muller paper on thin plate spline interpolation
         % meant to be used on the unit interval
         testfuncN = 10;
         yf = @(x) 10^(testfuncN+1).*(max(0,x-(1/4))).^testfuncN.*(max(0,(3/4)-x)).^testfuncN;
         fstr = ['y(x) = 10^{',num2str(testfuncN+1),'} (max(0,x-(1/4)))^{',num2str(testfuncN),'}(max(0,(3/4)-x)^{',num2str(testfuncN),'}'];
         embed = 0;
-    %---------------------------------
+    case 9
+        bSatTestFunc = sym('sin(x)');
+        % the test function will satisfy boundary conditions for all *even*
+        % derivatives up to the (2*bSatDegree)th derivative:
+            bSatDegree = 5; % Note: a value of -1 doesn't force any conditions to be satisfied
+        % specify desired boundary values here:
+            lbval = 0;
+            ubval = 0;
+        symyf = genBoundarySatisfyingFunction(bSatTestFunc,bSatDegree,0,L,lbval,ubval);
+        yf = matlabFunction(symyf);
+        fstr = char(simplify(symyf));
+        embed = 0
+ %--------------------------------------------------------------
     otherwise
         error('This function does not exist')
 end
