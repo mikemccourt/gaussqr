@@ -181,7 +181,7 @@ for N=5:12
     Nvec(m) = size(x,1);
     
     GQR = gqr_solveprep(1,x,ep,alpha);
-    phiMat = gqr_phi(GQR,x(b,:),);
+    phiMat = gqr_phi(GQR,x(b,:));
     phiMat2d = gqr_phi(GQR,x(bi,:),[2,0])+gqr_phi(GQR,x(bi,:),[0,2]);
     A = [phiMat2d;phiMat];
     rhs = zeros(length(x),1);
