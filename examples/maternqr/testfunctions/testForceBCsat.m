@@ -6,13 +6,14 @@ lbsat = 5;
 rbsat = 5;
 lbound = 0;
 rbound = 1;
-lbval = 0;
-rbval = 0;
+lbval = 1e10;
+rbval = 1e10;
 range = [lbound,rbound];
-test = 1; % 0 = add, 1 = mult
+test = 0; % 0 = add, 1 = mult
 
 if test == 0 % test additive version
     g = forceBCsatADD( f, lbsat, rbsat, lbound, rbound, lbval, rbval )
+    g = g / 10^(2*i) % normalization factor
     d = symfun(diff(g,2*i),x);
     figure;
     ezplot(d,range);
