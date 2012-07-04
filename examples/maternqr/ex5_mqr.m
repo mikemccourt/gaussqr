@@ -90,6 +90,7 @@ switch fopt
             ubval = 0;
             
             symyf = forceBCsatADD(bSatTestFunc,bSatDegree,0,L,lbval,ubval);
+            symf = symf / 10^(2*bSatDegree); % we're adding polynomials on the order of 2*bSatDegree, so we should normalize by that much
             yf = matlabFunction(symyf);
             fstr = char(simplify(symyf));
             embed = 0;
