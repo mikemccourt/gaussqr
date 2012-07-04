@@ -98,20 +98,16 @@ switch fopt
             error('Cannot call this function without the symbolic toolkit available')
         end
     case 10 % MULTIPLICATIVE boundary condition forcing
-        if symavail % requires Symbolic Math Toolbox :(
-            bSatTestFunc = sym(franke(sym('x'),0.5)); % this must be a symbolic expression
-            
-            % the test function will satisfy boundary conditions for *all*
-            % derivatives up to the (2*bSatDegree)th derivative:
-            bSatDegree = 5; % a value of -1 here doesn't force any conditions to be satisfied
-            
-            symyf = forceBCsatMULT(bSatTestFunc,bSatDegree,0,L);
-            yf = matlabFunction(symyf);
-            fstr = char(simplify(symyf));
-            embed = 0;
-        else
-            error('Cannot call this function without the symbolic toolkit available')
-        end
+        bSatTestFunc = sym(franke(sym('x'),0.5)); % this must be a symbolic expression
+        
+        % the test function will satisfy boundary conditions for *all*
+        % derivatives up to the (2*bSatDegree)th derivative:
+        bSatDegree = 5; % a value of -1 here doesn't force any conditions to be satisfied
+        
+        symyf = forceBCsatMULT(bSatTestFunc,bSatDegree,0,L);
+        yf = matlabFunction(symyf);
+        fstr = char(simplify(symyf));
+        embed = 0;
  %--------------------------------------------------------------
     otherwise
         error('This function does not exist')
