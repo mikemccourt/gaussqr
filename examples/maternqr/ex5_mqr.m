@@ -40,7 +40,7 @@ lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 3;
+fopt = 9;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -84,13 +84,14 @@ switch fopt
             
             % the test function will satisfy boundary conditions for all *even*
             % derivatives up to the (2*bSatDegree)th derivative:
-            bSatDegree = 5; % a value of -1 here doesn't force any conditions to be satisfied
+            leftbSatDegree = 5; % a value of -1 here doesn't force any conditions to be satisfied
+            rightbSatDegree = 5; % a value of -1 here doesn't force any conditions to be satisfied
             % specify desired boundary values here:
             lbval = 0;
             ubval = 0;
             
-            symyf = forceBCsatADD(bSatTestFunc,bSatDegree,0,L,lbval,ubval);
-            symf = symf / 10^(2*bSatDegree); % we're adding polynomials on the order of 2*bSatDegree, so we should normalize by that much
+            symyf = forceBCsatADD(bSatTestFunc,leftbSatDegree,rightbSatDegree,0,L,lbval,ubval);
+            symyf = symyf / 10^(2*bSatDegree); % we're adding polynomials on the order of 2*bSatDegree, so we should normalize by that much
             yf = matlabFunction(symyf);
             fstr = char(simplify(symyf));
             embed = 0;
