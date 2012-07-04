@@ -158,7 +158,9 @@ end
 
 warning on
 
-semilogy(Nvec,errvec,'linewidth',2)
+loglog(Nvec,errvec,'linewidth',2)
+% semilogy(Nvec,errvec,'linewidth',2)
+        
 xlabel('input points N')
 ylabel('RMS relative error')
 title(strcat(fstr,sprintf('x\\in[%g,%g], ',embed*L,(1-embed)*L),sprintf('\\epsilon=%g',ep)))
