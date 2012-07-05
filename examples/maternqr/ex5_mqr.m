@@ -81,7 +81,6 @@ switch fopt
     case 9 % ADDITIVE boundary condition forcing
         if symavail % requires Symbolic Math Toolbox :(
             bSatTestFunc = sym(franke(sym('x'),0.5)); % this must be a symbolic expression
-            bSatTestFunc = sym('x^2');
             
             % the test function will satisfy boundary conditions for all *even*
             % derivatives up to the (2*bSatDegree)th derivative:
