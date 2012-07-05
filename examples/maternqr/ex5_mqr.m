@@ -81,17 +81,18 @@ switch fopt
     case 9 % ADDITIVE boundary condition forcing
         if symavail % requires Symbolic Math Toolbox :(
             bSatTestFunc = sym(franke(sym('x'),0.5)); % this must be a symbolic expression
+            bSatTestFunc = sym('x^2');
             
             % the test function will satisfy boundary conditions for all *even*
             % derivatives up to the (2*bSatDegree)th derivative:
-            leftbSatDegree = 5; % a value of -1 here doesn't force any conditions to be satisfied
+            leftbSatDegree = 5;  % a value of -1 here doesn't force any conditions to be satisfied
             rightbSatDegree = 5; % a value of -1 here doesn't force any conditions to be satisfied
             % specify desired boundary values here:
             lbval = 0;
             ubval = 0;
             
             symyf = forceBCsatADD(bSatTestFunc,leftbSatDegree,rightbSatDegree,0,L,lbval,ubval);
-            symyf = symyf / 10^(2*bSatDegree); % we're adding polynomials on the order of 2*bSatDegree, so we should normalize by that much
+            symyf = symyf / 10^(leftbSatDegree+rightbSatDegree); % we're adding polynomials on the order of 2*bSatDegree, so we should normalize by that much
             yf = matlabFunction(symyf);
             fstr = char(simplify(symyf));
             embed = 0;
