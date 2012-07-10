@@ -40,7 +40,7 @@ lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 10;
+fopt = 11;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -109,6 +109,34 @@ switch fopt
         yf = forceBCsatMULT(bSatTestFunc,leftbSatDegree,rightbSatDegree,0,L);
         fstr = char(yf);
         embed = 0;
+    case 11
+        yf = @(x) x.^(26.*sin(2*pi*x));
+        fstr = char(yf);
+        embed = 0;
+    case 12
+        yf = @(x) (x.^17).*(x-1).^13;
+        fstr = char(yf);
+        embed = 0;
+    case 12
+        yf = @(x) exp(x);
+        fstr = char(yf);
+        embed = 0;
+    case 13
+        yf = @(x) exp(x)-1;
+        fstr = char(yf);
+        embed = 0;
+    case 14
+        yf = @(x) exp(x) - exp(1);
+        fstr = char(yf);
+        embed = 0;
+    case 15
+        yf = @(x) (1/2).*(2.*exp(x) - x.^2 + (x.^3).*((1-exp(1))/3));
+        fstr = char(yf);
+        embed = 0;
+    case 16
+        yf = @(x) (x.^17).*(x-1).^13;
+        fstr = char(yf);
+        embed = 0;
  %--------------------------------------------------------------
     otherwise
         error('This function does not exist')
@@ -166,7 +194,7 @@ warning on
 betaScores = zeros(length(betavec),1);
 for beta = betavec
     p = polyfit(log(Nvec),log(errvec(beta,:)),1);
-    betaScores(beta) = p(1)/beta;
+    betaScores(beta) = p(1)/beta
 end
 figure;
 plot(1:5,betaScores);
