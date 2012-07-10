@@ -168,9 +168,14 @@ for beta = betavec
     p = polyfit(log(Nvec),log(errvec(beta,:)),1);
     betaScores(beta) = p(1)/beta;
 end
-
+figure;
+plot(1:5,betaScores);
+title('Convergence Scores      error = c*n^{( a1 * beta )}')
+xlabel('beta')
+ylabel('a1')
 %---------------------------------------------
  
+figure;
 loglog(Nvec,errvec,'linewidth',2)
 % semilogy(Nvec,errvec,'linewidth',2)
         
