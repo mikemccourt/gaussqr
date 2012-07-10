@@ -40,7 +40,7 @@ lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 2;
+fopt = 16;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -194,13 +194,13 @@ warning on
 betaScores = zeros(length(betavec),1);
 for beta = betavec
     p = polyfit(log(Nvec),log(errvec(beta,:)),1);
-    betaScores(beta) = p(1)
+    betaScores(beta) = p(1)/beta
 end
 figure;
 plot(1:5,betaScores,'linewidth',2);
 title('Convergence Scores      error = c \cdot n^{( a_1 \cdot \beta )}')
 xlabel('\beta')
-ylabel('a_1')
+ylabel('a_1 / \beta')
 %---------------------------------------------
  
 figure;
