@@ -40,7 +40,7 @@ lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 10;
+fopt = 11;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -109,6 +109,9 @@ switch fopt
         yf = forceBCsatMULT(bSatTestFunc,leftbSatDegree,rightbSatDegree,0,L);
         fstr = char(yf);
         embed = 0;
+    case 11 % simple exp
+        yf = @(x) exp(x);
+        fstr = 'u(x) = e^{x}';
  %--------------------------------------------------------------
     otherwise
         error('This function does not exist')
@@ -169,17 +172,17 @@ for beta = betavec
     betaScores(beta) = p(1)/beta;
 end
 figure;
-plot(1:5,betaScores);
-title('Convergence Scores      error = c*n^{( a1 * beta )}')
-xlabel('beta')
-ylabel('a1')
+plot(1:5,betaScores,'linewidth',3);
+title('Convergence Scores      error = c \cdot N^{( a_1 \cdot \beta )}','FontSize',20)
+xlabel('\beta','FontSize',20)
+ylabel('a_1','FontSize',20)
 %---------------------------------------------
  
 figure;
 loglog(Nvec,errvec,'linewidth',2)
 % semilogy(Nvec,errvec,'linewidth',2)
         
-xlabel('input points N')
-ylabel('RMS relative error')
-title(strcat(fstr,sprintf('x\\in[%g,%g], ',embed*L,(1-embed)*L),sprintf('\\epsilon=%g',ep)))
+xlabel('Input points N','FontSize',20)
+ylabel('RMS relative error','FontSize',20)
+title(strcat(fstr,sprintf('    x\\in[%g,%g], ',embed*L,(1-embed)*L),sprintf('    \\epsilon=%g',ep)),'FontSize',20)
 legend('\beta=1','\beta=2','\beta=3','\beta=4','\beta=5','location','northeast')
