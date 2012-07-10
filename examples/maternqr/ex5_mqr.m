@@ -107,7 +107,7 @@ switch fopt
             rightbSatDegree = 5; % a value of -1 here doesn't force any conditions to be satisfied
         
         yf = forceBCsatMULT(bSatTestFunc,leftbSatDegree,rightbSatDegree,0,L);
-        fstr = char(symyf);
+        fstr = char(yf);
         embed = 0;
  %--------------------------------------------------------------
     otherwise
@@ -158,6 +158,19 @@ end
 
 warning on
 
+%--------------------------------------------
+% Convergence data
+
+% Finds a convergence "score" for each beta
+% (the slope of a best-fit line for error vs N)
+betaScores = zeros(length(betavec),1);
+for beta = betavec
+    p = polyfit(log(Nvec),log(errvec(beta,:)),1);
+    betaScores(beta) = p(1)/beta;
+end
+
+%---------------------------------------------
+ 
 loglog(Nvec,errvec,'linewidth',2)
 % semilogy(Nvec,errvec,'linewidth',2)
         
