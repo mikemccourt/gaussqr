@@ -40,7 +40,7 @@ lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 17;
+fopt = 12;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -130,15 +130,11 @@ switch fopt
         fstr = char(yf);
         embed = 0;
     case 15
-        yf = @(x) (1/2).*(2.*exp(x) - x.^2 + (1/3).*(x.^3).*(1-exp(1)));
+        yf = @(x) (1/2).*(2.*exp(x) - x.^2 + (x.^3).*((1-exp(1))/3));
         fstr = char(yf);
         embed = 0;
     case 16
-        yf = @(x) (1/6).*(-6 + 6.*exp(x) + 8.*x - 3.*x.^2 + x.^3 - x.*exp(1).*(5+x.^2));
-        fstr = char(yf);
-        embed = 0;
-    case 17
-        yf = @(x) (1/360).*(3.*x.^5 - 15.*x.^4 + 80.*x.^3 - 180.*x.^2 - exp(1).*(3.*x.^4 + 50.*x.^2 + 307).*x + 472.*x + 360.*exp(x) - 360);
+        yf = @(x) (x.^17).*(x-1).^13;
         fstr = char(yf);
         embed = 0;
  %--------------------------------------------------------------
@@ -201,7 +197,7 @@ for beta = betavec
     betaScores(beta) = p(1)/beta
 end
 figure;
-plot(1:5,betaScores);
+plot(1:5,betaScores,'linewidth',2);
 title('Convergence Scores      error = c*n^{( a1 * beta )}')
 xlabel('beta')
 ylabel('a1')
