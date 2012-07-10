@@ -40,7 +40,7 @@ lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 16;
+fopt = 12;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -111,10 +111,6 @@ switch fopt
         embed = 0;
     case 11
         yf = @(x) x.^(26.*sin(2*pi*x));
-        fstr = char(yf);
-        embed = 0;
-    case 12
-        yf = @(x) (x.^17).*(x-1).^13;
         fstr = char(yf);
         embed = 0;
     case 12
