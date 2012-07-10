@@ -109,9 +109,34 @@ switch fopt
         yf = forceBCsatMULT(bSatTestFunc,leftbSatDegree,rightbSatDegree,0,L);
         fstr = char(yf);
         embed = 0;
-    case 11 % simple exp
+    case 11
+        yf = @(x) x.^(26.*sin(2*pi*x));
+        fstr = char(yf);
+        embed = 0;
+    case 12
+        yf = @(x) (x.^17).*(x-1).^13;
+        fstr = char(yf);
+        embed = 0;
+    case 12
         yf = @(x) exp(x);
-        fstr = 'u(x) = e^{x}';
+        fstr = char(yf);
+        embed = 0;
+    case 13
+        yf = @(x) exp(x)-1;
+        fstr = char(yf);
+        embed = 0;
+    case 14
+        yf = @(x) exp(x) - exp(1);
+        fstr = char(yf);
+        embed = 0;
+    case 15
+        yf = @(x) (1/2).*(2.*exp(x) - x.^2 + (x.^3).*((1-exp(1))/3));
+        fstr = char(yf);
+        embed = 0;
+    case 16
+        yf = @(x) (x.^17).*(x-1).^13;
+        fstr = char(yf);
+        embed = 0;
  %--------------------------------------------------------------
     otherwise
         error('This function does not exist')
@@ -169,20 +194,20 @@ warning on
 betaScores = zeros(length(betavec),1);
 for beta = betavec
     p = polyfit(log(Nvec),log(errvec(beta,:)),1);
-    betaScores(beta) = p(1)/beta;
+    betaScores(beta) = p(1)/beta
 end
 figure;
-plot(1:5,betaScores,'linewidth',3);
-title('Convergence Scores      error = c \cdot N^{( a_1 \cdot \beta )}','FontSize',20)
-xlabel('\beta','FontSize',20)
-ylabel('a_1','FontSize',20)
+plot(1:5,betaScores);
+title('Convergence Scores      error = c*n^{( a1 * beta )}')
+xlabel('beta')
+ylabel('a1')
 %---------------------------------------------
  
 figure;
 loglog(Nvec,errvec,'linewidth',2)
 % semilogy(Nvec,errvec,'linewidth',2)
         
-xlabel('Input points N','FontSize',20)
-ylabel('RMS relative error','FontSize',20)
-title(strcat(fstr,sprintf('    x\\in[%g,%g], ',embed*L,(1-embed)*L),sprintf('    \\epsilon=%g',ep)),'FontSize',20)
+xlabel('input points N')
+ylabel('RMS relative error')
+title(strcat(fstr,sprintf('x\\in[%g,%g], ',embed*L,(1-embed)*L),sprintf('\\epsilon=%g',ep)))
 legend('\beta=1','\beta=2','\beta=3','\beta=4','\beta=5','location','northeast')
