@@ -40,7 +40,7 @@ lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 12;
+fopt = 18;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -126,11 +126,20 @@ switch fopt
         fstr = char(yf);
         embed = 0;
     case 15
+        % second order boundary conditions satisfied but no others
         yf = @(x) (1/2).*(2.*exp(x) - x.^2 + (x.^3).*((1-exp(1))/3));
         fstr = char(yf);
         embed = 0;
     case 16
         yf = @(x) (x.^17).*(x-1).^13;
+        fstr = char(yf);
+        embed = 0;
+    case 17
+        yf = @(x) exp(x) - (1-x) - x*exp(1);
+        fstr = char(yf);
+        embed = 0;
+    case 18
+        yf = @(x) exp(x) - 1 + (1/6).*(x.^3 - 3.*x.^2 + 8.*x - exp(1).*(x.^3+5.*x));
         fstr = char(yf);
         embed = 0;
  %--------------------------------------------------------------
@@ -190,8 +199,9 @@ warning on
 betaScores = zeros(length(betavec),1);
 for beta = betavec
     p = polyfit(log(Nvec),log(errvec(beta,:)),1);
-    betaScores(beta) = p(1)/beta
+    betaScores(beta) = p(1)/beta;
 end
+betaScores
 figure;
 plot(1:5,betaScores,'linewidth',2);
 title('Convergence Scores      error = c \cdot n^{( a_1 \cdot \beta )}')
