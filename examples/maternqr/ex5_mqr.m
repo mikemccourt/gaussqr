@@ -40,7 +40,7 @@ lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 18;
+fopt = 19;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -142,6 +142,18 @@ switch fopt
         yf = @(x) exp(x) - 1 + (1/6).*(x.^3 - 3.*x.^2 + 8.*x - exp(1).*(x.^3+5.*x));
         fstr = char(yf);
         embed = 0;
+ %--------------------------------------------------------------
+ %cases which satisfy boundary conditions but are not entirely smooth
+ %throughout
+    case 19 %jump in the third derivative
+        yf = @(x) testkernel(x);
+        fstr = char(yf);
+        embed = 0;
+         
+ 
+ 
+ 
+ 
  %--------------------------------------------------------------
     otherwise
         error('This function does not exist')
