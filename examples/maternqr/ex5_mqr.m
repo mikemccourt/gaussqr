@@ -163,7 +163,7 @@ switch fopt
     case 20 
     % This is a slice of our 2-D kernel for beta=2,epsilon>0.
     % It has a jump in the third derivative.
-    % Edit testkernel to se twhere this jump occurs 
+    % Edit testkernel to set where this jump occurs 
     % (change y to another value in [0,1]).
         yf = @(x) testkernel(x);
         fstr = char(yf);
