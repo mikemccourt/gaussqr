@@ -1,4 +1,4 @@
-% ex5_SQR
+% EX5_MQR
 % This puts together convergence order pictures for SineQR
 % We consider two choices:
 %     General functions with arbitrary "BC" embedded in [0,L]
@@ -20,7 +20,7 @@ Nvec = 10:5:100;
 % The orders (smoothness) of the kernel to consider
 betavec = 1:8;
 % The kernel shape parameter
-ep = .1;
+ep = 1;
 % The length of the domain
 L = 1;
 % The embedding width for nonhomogeneous functions
@@ -40,7 +40,7 @@ lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 16;
+fopt = 11;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -124,10 +124,12 @@ switch fopt
         fstr = char(yf);
         embed = 0;
     case 13
+        % satisfies left BC u(0) = 0
         yf = @(x) exp(x)-1;
         fstr = char(yf);
         embed = 0;
     case 14
+        % satisfies right BC u(1) = 0
         yf = @(x) exp(x) - exp(1);
         fstr = char(yf);
         embed = 0;
@@ -137,15 +139,27 @@ switch fopt
         fstr = char(yf);
         embed = 0;
     case 16
+        % satisfies all left BCs up to 17th derivative
+        % and all right BCs up to 13th derivative
         yf = @(x) (x.^17).*(x-1).^13;
         fstr = char(yf);
         embed = 0;
     case 17
+        % satisfies left and right BCs u(0) = u(1) = 0
         yf = @(x) exp(x) - (1-x) - x*exp(1);
         fstr = char(yf);
         embed = 0;
     case 18
+        % satisfies the left and right BCs for the 0th and 2nd derivative
+        %   u(0) = u''(0) = u(1) = u''(1) = 0
         yf = @(x) exp(x) - 1 + (1/6).*(x.^3 - 3.*x.^2 + 8.*x - exp(1).*(x.^3+5.*x));
+        fstr = char(yf);
+        embed = 0;
+    case 19
+        % satisfies left and right BCS for all even derivatives up to and
+        % including the fourth, i.e.
+        % u(0) = u''(0) = u''''(0) = u(1) = u''(1) = u''''(1) = 0
+        yf = @(x) (1/360).*(3.*x.^5-15.*x.^4+80.*x.^3-180.*x.^2-exp(1).*(3.*x.^4+50*x.^2+307).*x+472.*x+360.*exp(x)-360);
         fstr = char(yf);
         embed = 0;
 %==========================================================================
@@ -194,7 +208,6 @@ for N=Nvec
     
     k = k + 1;
 end
-
 warning on
 
 %==========================================================================
@@ -204,25 +217,41 @@ warning on
 % Finds a convergence "score" for each beta
 % (the slope of a best-fit line for error vs N)
 % i.e., ( a_1 * beta )
-convergenceExponent = zeros(length(betavec),2)
+convergenceExponent = zeros(length(betavec),2);
 for beta = betavec
     p = polyfit(log(Nvec),log(errvec(beta,:)),1);
     convergenceExponent(beta,:) = [p(1),p(1)];
 end
 convergenceExponent(:,2) = convergenceExponent(:,2)./(betavec'); % calculate a_1 values
 
+global betaData
+
 disp('(a_1 * beta) values:') ;% print a1*beta
 disp(convergenceExponent(:,1));
+betaData(fopt,1:8) = convergenceExponent(:,1)';
 
 disp('a_1 values:'); % print a1:
 disp(convergenceExponent(:,2));
+betaData(fopt,9:16) = convergenceExponent(:,2)';
 
-% Plot a1:
-figure;
-loglog(betavec,convergenceExponent,'linewidth',2);
+% Plot a1 and a1*beta:
+a1plot = figure('NumberTitle','off','Name',[num2str(fopt),'scores']);
+% axes1 = axes('Parent',a1plot,'YTick',-20:20,...
+%     'YScale','log',...
+%     'YMinorTick','on',...
+%     'YMinorGrid','on',...
+%     'XTick',betavec,...
+%     'XScale','log',...
+%     'XMinorTick','on',...
+%     'XMinorGrid','on');
+% box(axes1,'on');
+% grid(axes1,'on');
+% hold(axes1,'all');
+% plot(betavec,convergenceExponent,'Parent',axes1,'Marker','square','LineWidth',2);
+plot(betavec,convergenceExponent,'Marker','square','LineWidth',2);
 title('Convergence Rates, assuming error = c \cdot n^{( a_1 \cdot \beta )}')
 xlabel('\beta')
-legend('a_1 \cdot \beta','a_1','location','southwest')
+legend('a_1 \cdot \beta','a_1','location','best')
 %--------------------------------------------------------------------------
 % Plot error:
 
@@ -230,12 +259,11 @@ legend('a_1 \cdot \beta','a_1','location','southwest')
 % at boundary
 %==========================================================================
  
-% Plot error as beta and N vary:
-figure;
-loglog(Nvec,errvec,'linewidth',2)
+% Plot RMS error as beta and N vary:
+errorplot = figure('NumberTitle','off','Name',num2str(fopt));
+loglog(Nvec,errvec,'linewidth',2);
 % semilogy(Nvec,errvec,'linewidth',2)
-        
-xlabel('input points N')
-ylabel('RMS relative error')
-title(strcat(sprintf('x \\in [%g,%g] ',embed*L,(1-embed)*L),sprintf('     \\epsilon = %g',ep)))
-legend('\beta=1','\beta=2','\beta=3','\beta=4','\beta=5','location','southwest')
+xlabel('input points N');
+ylabel('RMS relative error');
+title(strcat(sprintf('x \\in [%g,%g] ',embed*L,(1-embed)*L),sprintf('     \\epsilon = %g',ep)));
+legend('\beta = 1','\beta = 2','\beta = 3','\beta = 4','\beta = 5','\beta = 6','\beta = 7','\beta = 8','location','best');
