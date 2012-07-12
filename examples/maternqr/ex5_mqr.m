@@ -173,6 +173,8 @@ switch fopt
         error('This function does not exist')
 end
 
+errorForBetas = zeros(length(betavec),NN);
+
 % At some point I'll move the solves into a separate function and consider
 % warnings there.  For now I'm tired of seeing the warnings pop up.
 warning off
@@ -209,6 +211,7 @@ for N=Nvec
         end
 
         errvec(j,k) = errcompute(yp,yy);
+        errorForBetas(beta,:) = yy-yp;
         j = j + 1;
     end
     
@@ -243,12 +246,19 @@ plot(betavec,convergenceExponentData,'Marker','square','LineWidth',2);
 xlabel('\beta')
 legend('a_1 \cdot \beta','a_1','location','best')
 %---------------------------------------------
- 
 % Plot function:
 figure;
 plot(xx,yf(xx));
+%---------------------------------------------
+% Plot error:
 
+for i = betavec
+errorFig = subplot(length(betavec)/2,2,i), plot(errorForBetas(i,:));
+titleStr = ['\beta = ',num2str(i)];
+title(titleStr);
+end
 
+%---------------------------------------------
 % Plot RMS error as beta and N vary:
 errorplot = figure('NumberTitle','off','Name',num2str(fopt));
 loglog(Nvec,errvec,'linewidth',2);
