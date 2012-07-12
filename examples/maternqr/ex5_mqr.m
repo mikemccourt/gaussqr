@@ -18,7 +18,7 @@ symavail = GAUSSQR_PARAMETERS.SYMBOLIC_TOOLBOX_AVAILABLE;
 % The range of N values to consider
 Nvec = 10:5:100;
 % The orders (smoothness) of the kernel to consider
-betavec = 1:8;
+betavec = 1:5;
 % The kernel shape parameter
 ep = 1;
 % The length of the domain
@@ -40,7 +40,7 @@ lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 11;
+fopt = 19;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -69,13 +69,16 @@ switch fopt
     case 7
         fstr = 'y(x)=cos(x)+e^{-(x-1)^2}-e^{-(x+1)^2}';
         yf = @(x) cos(x)+exp(-(x-1).^2)-exp(-(x+1).^2);
-        embed = embed_cushion
-%==========================================================================
-% Casey and Will's test functions
-%==========================================================================
-    % Boundary satisfaction forcing for arbitrary functions:
-    %-----------------------------------------------------------
-    case 8 % ADDITIVE boundary condition forcing
+        embed = embed_cushion;
+ %--------------------------------------------------------------
+ % Casey and Will's test functions
+    case 8 % this family is from the Hubbert-Muller paper on thin plate spline interpolation
+        % meant to be used on the unit interval
+        testfuncN = 10;
+        yf = @(x) 10^(testfuncN+1).*(max(0,x-(1/4))).^testfuncN.*(max(0,(3/4)-x)).^testfuncN;
+        fstr = ['y(x) = 10^{',num2str(testfuncN+1),'} (max(0,x-(1/4)))^{',num2str(testfuncN),'}(max(0,(3/4)-x)^{',num2str(testfuncN),'}'];
+        embed = 0;
+    case 9 % ADDITIVE boundary condition forcing
         if symavail % requires Symbolic Math Toolbox :(
             bSatTestFunc = sym(franke(sym('x'),0.5)); % this must be a symbolic expression
             
@@ -95,7 +98,7 @@ switch fopt
         else
             error('Cannot call this function without the symbolic toolkit available')
         end
-    case 9 % MULTIPLICATIVE boundary condition forcing
+    case 10 % MULTIPLICATIVE boundary condition forcing
         bSatTestFunc = @(x) franke(x,0.5); % this must be a symbolic expression
         
         % the test function will satisfy boundary conditions for all *even*
@@ -105,15 +108,6 @@ switch fopt
         
         yf = forceBCsatMULT(bSatTestFunc,leftbSatDegree,rightbSatDegree,0,L);
         fstr = char(yf);
-        embed = 0;
-    %----------------------------------------------------------------------
-    % Other test functions:
-    %-------------------------
-    case 10 % this family is from the Hubbert-Muller paper on thin plate spline interpolation
-        % meant to be used on the unit interval
-        testfuncN = 10;
-        yf = @(x) 10^(testfuncN+1).*(max(0,x-(1/4))).^testfuncN.*(max(0,(3/4)-x)).^testfuncN;
-        fstr = ['y(x) = 10^{',num2str(testfuncN+1),'} (max(0,x-(1/4)))^{',num2str(testfuncN),'}(max(0,(3/4)-x)^{',num2str(testfuncN),'}'];
         embed = 0;
     case 11
         yf = @(x) x.^(26.*sin(2*pi*x));
@@ -162,7 +156,19 @@ switch fopt
         yf = @(x) (1/360).*(3.*x.^5-15.*x.^4+80.*x.^3-180.*x.^2-exp(1).*(3.*x.^4+50*x.^2+307).*x+472.*x+360.*exp(x)-360);
         fstr = char(yf);
         embed = 0;
-%==========================================================================
+         
+ %--------------------------------------------------------------
+ % Functions that satisfy BCs but violate smoothness assumptions
+ % at a point in the interior
+    case 20 
+    % This has a jump in the third derivative.
+    % Edit testkernel to se twhere this jump occurs 
+    % (change y to another value in [0,1]).
+        yf = @(x) testkernel(x);
+        fstr = char(yf);
+        embed = 0;         
+        
+ %--------------------------------------------------------------
     otherwise
         error('This function does not exist')
 end
@@ -210,30 +216,22 @@ for N=Nvec
 end
 warning on
 
-%==========================================================================
-% Convergence score data...
-%      ... assumes error = c*N^(a1*beta)
+%--------------------------------------------
+% Convergence data
 
 % Finds a convergence "score" for each beta
 % (the slope of a best-fit line for error vs N)
-% i.e., ( a_1 * beta )
+betaScores = zeros(length(betavec),1);
 convergenceExponent = zeros(length(betavec),2);
 for beta = betavec
     p = polyfit(log(Nvec),log(errvec(beta,:)),1);
-    convergenceExponent(beta,:) = [p(1),p(1)];
+    betaScores(beta) = p(1)/beta;
 end
-convergenceExponent(:,2) = convergenceExponent(:,2)./(betavec'); % calculate a_1 values
-
+betaScores
 global betaData
 
-disp('(a_1 * beta) values:') ;% print a1*beta
-disp(convergenceExponent(:,1));
 betaData(fopt,1:8) = convergenceExponent(:,1)';
-
-disp('a_1 values:'); % print a1:
-disp(convergenceExponent(:,2));
 betaData(fopt,9:16) = convergenceExponent(:,2)';
-
 % Plot a1 and a1*beta:
 a1plot = figure('NumberTitle','off','Name',[num2str(fopt),'scores']);
 % axes1 = axes('Parent',a1plot,'YTick',-20:20,...
@@ -249,15 +247,9 @@ a1plot = figure('NumberTitle','off','Name',[num2str(fopt),'scores']);
 % hold(axes1,'all');
 % plot(betavec,convergenceExponent,'Parent',axes1,'Marker','square','LineWidth',2);
 plot(betavec,convergenceExponent,'Marker','square','LineWidth',2);
-title('Convergence Rates, assuming error = c \cdot n^{( a_1 \cdot \beta )}')
 xlabel('\beta')
 legend('a_1 \cdot \beta','a_1','location','best')
-%--------------------------------------------------------------------------
-% Plot error:
-
-% TODO: plot error for various beta/N values to show concentration of error
-% at boundary
-%==========================================================================
+%---------------------------------------------
  
 % Plot RMS error as beta and N vary:
 errorplot = figure('NumberTitle','off','Name',num2str(fopt));
