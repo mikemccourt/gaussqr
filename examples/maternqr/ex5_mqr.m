@@ -16,7 +16,7 @@ global GAUSSQR_PARAMETERS
 symavail = GAUSSQR_PARAMETERS.SYMBOLIC_TOOLBOX_AVAILABLE;
 
 % The range of N values to consider
-Nvec = 10:5:100;
+Nvec = 11:5:101;
 % The orders (smoothness) of the kernel to consider
 betavec = 1:8;
 % The kernel shape parameter
@@ -244,6 +244,11 @@ xlabel('\beta')
 legend('a_1 \cdot \beta','a_1','location','best')
 %---------------------------------------------
  
+% Plot function:
+figure;
+plot(xx,yf(xx));
+
+
 % Plot RMS error as beta and N vary:
 errorplot = figure('NumberTitle','off','Name',num2str(fopt));
 loglog(Nvec,errvec,'linewidth',2);
