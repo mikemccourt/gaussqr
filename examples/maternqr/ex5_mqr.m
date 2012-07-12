@@ -162,7 +162,7 @@ switch fopt
  % at a point in the interior
     case 20 
     % This has a jump in the third derivative.
-    % Edit testkernel to se twhere this jump occurs 
+    % Edit testkernel to set where this jump occurs 
     % (change y to another value in [0,1]).
         yf = @(x) testkernel(x);
         fstr = char(yf);
