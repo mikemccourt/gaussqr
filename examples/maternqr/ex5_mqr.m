@@ -16,11 +16,11 @@ global GAUSSQR_PARAMETERS
 symavail = GAUSSQR_PARAMETERS.SYMBOLIC_TOOLBOX_AVAILABLE;
 
 % The range of N values to consider
-Nvec = 11:5:101;
+Nvec = 10:5:100;
 % The orders (smoothness) of the kernel to consider
 betavec = 1:8;
 % The kernel shape parameter
-ep = 1;
+ep = 0.0001;
 % The length of the domain
 L = 1;
 % The embedding width for nonhomogeneous functions
@@ -169,6 +169,10 @@ switch fopt
         fstr = char(yf);
         embed = 0;         
  %--------------------------------------------------------------
+    case 21
+        yf = @(x) min(abs(x-pi/6)-.25,0);
+        fstr = char(yf);
+        embed = 0;
     otherwise
         error('This function does not exist')
 end
