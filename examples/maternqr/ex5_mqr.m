@@ -18,7 +18,7 @@ symavail = GAUSSQR_PARAMETERS.SYMBOLIC_TOOLBOX_AVAILABLE;
 % The range of N values to consider
 Nvec = 10:5:100;
 % The orders (smoothness) of the kernel to consider
-betavec = 1:5;
+betavec = 1:8;
 % The kernel shape parameter
 ep = 1;
 % The length of the domain
@@ -40,7 +40,7 @@ lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 19;
+fopt = 20;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -156,18 +156,18 @@ switch fopt
         yf = @(x) (1/360).*(3.*x.^5-15.*x.^4+80.*x.^3-180.*x.^2-exp(1).*(3.*x.^4+50*x.^2+307).*x+472.*x+360.*exp(x)-360);
         fstr = char(yf);
         embed = 0;
-         
+
  %--------------------------------------------------------------
  % Functions that satisfy BCs but violate smoothness assumptions
  % at a point in the interior
     case 20 
-    % This has a jump in the third derivative.
+    % This is a slice of our 2-D kernel for beta=2,epsilon>0.
+    % It has a jump in the third derivative.
     % Edit testkernel to se twhere this jump occurs 
     % (change y to another value in [0,1]).
         yf = @(x) testkernel(x);
         fstr = char(yf);
         embed = 0;         
-        
  %--------------------------------------------------------------
     otherwise
         error('This function does not exist')
@@ -221,32 +221,25 @@ warning on
 
 % Finds a convergence "score" for each beta
 % (the slope of a best-fit line for error vs N)
-betaScores = zeros(length(betavec),1);
-convergenceExponent = zeros(length(betavec),2);
+a1betaVals = zeros(length(betavec),1);
+convergenceExponentData = zeros(length(betavec),2);
 for beta = betavec
     p = polyfit(log(Nvec),log(errvec(beta,:)),1);
-    betaScores(beta) = p(1)/beta;
+    a1betaVals(beta) = p(1);
 end
-betaScores
-global betaData
+a1Vals = a1betaVals./betavec';
+convergenceExponentData(:,1) = a1betaVals;
+convergenceExponentData(:,2) = a1Vals;
 
-betaData(fopt,1:8) = convergenceExponent(:,1)';
-betaData(fopt,9:16) = convergenceExponent(:,2)';
+% Display a1 and a1beta values:
+disp('a_1 values:')
+disp(a1Vals);
+disp('(a_1 * beta) values:')
+disp(a1betaVals);
+
 % Plot a1 and a1*beta:
 a1plot = figure('NumberTitle','off','Name',[num2str(fopt),'scores']);
-% axes1 = axes('Parent',a1plot,'YTick',-20:20,...
-%     'YScale','log',...
-%     'YMinorTick','on',...
-%     'YMinorGrid','on',...
-%     'XTick',betavec,...
-%     'XScale','log',...
-%     'XMinorTick','on',...
-%     'XMinorGrid','on');
-% box(axes1,'on');
-% grid(axes1,'on');
-% hold(axes1,'all');
-% plot(betavec,convergenceExponent,'Parent',axes1,'Marker','square','LineWidth',2);
-plot(betavec,convergenceExponent,'Marker','square','LineWidth',2);
+plot(betavec,convergenceExponentData,'Marker','square','LineWidth',2);
 xlabel('\beta')
 legend('a_1 \cdot \beta','a_1','location','best')
 %---------------------------------------------
