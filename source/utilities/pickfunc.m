@@ -25,6 +25,9 @@ switch dim
             case 'log'
                 fstr = 'y(x)=xlog(1+x^2)';
                 yf = @(x) x.*log(1+x.^2);
+            case 'qian'
+                fstr = 'y(x)=exp((x-1)^2) sin(exp((x-1)^2))';
+                yf = @(x) exp((x-1).^2).*sin(exp((x-1).^2));
         end
     case 2
         switch lower(fopt)
@@ -77,7 +80,7 @@ function y = ksa1(x)
     rho = 1;
     kappa = -1;
     y = rho*r2./(1+sqrt(1-(1+kappa)*rho^2*r2)) + 1.5*r2.^2 ...
-            - 7e-1*r2.^3 + 5e-1*r2.^4 - 5e-1*r2.^5;
+            - 7e-1*r2.^3 + 5e-1*r2.^4 - 5e-2*r2.^5;
 end
 function y = ksa2(x)
 % used on disk of radius 20 in [Jester/Menke/Urban (2011)]
