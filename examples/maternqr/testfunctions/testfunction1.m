@@ -2,11 +2,12 @@ function out = testfunction1(x)
 % TESTKERNEL1
 %Builds a piecewise function in 3 pieces: a small left portion which
 %satisfies boundary conditions through beta=6, a small right portion which
-%satisfies boundary conditions through beta=6, and a middle portion which
-%only has 3 derivatives.
+%satisfies boundary conditions through beta=6, and a middle portion which 
+%has a discontinuity in the 0th derivative/in the funtion itself.
 
 
-y = .01; %where the middle insufficiently smooth portion begins
+y = .01; %where the middle insufficiently smooth portion begins. Note the 
+%difference between .01 and .1 -- to check later?
 eps = 1;
 
 out = zeros(length(x),1);

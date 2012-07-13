@@ -20,7 +20,7 @@ Nvec = 10:5:100;
 % The orders (smoothness) of the kernel to consider
 betavec = 1:8;
 % The kernel shape parameter
-ep = 0.0001;
+ep = 0.001;
 % The length of the domain
 L = 1;
 % The embedding width for nonhomogeneous functions
