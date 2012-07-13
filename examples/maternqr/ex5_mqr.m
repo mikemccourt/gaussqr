@@ -239,7 +239,7 @@ disp('a_1 values:')
 disp(a1Vals);
 disp('(a_1 * beta) values:')
 disp(a1betaVals);
-
+%---------------------------------------------
 % Plot a1 and a1*beta:
 a1plot = figure('NumberTitle','off','Name',[num2str(fopt),'scores']);
 plot(betavec,convergenceExponentData,'Marker','square','LineWidth',2);
@@ -248,16 +248,19 @@ legend('a_1 \cdot \beta','a_1','location','best')
 %---------------------------------------------
 % Plot function:
 figure;
-plot(xx,yf(xx));
+plot(xx,yy);
+title('Test function');
 %---------------------------------------------
 % Plot error:
-
+individualerror = figure;
+title('Error as \beta varies');
 for i = betavec
-errorFig = subplot(length(betavec)/2,2,i), plot(errorForBetas(i,:));
+errorFig = subplot(length(betavec)/2,2,i);
+plot(xx,errorForBetas(i,:));
 titleStr = ['\beta = ',num2str(i)];
+ylabel('error');
 title(titleStr);
 end
-
 %---------------------------------------------
 % Plot RMS error as beta and N vary:
 errorplot = figure('NumberTitle','off','Name',num2str(fopt));
