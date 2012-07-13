@@ -6,7 +6,7 @@ function out = testfunction1(x)
 %only has 3 derivatives.
 
 
-y = .1; %where the middle insufficiently smooth portion begins
+y = .01; %where the middle insufficiently smooth portion begins
 eps = 1;
 
 out = zeros(length(x),1);

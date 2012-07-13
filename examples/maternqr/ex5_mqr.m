@@ -40,7 +40,7 @@ lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 20;
+fopt = 22;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -99,7 +99,7 @@ switch fopt
             error('Cannot call this function without the symbolic toolkit available')
         end
     case 10 % MULTIPLICATIVE boundary condition forcing
-        bSatTestFunc = @(x) franke(x,0.5); % this must be a symbolic expression
+        bSatTestFunc = @(x) x; % this must be a symbolic expression
         
         % the test function will satisfy boundary conditions for all *even*
             % derivatives up to the (2*bSatDegree)th derivative:
@@ -168,11 +168,17 @@ switch fopt
         yf = @(x) testkernel(x);
         fstr = char(yf);
         embed = 0;         
- %--------------------------------------------------------------
     case 21
         yf = @(x) min(abs(x-pi/6)-.25,0);
         fstr = char(yf);
         embed = 0;
+    case 22
+        yf = @(x) testfunction1(x);
+        fstr = char(yf);
+        embed = 0;
+        
+   %--------------------------------------------------------------
+
     otherwise
         error('This function does not exist')
 end
