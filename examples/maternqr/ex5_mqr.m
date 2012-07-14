@@ -99,7 +99,7 @@ switch fopt
             error('Cannot call this function without the symbolic toolkit available')
         end
     case 10 % MULTIPLICATIVE boundary condition forcing
-        bSatTestFunc = @(x) x; % this must be a symbolic expression
+        bSatTestFunc = @(x) x;
         
         % the test function will satisfy boundary conditions for all *even*
             % derivatives up to the (2*bSatDegree)th derivative:
@@ -166,7 +166,7 @@ switch fopt
     % Edit testkernel to set where this jump occurs 
     % (change y to another value in [0,1]).
         yf = @(x) testkernel(x);
-        fstr = char(yf);
+        fstr = 'testkernel';
         embed = 0;         
     case 21
         yf = @(x) min(abs(x-pi/6)-.25,0);
@@ -176,7 +176,10 @@ switch fopt
         yf = @(x) testfunction1(x);
         fstr = char(yf);
         embed = 0;
-        
+    case 24
+        yf = @(x) hutfunc(x);
+        fstr = 'hutfunc';
+        embed = 0;
    %--------------------------------------------------------------
 
     otherwise
