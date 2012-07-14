@@ -261,7 +261,7 @@ legend('a_1 \cdot \beta','a_1','location','best')
 %---------------------------------------------
 % Plot function:
 figure;
-plot(xx,yy);
+plot(xx,yy,'LineWidth',2);
 title('Test function');
 %---------------------------------------------
 % Plot error:
@@ -269,7 +269,7 @@ individualerror = figure;
 title('Error as \beta varies');
 for i = betavec
 errorFig = subplot(length(betavec)/2,2,i);
-plot(xx,errorForBetas(i,:));
+plot(xx,errorForBetas(i,:),'LineWidth',2);
 titleStr = ['\beta = ',num2str(i)];
 ylabel('error');
 title(titleStr);
