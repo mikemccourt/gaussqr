@@ -40,7 +40,7 @@ lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 22;
+fopt = 25;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -176,7 +176,19 @@ switch fopt
         yf = @(x) testfunction1(x);
         fstr = char(yf);
         embed = 0;
+    case 23 
+        yf = @(x) testfunction3(x);
+        fstr = char(yf);
+        embed=0;
+    case 24 %sines pasted together
+        yf = @(x) testfunction4(x);
+        fstr = char(yf);
+        embed = 0;
         
+    case 25 %satisfies boundary conditions for 0th and 1st derivative and has a discontinuity in the 2nd derivative at .5
+        yf= @(x) testfunction5(x);
+        fstr = char(yf);
+        embed = 0;
    %--------------------------------------------------------------
 
     otherwise
