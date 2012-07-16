@@ -20,7 +20,7 @@ Nvec = 10:5:100;
 % The orders (smoothness) of the kernel to consider
 betavec = 1:8;
 % The kernel shape parameter
-ep = 0.001;
+ep = 20;
 % The length of the domain
 L = 1;
 % The embedding width for nonhomogeneous functions
@@ -40,7 +40,7 @@ lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 25;
+fopt = 26;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -190,7 +190,14 @@ switch fopt
         fstr = char(yf);
         embed = 0;
    %--------------------------------------------------------------
-
+    case 26 % piecewise polynomial spline kernel as test function
+        ppsz = pi/6; % center z for piecewise polynomial spline kernel
+        ppsL = 1; % length of interval
+        ppsbeta = 5; % beta for piecewise polynomial spline kernel
+        yf = @(x) ppsplinekernel(x,ppsz,ppsL,ppsbeta);
+        fstr = char(yf);
+        embed = 0;
+        
     otherwise
         error('This function does not exist')
 end
