@@ -20,7 +20,7 @@ Nvec = 10:5:100;
 % The orders (smoothness) of the kernel to consider
 betavec = 1:8;
 % The kernel shape parameter
-ep = 0.001;
+ep = 20;
 % The length of the domain
 L = 1;
 % The embedding width for nonhomogeneous functions
@@ -40,7 +40,7 @@ lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 22;
+fopt = 26;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -99,7 +99,7 @@ switch fopt
             error('Cannot call this function without the symbolic toolkit available')
         end
     case 10 % MULTIPLICATIVE boundary condition forcing
-        bSatTestFunc = @(x) x;
+        bSatTestFunc = @(x) x; % this must be a symbolic expression
         
         % the test function will satisfy boundary conditions for all *even*
             % derivatives up to the (2*bSatDegree)th derivative:
@@ -166,7 +166,7 @@ switch fopt
     % Edit testkernel to set where this jump occurs 
     % (change y to another value in [0,1]).
         yf = @(x) testkernel(x);
-        fstr = 'testkernel';
+        fstr = char(yf);
         embed = 0;         
     case 21
         yf = @(x) min(abs(x-pi/6)-.25,0);
@@ -176,12 +176,28 @@ switch fopt
         yf = @(x) testfunction1(x);
         fstr = char(yf);
         embed = 0;
-    case 24
-        yf = @(x) hutfunc(x);
-        fstr = 'hutfunc';
+    case 23 
+        yf = @(x) testfunction3(x);
+        fstr = char(yf);
+        embed=0;
+    case 24 %sines pasted together
+        yf = @(x) testfunction4(x);
+        fstr = char(yf);
+        embed = 0;
+        
+    case 25 %satisfies boundary conditions for 0th and 1st derivative and has a discontinuity in the 2nd derivative at .5
+        yf= @(x) testfunction5(x);
+        fstr = char(yf);
         embed = 0;
    %--------------------------------------------------------------
-
+    case 26 % piecewise polynomial spline kernel as test function
+        ppsz = pi/6; % center z for piecewise polynomial spline kernel
+        ppsL = 1; % length of interval
+        ppsbeta = 5; % beta for piecewise polynomial spline kernel
+        yf = @(x) ppsplinekernel(x,ppsz,ppsL,ppsbeta);
+        fstr = char(yf);
+        embed = 0;
+        
     otherwise
         error('This function does not exist')
 end
@@ -261,7 +277,7 @@ legend('a_1 \cdot \beta','a_1','location','best')
 %---------------------------------------------
 % Plot function:
 figure;
-plot(xx,yy,'LineWidth',2);
+plot(xx,yy);
 title('Test function');
 %---------------------------------------------
 % Plot error:
@@ -269,7 +285,7 @@ individualerror = figure;
 title('Error as \beta varies');
 for i = betavec
 errorFig = subplot(length(betavec)/2,2,i);
-plot(xx,errorForBetas(i,:),'LineWidth',2);
+plot(xx,errorForBetas(i,:));
 titleStr = ['\beta = ',num2str(i)];
 ylabel('error');
 title(titleStr);
