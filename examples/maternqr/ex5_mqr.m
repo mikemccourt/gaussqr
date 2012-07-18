@@ -15,12 +15,13 @@ rbfsetup
 global GAUSSQR_PARAMETERS
 symavail = GAUSSQR_PARAMETERS.SYMBOLIC_TOOLBOX_AVAILABLE;
 
+close all
 % The range of N values to consider
 Nvec = 10:5:100;
 % The orders (smoothness) of the kernel to consider
 betavec = 1:8;
 % The kernel shape parameter
-ep = 20;
+ep = 1;
 % The length of the domain
 L = 1;
 % The embedding width for nonhomogeneous functions
@@ -40,7 +41,7 @@ lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 26;
+fopt = 21;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -241,6 +242,7 @@ for N=Nvec
 
         errvec(j,k) = errcompute(yp,yy);
         errorForBetas(beta,:) = yy-yp;
+        errorForBetasAndN(beta+(k-1)*length(betavec),:) = yy-yp;
         j = j + 1;
     end
     
@@ -285,10 +287,22 @@ individualerror = figure;
 title('Error as \beta varies');
 for i = betavec
 errorFig = subplot(length(betavec)/2,2,i);
-plot(xx,errorForBetas(i,:));
+%plot(xx,errorForBetas(i,:));
+semilogy(xx,abs(errorForBetas(i,:)));
 titleStr = ['\beta = ',num2str(i)];
 ylabel('error');
 title(titleStr);
+end
+%---------------------------------------------
+% Plot error surfaces:
+for i = betavec
+    figure;
+    surf(xx,Nvec,log10(abs(errorForBetasAndN(i:length(betavec):end,:))))
+    titleStr = ['\beta = ',num2str(i)];
+    xlabel('x');
+    ylabel('N');
+    zlabel('error');
+    title(titleStr);
 end
 %---------------------------------------------
 % Plot RMS error as beta and N vary:
