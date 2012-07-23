@@ -14,7 +14,7 @@ spaceopt = 'cheb';
 % The order (smoothness) of the kernel
 beta = 6;
 % The  range of kernel shape parameters to consider
-epvec =  logspace(0,2,20);
+epvec =  logspace(0,2,30);
 % The length of the domain
 L = 1;
 % The embedding width for nonhomogeneous functions (must be <.5)
@@ -24,7 +24,7 @@ NN = 100;
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 8;
+fopt = 6;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -140,9 +140,9 @@ for N=Nvec
 end
 
 % Direct method plots:
-hdLowN = loglog(epvec,errvecd(1,:),'-bx')
+hdLowN = loglog(epvec,errvecd(1,:),'-bx');
 hold on
-hdMedN = loglog(epvec,errvecd(2,:),'-g+')
+hdMedN = loglog(epvec,errvecd(2,:),'-g+');
 hdHighN = loglog(epvec,errvecd(3,:),'-r^');
 % MaternQR plots:
 hqLowN = loglog(epvec,errvec(1,:),'b','LineWidth',3);
