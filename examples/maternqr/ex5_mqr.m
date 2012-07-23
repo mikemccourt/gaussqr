@@ -41,7 +41,8 @@ lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 21;
+fopt = 16;
+%potential optimal beta examples: 3, 5, 8, 12, 15, 16
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -51,7 +52,7 @@ switch fopt
         yf = @(x) sin(2*pi*x/L);
         fstr = 'u(x) = sin(2\pi{x}/L)';
         embed = 0;
-    case 3
+    case 3     %optimal beta = 4?
         yf = @(x) 30*x.^2.*(L-x).^2.*sin(2*pi*x/L).^4;
         fstr = 'u(x) = 30x^2(L-x)^2sin(2\pi{x}/L)^4';
         embed = 0;
@@ -59,7 +60,7 @@ switch fopt
         yf = @(x) 1./(1+(x/L).^2);
         fstr = 'u(x) = 1/(1+(x/L)^2)';
         embed = embed_cushion;
-    case 5
+    case 5 %optimal beta = 3?
         yf = @(x) 1./(1+(x/L).^2)-(1-.5*(x/L));
         fstr = 'u(x) = 1/(1+(x/L)^2)+.5(x/L)-1';
         embed = 0;
@@ -75,6 +76,7 @@ switch fopt
  % Casey and Will's test functions
     case 8 % this family is from the Hubbert-Muller paper on thin plate spline interpolation
         % meant to be used on the unit interval
+        %which beta is optimal?
         testfuncN = 10;
         yf = @(x) 10^(testfuncN+1).*(max(0,x-(1/4))).^testfuncN.*(max(0,(3/4)-x)).^testfuncN;
         fstr = ['y(x) = 10^{',num2str(testfuncN+1),'} (max(0,x-(1/4)))^{',num2str(testfuncN),'}(max(0,(3/4)-x)^{',num2str(testfuncN),'}'];
@@ -130,13 +132,14 @@ switch fopt
         embed = 0;
     case 15
         % second order boundary conditions satisfied but no others
+        %increasing beta increases error
         yf = @(x) (1/2).*(2.*exp(x) - x.^2 + (x.^3).*((1-exp(1))/3));
         fstr = char(yf);
         embed = 0;
     case 16
-        % satisfies all left BCs up to 17th derivative
-        % and all right BCs up to 13th derivative
-        yf = @(x) (x.^17).*(x-1).^13;
+        % satisfies all left BCs up to 5th derivative
+        % and all right BCs up to 6th derivative
+        yf = @(x) (x.^5).*(x-1).^6;
         fstr = char(yf);
         embed = 0;
     case 17
