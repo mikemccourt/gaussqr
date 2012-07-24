@@ -19,7 +19,7 @@ close all
 % The range of N values to consider
 Nvec = 10:5:100;
 % The orders (smoothness) of the kernel to consider
-betavec = 1:8;
+betavec = 1:6;
 % The kernel shape parameter
 ep = 1;
 % The length of the domain
@@ -41,7 +41,7 @@ lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 16;
+fopt = 8;
 %potential optimal beta examples: 3, 5, 8, 12, 15, 16
 switch fopt
     case 1
@@ -139,7 +139,9 @@ switch fopt
     case 16
         % satisfies all left BCs up to 5th derivative
         % and all right BCs up to 6th derivative
-        yf = @(x) (x.^5).*(x-1).^6;
+        leftExponent = 1;
+        rightExponent = 8;
+        yf = @(x) (x.^leftExponent).*(x-1).^rightExponent;
         fstr = char(yf);
         embed = 0;
     case 17
@@ -242,7 +244,8 @@ for N=Nvec
             MQR = mqr_solve(x,y,L,ep,beta);
             yp = mqr_eval(MQR,xx);
         end
-
+        plot(xx,yp)
+        title('Approximation')
         errvec(j,k) = errcompute(yp,yy);
         errorForBetas(beta,:) = yy-yp;
         errorForBetasAndN(beta+(k-1)*length(betavec),:) = yy-yp;
@@ -298,15 +301,15 @@ title(titleStr);
 end
 %---------------------------------------------
 % Plot error surfaces:
-for i = betavec
-    figure;
-    surf(xx,Nvec,log10(abs(errorForBetasAndN(i:length(betavec):end,:))))
-    titleStr = ['\beta = ',num2str(i)];
-    xlabel('x');
-    ylabel('N');
-    zlabel('error');
-    title(titleStr);
-end
+% for i = betavec
+%     figure;
+%     surf(xx,Nvec,log10(abs(errorForBetasAndN(i:length(betavec):end,:))))
+%     titleStr = ['\beta = ',num2str(i)];
+%     xlabel('x');
+%     ylabel('N');
+%     zlabel('error');
+%     title(titleStr);
+% end
 %---------------------------------------------
 % Plot RMS error as beta and N vary:
 errorplot = figure('NumberTitle','off','Name',num2str(fopt));

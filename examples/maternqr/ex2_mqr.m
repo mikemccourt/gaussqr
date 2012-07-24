@@ -20,7 +20,7 @@ L = 1;
 % The embedding width for nonhomogeneous functions (must be <.5)
 embed_cushion = .1;
 % The number of evenly spaced points at which to sample error
-NN = 100;
+NN = 400;
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
@@ -50,7 +50,7 @@ switch fopt
         embed = 0;
     case 6
         yf = @(x) sinh(3/L*x)./(1+cosh(3/L*x)) - sinh(3)/(1+cosh(3))*x/L;
-        fstr = 'u(x) = sinh(3x/L)./(1+cosh(3x/L))';
+        fstr = 'u(x) = sinh(3x/L)./(1+cosh(3x/L)) - (sinh(3)x)/((1+cosh(3))L)';
         embed = embed_cushion;
         embed = 0;
     case 7
@@ -179,7 +179,7 @@ hdLowNLabel = ['Direct (N = ',num2str(Nvec(1)),')'];
 hqLowNLabel = ['MaternQR (N = ',num2str(Nvec(1)),')'];
 hpLowNLabel = ['PP Spline (N = ',num2str(Nvec(1)),')'];
 
-legend([hdHighN hqHighN hpHighN hdMedN hqMedN hpMedN hdLowN hqLowN hpLowN ], hdHighNLabel, hqHighNLabel, hpHighNLabel, hdMedNLabel, hqMedNLabel, hpMedNLabel, hdLowNLabel, hqLowNLabel, hpLowNLabel, 'location','Best')
+legend([ hqLowN hpLowN ], hqLowNLabel, hpLowNLabel, 'location','Best')
 
 
 
