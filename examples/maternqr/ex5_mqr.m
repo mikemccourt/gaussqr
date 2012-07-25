@@ -19,7 +19,7 @@ close all
 % The range of N values to consider
 Nvec = 10:5:100;
 % The orders (smoothness) of the kernel to consider
-betavec = 1:6;
+betavec = 1:8;
 % The kernel shape parameter
 ep = 1;
 % The length of the domain
@@ -41,7 +41,7 @@ lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 8;
+fopt = 16;
 %potential optimal beta examples: 3, 5, 8, 12, 15, 16
 switch fopt
     case 1
@@ -139,9 +139,7 @@ switch fopt
     case 16
         % satisfies all left BCs up to 5th derivative
         % and all right BCs up to 6th derivative
-        leftExponent = 1;
-        rightExponent = 8;
-        yf = @(x) (x.^leftExponent).*(x-1).^rightExponent;
+        yf = @(x) (x.^5).*(x-1).^6;
         fstr = char(yf);
         embed = 0;
     case 17
@@ -217,6 +215,17 @@ warning off
 errvec = zeros(length(betavec),length(Nvec));
 k = 1;
 j = 1;
+
+% interior vs boundary stuff
+% define "left boundary" as first quarter of interval,
+%        "right boundary" as last quarter of interval,
+%        "interior" the half left in the middle
+LboundaryRegionEnd = floor((NN/4));
+RboundaryRegionStart= floor((3*NN/4));
+interiorStart = LboundaryRegionEnd;
+interiorEnd = RboundaryRegionStart;
+intVsBoundErr = zeros(3*length(betavec),length(Nvec));
+
 for N=Nvec
     if embed==0
     % Don't consider the homogeneous end points because they are fixed
@@ -244,9 +253,25 @@ for N=Nvec
             MQR = mqr_solve(x,y,L,ep,beta);
             yp = mqr_eval(MQR,xx);
         end
-        plot(xx,yp)
-        title('Approximation')
+
         errvec(j,k) = errcompute(yp,yy);
+        
+        %-----------------------------------------------------
+        % interior vs boundary error stuff:
+        
+        Lyp = yp(1:LboundaryRegionEnd);
+        Ryp = yp(RboundaryRegionStart:end);
+        interioryp = yp(interiorStart:interiorEnd);
+        Lyy = yy(1:LboundaryRegionEnd);
+        Ryy = yy(RboundaryRegionStart:end);
+        interioryy = yy(interiorStart:interiorEnd);
+        
+        intVsBoundErr(3*j-2,k) = errcompute(Lyp,Lyy);
+        intVsBoundErr((3*j)-1,k) = errcompute(Ryp,Ryy);
+        intVsBoundErr(3*j,k) = errcompute(interioryp,interioryy);
+        %-------------------------------------------------------
+        
+        % For error profile plots
         errorForBetas(beta,:) = yy-yp;
         errorForBetasAndN(beta+(k-1)*length(betavec),:) = yy-yp;
         j = j + 1;
@@ -256,39 +281,54 @@ for N=Nvec
 end
 warning on
 
+% loglog(Nvec,intVsBoundErr);
 %--------------------------------------------
-% Convergence data
+% Boundary vs. Interior error plots:
+interiorVsBoundaryPlots = figure;
+title('Interior vs Boundary Error as Beta Varies');
+for i = betavec
+thisFig = subplot(length(betavec)/2,2,i);
+loglog(Nvec,intVsBoundErr(3*i-2:3*i,:));
+titleStr = ['\beta = ',num2str(i)];
+ylabel('error');
+title(titleStr);
+end
+% ylim(10e-20,0);
+%--------------------------------------------
+
+% %--------------------------------------------
+% % Convergence data
 
 % Finds a convergence "score" for each beta
 % (the slope of a best-fit line for error vs N)
-a1betaVals = zeros(length(betavec),1);
-convergenceExponentData = zeros(length(betavec),2);
-for beta = betavec
-    p = polyfit(log(Nvec),log(errvec(beta,:)),1);
-    a1betaVals(beta) = p(1);
-end
-a1Vals = a1betaVals./betavec';
-convergenceExponentData(:,1) = a1betaVals;
-convergenceExponentData(:,2) = a1Vals;
-
-% Display a1 and a1beta values:
-disp('a_1 values:')
-disp(a1Vals);
-disp('(a_1 * beta) values:')
-disp(a1betaVals);
-%---------------------------------------------
-% Plot a1 and a1*beta:
-a1plot = figure('NumberTitle','off','Name',[num2str(fopt),'scores']);
-plot(betavec,convergenceExponentData,'Marker','square','LineWidth',2);
-xlabel('\beta')
-legend('a_1 \cdot \beta','a_1','location','best')
-%---------------------------------------------
-% Plot function:
-figure;
-plot(xx,yy);
-title('Test function');
-%---------------------------------------------
-% Plot error:
+% a1betaVals = zeros(length(betavec),1);
+% convergenceExponentData = zeros(length(betavec),2);
+% for beta = betavec
+%     p = polyfit(log(Nvec),log(errvec(beta,:)),1);
+%     a1betaVals(beta) = p(1);
+% end
+% a1Vals = a1betaVals./betavec';
+% convergenceExponentData(:,1) = a1betaVals.*-1;
+% convergenceExponentData(:,2) = a1Vals;
+% 
+% % Display a1 and a1beta values:
+% disp('a_1 values:')
+% disp(a1Vals);
+% disp('(a_1 * beta) values:')
+% disp(a1betaVals);
+% %---------------------------------------------
+% % Plot a1 and a1*beta:
+% a1plot = figure('NumberTitle','off','Name',[num2str(fopt),'scores']);
+% plot(betavec,convergenceExponentData,'Marker','square','LineWidth',2);
+% xlabel('\beta')
+% legend('a_1 \cdot \beta','a_1','location','best')
+% %---------------------------------------------
+% % Plot function:
+% figure;
+% plot(xx,yy);
+% title('Test function');
+% %---------------------------------------------
+% Plot individual error:
 individualerror = figure;
 title('Error as \beta varies');
 for i = betavec
@@ -299,8 +339,8 @@ titleStr = ['\beta = ',num2str(i)];
 ylabel('error');
 title(titleStr);
 end
-%---------------------------------------------
-% Plot error surfaces:
+% %---------------------------------------------
+% % Plot error surfaces:
 % for i = betavec
 %     figure;
 %     surf(xx,Nvec,log10(abs(errorForBetasAndN(i:length(betavec):end,:))))
@@ -310,12 +350,12 @@ end
 %     zlabel('error');
 %     title(titleStr);
 % end
-%---------------------------------------------
-% Plot RMS error as beta and N vary:
-errorplot = figure('NumberTitle','off','Name',num2str(fopt));
-loglog(Nvec,errvec,'linewidth',2);
-% semilogy(Nvec,errvec,'linewidth',2)
-xlabel('input points N');
-ylabel('RMS relative error');
-title(strcat(sprintf('x \\in [%g,%g] ',embed*L,(1-embed)*L),sprintf('     \\epsilon = %g',ep)));
-legend('\beta = 1','\beta = 2','\beta = 3','\beta = 4','\beta = 5','\beta = 6','\beta = 7','\beta = 8','location','best');
+% %---------------------------------------------
+% % Plot RMS error as beta and N vary:
+% errorplot = figure('NumberTitle','off','Name',num2str(fopt));
+% loglog(Nvec,errvec,'linewidth',2);
+% % semilogy(Nvec,errvec,'linewidth',2)
+% xlabel('input points N');
+% ylabel('RMS relative error');
+% title(strcat(sprintf('x \\in [%g,%g] ',embed*L,(1-embed)*L),sprintf('     \\epsilon = %g',ep)));
+% legend('\beta = 1','\beta = 2','\beta = 3','\beta = 4','\beta = 5','\beta = 6','\beta = 7','\beta = 8','location','best');
