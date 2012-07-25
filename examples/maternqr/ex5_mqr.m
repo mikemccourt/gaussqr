@@ -41,7 +41,7 @@ lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 16;
+fopt = 17;
 %potential optimal beta examples: 3, 5, 8, 12, 15, 16
 switch fopt
     case 1
@@ -290,6 +290,7 @@ for i = betavec
     highNintVsBoundaryErr(i,1:3) = intVsBoundErr(3*i-2:3*i,length(Nvec));
 end
 semilogy(betavec,highNintVsBoundaryErr);
+set(gca,'XTick',[1:length(betavec)])
 
 %--------------------------------------------
 % Boundary vs. Interior individual error plots:
@@ -342,6 +343,8 @@ for i = betavec;
 errorFig = subplot(length(betavec)/2,2,i);
 %plot(xx,errorForBetas(i,:));
 semilogy(xx,abs(errorForBetas(i,:)));
+ylim([1e-18 1e-3]);
+set(gca,'YTick',[1e-15 1e-10 1e-5])
 titleStr = ['\beta = ',num2str(i)];
 ylabel('error');
 title(titleStr);
