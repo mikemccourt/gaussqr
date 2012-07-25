@@ -19,7 +19,7 @@ close all
 % The range of N values to consider
 Nvec = 10:5:100;
 % The orders (smoothness) of the kernel to consider
-betavec = 1:10;
+betavec = 1:6;
 % The kernel shape parameter
 ep = 1;
 % The length of the domain
@@ -302,22 +302,22 @@ titleStr = ['\beta = ',num2str(i)];
 ylabel('error');
 title(titleStr);
 end
-ylim(10e-20,0);
+% ylim(10e-20,0);
 %--------------------------------------------
 % Convergence data
 
 % Finds a convergence "score" for each beta
 % (the slope of a best-fit line for error vs N)
-% a1betaVals = zeros(length(betavec),1);
-% convergenceExponentData = zeros(length(betavec),2);
-% for beta = betavec
-%     p = polyfit(log(Nvec),log(errvec(beta,:)),1);
-%     a1betaVals(beta) = p(1);
-% end
-% a1Vals = a1betaVals./betavec';
-% convergenceExponentData(:,1) = a1betaVals.*-1;
-% convergenceExponentData(:,2) = a1Vals;
-% 
+a1betaVals = zeros(length(betavec),1);
+convergenceExponentData = zeros(length(betavec),2);
+for beta = betavec
+    p = polyfit(log(Nvec),log(errvec(beta,:)),1);
+    a1betaVals(beta) = p(1);
+end
+a1Vals = a1betaVals./betavec';
+convergenceExponentData(:,1) = a1betaVals.*-1;
+convergenceExponentData(:,2) = a1Vals;
+
 % Display a1 and a1beta values:
 disp('a_1 values:')
 disp(a1Vals);
@@ -335,7 +335,7 @@ figure;
 plot(xx,yy);
 title('Test function');
 %---------------------------------------------
-Plot individual error:
+% Plot individual error:
 individualerror = figure;
 title('Error as \beta varies');
 for i = betavec;
