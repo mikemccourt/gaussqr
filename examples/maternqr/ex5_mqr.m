@@ -19,7 +19,7 @@ close all
 % The range of N values to consider
 Nvec = 10:5:100;
 % The orders (smoothness) of the kernel to consider
-betavec = 1:8;
+betavec = 1:10;
 % The kernel shape parameter
 ep = 1;
 % The length of the domain
@@ -281,9 +281,18 @@ for N=Nvec
 end
 warning on
 
-% loglog(Nvec,intVsBoundErr);
 %--------------------------------------------
-% Boundary vs. Interior error plots:
+% Interior vs. Boundary Error Curves
+% look at that beautiful dip
+
+highNintVsBoundaryErr = zeros(length(betavec),3);
+for i = betavec
+    highNintVsBoundaryErr(i,1:3) = intVsBoundErr(3*i-2:3*i,length(Nvec));
+end
+semilogy(betavec,highNintVsBoundaryErr);
+
+%--------------------------------------------
+% Boundary vs. Interior individual error plots:
 interiorVsBoundaryPlots = figure;
 title('Interior vs Boundary Error as Beta Varies');
 for i = betavec
@@ -293,11 +302,9 @@ titleStr = ['\beta = ',num2str(i)];
 ylabel('error');
 title(titleStr);
 end
-% ylim(10e-20,0);
+ylim(10e-20,0);
 %--------------------------------------------
-
-% %--------------------------------------------
-% % Convergence data
+% Convergence data
 
 % Finds a convergence "score" for each beta
 % (the slope of a best-fit line for error vs N)
@@ -311,27 +318,27 @@ end
 % convergenceExponentData(:,1) = a1betaVals.*-1;
 % convergenceExponentData(:,2) = a1Vals;
 % 
-% % Display a1 and a1beta values:
-% disp('a_1 values:')
-% disp(a1Vals);
-% disp('(a_1 * beta) values:')
-% disp(a1betaVals);
-% %---------------------------------------------
-% % Plot a1 and a1*beta:
-% a1plot = figure('NumberTitle','off','Name',[num2str(fopt),'scores']);
-% plot(betavec,convergenceExponentData,'Marker','square','LineWidth',2);
-% xlabel('\beta')
-% legend('a_1 \cdot \beta','a_1','location','best')
-% %---------------------------------------------
-% % Plot function:
-% figure;
-% plot(xx,yy);
-% title('Test function');
-% %---------------------------------------------
-% Plot individual error:
+% Display a1 and a1beta values:
+disp('a_1 values:')
+disp(a1Vals);
+disp('(a_1 * beta) values:')
+disp(a1betaVals);
+%---------------------------------------------
+% Plot a1 and a1*beta:
+a1plot = figure('NumberTitle','off','Name',[num2str(fopt),'scores']);
+plot(betavec,convergenceExponentData,'Marker','square','LineWidth',2);
+xlabel('\beta')
+legend('a_1 \cdot \beta','a_1','location','best')
+%---------------------------------------------
+% Plot function:
+figure;
+plot(xx,yy);
+title('Test function');
+%---------------------------------------------
+Plot individual error:
 individualerror = figure;
 title('Error as \beta varies');
-for i = betavec
+for i = betavec;
 errorFig = subplot(length(betavec)/2,2,i);
 %plot(xx,errorForBetas(i,:));
 semilogy(xx,abs(errorForBetas(i,:)));
@@ -339,23 +346,23 @@ titleStr = ['\beta = ',num2str(i)];
 ylabel('error');
 title(titleStr);
 end
-% %---------------------------------------------
-% % Plot error surfaces:
-% for i = betavec
-%     figure;
-%     surf(xx,Nvec,log10(abs(errorForBetasAndN(i:length(betavec):end,:))))
-%     titleStr = ['\beta = ',num2str(i)];
-%     xlabel('x');
-%     ylabel('N');
-%     zlabel('error');
-%     title(titleStr);
-% end
-% %---------------------------------------------
-% % Plot RMS error as beta and N vary:
-% errorplot = figure('NumberTitle','off','Name',num2str(fopt));
-% loglog(Nvec,errvec,'linewidth',2);
-% % semilogy(Nvec,errvec,'linewidth',2)
-% xlabel('input points N');
-% ylabel('RMS relative error');
-% title(strcat(sprintf('x \\in [%g,%g] ',embed*L,(1-embed)*L),sprintf('     \\epsilon = %g',ep)));
-% legend('\beta = 1','\beta = 2','\beta = 3','\beta = 4','\beta = 5','\beta = 6','\beta = 7','\beta = 8','location','best');
+%---------------------------------------------
+% Plot error surfaces:
+for i = betavec
+    figure;
+    surf(xx,Nvec,log10(abs(errorForBetasAndN(i:length(betavec):end,:))))
+    titleStr = ['\beta = ',num2str(i)];
+    xlabel('x');
+    ylabel('N');
+    zlabel('error');
+    title(titleStr);
+end
+%---------------------------------------------
+% Plot RMS error as beta and N vary:
+errorplot = figure('NumberTitle','off','Name',num2str(fopt));
+loglog(Nvec,errvec,'linewidth',2);
+% semilogy(Nvec,errvec,'linewidth',2)
+xlabel('input points N');
+ylabel('RMS relative error');
+title(strcat(sprintf('x \\in [%g,%g] ',embed*L,(1-embed)*L),sprintf('     \\epsilon = %g',ep)));
+legend('\beta = 1','\beta = 2','\beta = 3','\beta = 4','\beta = 5','\beta = 6','\beta = 7','\beta = 8','location','best');
