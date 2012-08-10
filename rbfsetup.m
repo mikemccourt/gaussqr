@@ -102,7 +102,7 @@ GAUSSQR_PARAMETERS.RBFPHI_EXP_TOL = 1e-4;
 % If you choose a negative number, that is treated as a percentage of the
 % number of input points, ie. -50 would mean max M=1.5N
 %%%% MATERNQR relevant
-GAUSSQR_PARAMETERS.MAX_EXTRA_EFUNC = -1500;
+GAUSSQR_PARAMETERS.MAX_EXTRA_EFUNC = 200;
 
 % This chooses a default global scale parameter
 % You should really set this as you go and not use the default
