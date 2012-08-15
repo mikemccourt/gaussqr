@@ -43,15 +43,15 @@ for ep=epvec
     
     
     GQR_ip = log((phi1\y)'*((psi\y).*laminv));
-    GQR_det = log(det(psi)) + log(det(phi1)) + sum(lamvec);
+    GQR_det = log(det(psi)) + log(det(phi1)) + sum(log(lamvec));
     GQRvec(k) = GQR_ip + 1/N*GQR_det;
     
     
     lam_drop = find(lamvec<THStol);
-    lamvec(lam_drop) = zeros(size(lam_drop));
+    lamvec(lam_drop) = ones(size(lam_drop));
     laminv(lam_drop) = zeros(size(lam_drop));
     GQR_ip = log((phi1\y)'*((psi\y).*laminv));
-    GQR_det = log(det(psi)) + log(det(phi1)) + sum(lamvec);
+    GQR_det = log(det(psi)) + log(det(phi1)) + sum(log(lamvec));
     THSvec(k) = GQR_ip + 1/N*GQR_det;
     
     
