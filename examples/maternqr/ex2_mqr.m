@@ -8,11 +8,11 @@ GAUSSQR_PARAMETERS.ERROR_STYLE = 2; % Relative RMS
 GAUSSQR_PARAMETERS.NORM_TYPE = inf; % Relative RMS
 
 % The range of N values to consider
-Nvec = [10,25,40];
+Nvec = [10,20,40];
 % The spacing choice for the points
 spaceopt = 'cheb';
 % The order (smoothness) of the kernel
-beta = 6;
+beta = 2;
 % The  range of kernel shape parameters to consider
 epvec =  logspace(0,2,30);
 % The length of the domain
@@ -133,9 +133,12 @@ for N=Nvec
     % This only makes sense when beta=2, i.e., cubic splines
     x = [0; x; L];
     y = yf(x);
-    yp = splinetx_natural(x,y,xx);
+    % Custom routine modeled after Moler's code from NCM
+    % yp = splinetx_natural(x,y,xx);
+    % Routine from curve fitting toolbox (also only exists for beta=2)
+    pp = csape(x,y,'variational');
+    yp = ppval(pp,xx);
     errvecs(i) = errcompute(yp,yy);
-    
     i = i+1;
 end
 
