@@ -46,6 +46,8 @@ beta = 2;
 % is 1e-5, this error should be 1e-10
 tic
 truesf = cmatern(x,z,ep,L,beta,0,100000);
+%truesf = cmatern(x,z,ep,L,beta); % Should be able to use this once the
+%correct factor is added in cmatern
 tcomp = toc;
 fprintf('\n%g seconds spent computing "true" function for beta = %d\n',tcomp,beta)
 
@@ -108,3 +110,4 @@ for k=1:9
     Vk(:,k) = cmatern(x,L*k/10,L,ep,beta);
 end
 plot(x,Vk)
+

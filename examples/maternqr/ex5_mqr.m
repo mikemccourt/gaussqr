@@ -19,7 +19,7 @@ close all
 % The range of N values to consider
 Nvec = 10:5:100;
 % The orders (smoothness) of the kernel to consider
-betavec = 1:6;
+betavec = 1:8;
 % The kernel shape parameter
 ep = 1;
 % The length of the domain
@@ -41,7 +41,7 @@ lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 17;
+fopt = 8;
 %potential optimal beta examples: 3, 5, 8, 12, 15, 16
 switch fopt
     case 1
@@ -77,7 +77,7 @@ switch fopt
     case 8 % this family is from the Hubbert-Muller paper on thin plate spline interpolation
         % meant to be used on the unit interval
         %which beta is optimal?
-        testfuncN = 10;
+        testfuncN = 14;
         yf = @(x) 10^(testfuncN+1).*(max(0,x-(1/4))).^testfuncN.*(max(0,(3/4)-x)).^testfuncN;
         fstr = ['y(x) = 10^{',num2str(testfuncN+1),'} (max(0,x-(1/4)))^{',num2str(testfuncN),'}(max(0,(3/4)-x)^{',num2str(testfuncN),'}'];
         embed = 0;
@@ -240,7 +240,7 @@ for N=Nvec
     
     j = 1;
     for beta=betavec
-        if beta==1 % Work with the kernel form
+        if beta==1 || beta==2 % Work with the kernel form
             K_solve = zeros(N);
             K_eval = zeros(NN,N);
             for n=1:N
@@ -350,16 +350,16 @@ ylabel('error');
 title(titleStr);
 end
 %---------------------------------------------
-% Plot error surfaces:
-for i = betavec
-    figure;
-    surf(xx,Nvec,log10(abs(errorForBetasAndN(i:length(betavec):end,:))))
-    titleStr = ['\beta = ',num2str(i)];
-    xlabel('x');
-    ylabel('N');
-    zlabel('error');
-    title(titleStr);
-end
+% % Plot error surfaces:
+% for i = betavec
+%     figure;
+%     surf(xx,Nvec,log10(abs(errorForBetasAndN(i:length(betavec):end,:))))
+%     titleStr = ['\beta = ',num2str(i)];
+%     xlabel('x');
+%     ylabel('N');
+%     zlabel('error');
+%     title(titleStr);
+% end
 %---------------------------------------------
 % Plot RMS error as beta and N vary:
 errorplot = figure('NumberTitle','off','Name',num2str(fopt));

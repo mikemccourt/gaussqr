@@ -6,13 +6,15 @@ GAUSSQR_PARAMETERS.ERROR_STYLE = 4; % Relative RMS
 useSplines = GAUSSQR_PARAMETERS.SPLINE_TOOLBOX_AVAILABLE;
 GAUSSQR_PARAMETERS.ERROR_STYLE = 2; % Relative RMS
 GAUSSQR_PARAMETERS.NORM_TYPE = inf; % Relative RMS
+GAUSSQR_PARAMETERS.MAX_EXTRA_EFUNC = 500; % Need more eigenfunctions for N=40, 
+                                          % but then the direct method for beta=3 is VERY slow
 
 % The range of N values to consider
 Nvec = [10,20,40];
 % The spacing choice for the points
 spaceopt = 'cheb';
 % The order (smoothness) of the kernel
-beta = 2;
+beta = 5;
 % The  range of kernel shape parameters to consider
 epvec =  logspace(0,2,30);
 % The length of the domain
@@ -160,6 +162,13 @@ hqHighN = loglog(epvec,errvec(3,:),'r','LineWidth',3);
 hpLowN = loglog(epvec,errvecp(1)*ones(size(epvec)),'--b','LineWidth',2);
 hpMedN = loglog(epvec,errvecp(2)*ones(size(epvec)),'--g','LineWidth',2);
 hpHighN = loglog(epvec,errvecp(3)*ones(size(epvec)),'--r','LineWidth',2);
+
+% Natural Spline plots:
+if beta==2
+    hsLowN = loglog(epvec,errvecs(1)*ones(size(epvec)),'-.b','LineWidth',2);
+    hsMedN = loglog(epvec,errvecs(2)*ones(size(epvec)),'-.g','LineWidth',2);
+    hsHighN = loglog(epvec,errvecs(3)*ones(size(epvec)),'-.r','LineWidth',2);
+end
 hold off
 
 xlabel('\epsilon')
@@ -175,14 +184,21 @@ title(strcat(fstr,ptsstr,spacestr))
 hdHighNLabel = ['Direct (N = ',num2str(Nvec(3)),')'];
 hqHighNLabel = ['MaternQR (N = ',num2str(Nvec(3)),')'];
 hpHighNLabel = ['PP Spline (N = ',num2str(Nvec(3)),')'];
+hsHighNLabel = ['Natural Spline (N = ',num2str(Nvec(3)),')'];
 hdMedNLabel = ['Direct (N = ',num2str(Nvec(2)),')'];
 hqMedNLabel = ['MaternQR (N = ',num2str(Nvec(2)),')'];
 hpMedNLabel = ['PP Spline (N = ',num2str(Nvec(2)),')'];
+hsMedNLabel = ['Natural Spline (N = ',num2str(Nvec(2)),')'];
 hdLowNLabel = ['Direct (N = ',num2str(Nvec(1)),')'];
 hqLowNLabel = ['MaternQR (N = ',num2str(Nvec(1)),')'];
 hpLowNLabel = ['PP Spline (N = ',num2str(Nvec(1)),')'];
+hsLowNLabel = ['Natural Spline (N = ',num2str(Nvec(1)),')'];
 
-legend([ hqLowN hpLowN ], hqLowNLabel, hpLowNLabel, 'location','Best')
+if beta==2 
+    legend([ hqLowN hdLowN hpLowN hsLowN ], hqLowNLabel, hdLowNLabel, hpLowNLabel, hsLowNLabel, 'location','Best')
+else
+    legend([ hqLowN hdLowN hpLowN ], hqLowNLabel, hdLowNLabel, hpLowNLabel, 'location','Best')
+end
 
 
 
