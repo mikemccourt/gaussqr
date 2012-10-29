@@ -113,7 +113,7 @@ for N=Nvec
     
     j = 1;
     for beta=betavec
-        if beta==1 % Work with the kernel form
+        if beta==1 || beta==2 % Work with the kernel form
             K_solve = zeros(N);
             K_eval = zeros(NN,N);
             for n=1:N
