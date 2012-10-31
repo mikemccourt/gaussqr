@@ -5,8 +5,8 @@ global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.ERROR_STYLE = 2;
 GAUSSQR_PARAMETERS.NORM_TYPE = inf;
 
-epvecd = logspace(-2,1.3,40);
-epvec = logspace(-2,1.3,100);
+epvecd = logspace(-2,1.5,41);
+epvec = logspace(-2,1.5,161); % Change to 81 if taking too long
 Nvec = [3,5,9,17];
 NN = 100;
 
@@ -18,12 +18,12 @@ fopt = 'sin';
 fstr = 'y(x)=sinc(x)';
 yf = @(x) sinc(x);
 
-aa = 0;bb = 1;
-xx = linspace(aa,bb,NN)';
+aa = -1;bb = 1;
+xx = pickpoints(aa,bb,NN);
 yy = yf(xx);
 errvec = zeros(length(Nvec),length(epvec));
 errvecd = zeros(length(Nvec),length(epvecd));
-alpha = .65;
+alpha = 1; % For larger epsilon, may need to be varied
 
 n = 1;
 for N=Nvec
@@ -99,7 +99,8 @@ loglog(epvecd,errpoly4*ones(size(epvecd)),'--c')
 hold off
 xlabel('\epsilon')
 ylabel('Error')
-ylim([10^-18 10])
+ylim([10^-15 10])
+xlim([min([epvec,epvecd]),max([epvec,epvecd])])
 ptsstr=strcat(', x\in[',num2str(aa),',',num2str(bb),'],');
 title(strcat(fstr,ptsstr,spacestr))
 %legend('N=3 (Direct)','N=5 (Direct)','N=9 (Direct)','N=17 (Direct)','N=3 (QR)','N=5 (QR)','N=9 (QR)','N=17 (QR)','Location','SouthEast')
