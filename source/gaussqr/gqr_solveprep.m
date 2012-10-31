@@ -163,13 +163,15 @@ switch reg
         
         if Mextramax<0
             Mextramax = (1-Mextramax/100)*N;
+        elseif Mextramax>0
+            Mextramax = N + Mextramax;
+        else
+            Mextramax = inf; % Allow the array to go as long as it wants
         end
+
         MarrN = gqr_formMarr(zeros(d,1),[],N);
         Mlim = ceil(size(MarrN,2)+log(eps)/log(lam));
         Mlim = ceil(N+log(eps)/log(lam));
-        if Mextramax==0
-            Mextramax = inf; % Allow the array to go as long as it wants
-        end
 
         % This needs to get better
         % Specifically it needs to handle people passing weird stuff

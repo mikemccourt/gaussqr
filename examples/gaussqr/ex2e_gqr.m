@@ -6,12 +6,12 @@ global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.ERROR_STYLE = 2;
 GAUSSQR_PARAMETERS.NORM_TYPE = inf;
 
-epvecd = logspace(-2,1.3,20);
-epvecr = logspace(-2,1.3,100);
+epvecd = logspace(-2,1,21);
+epvecr = logspace(-2,1,61);
 Nvec = [3,5,9;3,5,9];
 NN = [30;30];
 
-spaceopt = 'even';
+spaceopt = 'halton';
 fopt = 'sin';
 rbf = @(ep,x) exp(-(ep*x).^2);
 
@@ -25,12 +25,12 @@ yy = yf(xx);
 errvecr = zeros(size(Nvec,2),length(epvecr));
 errvecd = zeros(size(Nvec,2),length(epvecd));
 
-%alpha = 1;
+alpha = 1;
 tic
 status = 'Finding alpha values'
 k = 1;
 for ep=epvecr
-    alphavals(k) = gqr_alphasearch(ep,[-1,-1],[1,1]);
+%    alphavals(k) = gqr_alphasearch(ep,[-1,-1],[1,1]);
     k = k+1;
 end
 Total_time = toc
@@ -42,8 +42,8 @@ for N=Nvec
     y = yf(x);
     k = 1;
     for ep=epvecr
-%        GQR = gqr_solve(x,y,ep,alpha);
-        GQR = gqr_solve(x,y,ep,alphavals(k));
+        GQR = gqr_solve(x,y,ep,alpha);
+%        GQR = gqr_solve(x,y,ep,alphavals(k));
         yp = gqr_eval(GQR,xx);
         errvecr(j,k) = errcompute(yp,yy);
         k = k+1;
@@ -80,7 +80,7 @@ loglog(epvecr,errvecr,'LineWidth',3)
 hold off
 xlabel('\epsilon')
 ylabel('Error')
-ylim([1e-8,10])
+ylim([1e-10,10])
 ptsstr=strcat(', x\in[',num2str(aa),',',num2str(bb),'],');
 title(strcat(fstr,ptsstr,spacestr))
 legend('N=9','N=25','N=81','Location','SouthEast')
