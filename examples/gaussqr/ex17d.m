@@ -3,14 +3,16 @@
 % given an approximation problem
 %     f(x) = sin(x/2)-2*cos(x)+4*sin(pi*x)
 %          N=30 points at the Chebyshev nodes
+global GAUSSQR_PARAMETERS
+GAUSSQR_PARAMETERS.MAX_EXTRA_EFUNC = 120;
 
 rbf = @(e,r) exp(-(e*r).^2);
-N = 30;
+N = 40;
 NN = 100;
 
-epvec = logspace(-1,1,40);
+epvec = logspace(-1,1,75);
 
-alpha = 1;
+alpha_base = 2;
 yf = @(x) tanh(x);
 
 x = pickpoints(-3,3,N,'cheb');
@@ -18,28 +20,43 @@ y = yf(x);
 xx = pickpoints(-3,3,NN);
 yy = yf(xx);
 
-% % This is first used to create the error graph for comparison
-% errvec = [];
-% k = 1;
-% for ep=epvec
-%     if ep<1
-%         alpha = 1;
-%     else
-%         alpha = 1/(3^log10(ep));
-%     end
-%     GQR = gqr_solve(x,y,ep,alpha);
-%     yp = gqr_eval(GQR,xx);
-%     errvec(k) = errcompute(yp,yy);
-%     fprintf('ep=%g\tM=%d\terr=%g\n',ep,length(GQR.Marr),log10(errvec(k)))
-%     k = k + 1;
-% end
-% 
-% loglog(epvec,errvec,'linewidth',3)
-% xlabel('\epsilon')
-% ylabel('error')
-% ylim([1e-9,1e-1])
-% 
-% pause
+DM = DistanceMatrix(x,x);
+EM = DistanceMatrix(xx,x);
+
+% This is first used to create the error graph for comparison
+errvec = [];
+edvec = [];
+k = 1;
+for ep=epvec
+    if ep<1
+        alpha = alpha_base;
+    else
+        alpha = alpha_base/(6^log10(ep));
+    end
+    GQR = gqr_solve(x,y,ep,alpha);
+    yp = gqr_eval(GQR,xx);
+    errvec(k) = errcompute(yp,yy);
+    
+    A = rbf(ep,DM);
+    warning off
+    yp = rbf(ep,EM)*(A\y);
+    warning on
+    edvec(k) = errcompute(yp,yy);
+    
+    fprintf('ep=%g\tM=%d\terr=%g\n',ep,length(GQR.Marr),log10(errvec(k)))
+    k = k + 1;
+end
+
+loglog(epvec,edvec,'linewidth',2),hold on
+loglog(epvec,errvec,'r','linewidth',3),hold off
+xlabel('\epsilon')
+ylabel('error')
+legend('Direct method','Stable method','location','southeast')
+ylim([1e-12,1e-1])
+
+pause
+
+alpha = 2;
 
 % Define the prior distribution
 galpha = 1.5;
