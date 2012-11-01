@@ -16,7 +16,7 @@ fopt = 'sin';
 [yf,fstr] = pickfunc(fopt,1);
 
 fstr = 'y(x)=sinc(x)';
-yf = @(x) sinc(x);
+yf = @(x) sinc((x+1)/2);
 
 aa = -1;bb = 1;
 xx = pickpoints(aa,bb,NN);
@@ -58,6 +58,7 @@ warning off
 warning on
 yp = polyval(p,xx,S,mu);
 errpoly1 = errcompute(yp,yy);
+errpoly1 = max(abs(yp-yy));
 
 [x,spacestr] = pickpoints(aa,bb,Nvec(2),spaceopt);
 y = yf(x);
@@ -83,15 +84,15 @@ warning on
 yp = polyval(p,xx,S,mu);
 errpoly4 = errcompute(yp,yy);
 
-loglog(epvecd,errvecd(1,:),'-rx')
-hold on
-loglog(epvecd,errvecd(2,:),'-g+')
-loglog(epvecd,errvecd(3,:),'-b^')
-loglog(epvecd,errvecd(4,:),'-c^')
 loglog(epvec,errvec(1,:),'r','LineWidth',3)
+hold on
 loglog(epvec,errvec(2,:),'g','LineWidth',3)
 loglog(epvec,errvec(3,:),'b','LineWidth',3)
 loglog(epvec,errvec(4,:),'c','LineWidth',3)
+loglog(epvecd,errvecd(1,:),'-rx')
+loglog(epvecd,errvecd(2,:),'-g+')
+loglog(epvecd,errvecd(3,:),'-b^')
+loglog(epvecd,errvecd(4,:),'-c^')
 loglog(epvecd,errpoly1*ones(size(epvecd)),'--r')
 loglog(epvecd,errpoly2*ones(size(epvecd)),'--g')
 loglog(epvecd,errpoly3*ones(size(epvecd)),'--b')
