@@ -48,6 +48,10 @@ global GAUSSQR_PARAMETERS
 % This is used to produce some results for the MaternQR stuff
 GAUSSQR_PARAMETERS.SPLINE_TOOLBOX_AVAILABLE = length(findstr('splines',path))>0;
 
+% Checks if the curve fitting toolbox is available
+% This is used to produce some results for the MaternQR stuff
+GAUSSQR_PARAMETERS.CURVEFIT_TOOLBOX_AVAILABLE = length(findstr('curvefit',path))>0;
+
 % Checks if the symbolic toolbox is available
 % This is used to produce some results for the MaternQR stuff
 GAUSSQR_PARAMETERS.SYMBOLIC_TOOLBOX_AVAILABLE = length(findstr('symbolic',path))>0;
