@@ -3,15 +3,17 @@
 % given an approximation problem
 %     f(x) = sin(x/2)-2*cos(x)+4*sin(pi*x)
 %          N=30 points at the Chebyshev nodes
+global GAUSSQR_PARAMETERS
+GAUSSQR_PARAMETERS.MAX_EXTRA_EFUNC = 120;
 
 rbf = @(e,r) exp(-(e*r).^2);
 N = 30;
 NN = 100;
 
-epvec = logspace(-1,1,40);
+epvec = logspace(-1,1,70);
 
 alpha = 1;
-yf = @(x) tanh(x);
+yf = @(x) -1/3*x+tanh(x);
 
 x = pickpoints(-3,3,N,'cheb');
 y = yf(x);
