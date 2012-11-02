@@ -1,5 +1,5 @@
-% EX5_MQR
-% This puts together convergence order pictures for SineQR
+% ex6_mqr
+% This puts together convergence order pictures for MaternQR
 % We consider two choices:
 %     General functions with arbitrary "BC" embedded in [0,L]
 %     Functions which are homogeneous on [0,L]
@@ -15,7 +15,6 @@ rbfsetup
 global GAUSSQR_PARAMETERS
 symavail = GAUSSQR_PARAMETERS.SYMBOLIC_TOOLBOX_AVAILABLE;
 
-close all
 % The range of N values to consider
 Nvec = 10:15:100;
 % The orders (smoothness) of the kernel to consider
@@ -30,7 +29,7 @@ embed_cushion = .1;
 NN = 397;
 % Choice of interpolation function and associated parameters
 fopt = 8;
-fpar = 7;
+fpar = 6;
 
 % This determines how many extra basis functions should be added to the
 % RBF-QR evaluation to get the necessary accuracy: M = Mfactor*N
@@ -76,8 +75,9 @@ switch fopt
         %which beta is optimal?
         HMN = fpar(1);
 %        yf = @(x) 10^(HMN+1).*(max(0,x-(1/4))).^HMN.*(max(0,(3/4)-x)).^HMN;
-        CC = 1/(.5-log(1.25))^2;
-        yf = @(x) CC^(HMN).*(max(0,x-(log(1.25)))).^HMN.*(max(0,(1-log(1.25))-x)).^HMN;
+        gamval = .0567;
+        CC = 1/(.5-gamval)^2;
+        yf = @(x) CC^(HMN).*(max(0,x-gamval)).^HMN.*(max(0,(1-gamval)-x)).^HMN;
         fstr = ['y(x) = 10^{',num2str(HMN+1),'} (max(0,x-(1/4)))^{',num2str(HMN),'}(max(0,(3/4)-x)^{',num2str(HMN),'}'];
         embed = 0;
     otherwise
@@ -137,12 +137,13 @@ end
 warning on
 
 % Plot RMS error as beta and N vary:
-errorplot = figure('NumberTitle','off','Name',num2str(fopt));
+% close all
+% errorplot = figure('NumberTitle','off','Name',num2str(fopt));
 loglog(Nvec,errvec,'linewidth',2);
 % semilogy(Nvec,errvec,'linewidth',2)
 xlabel('input points N');
 ylabel('RMS relative error');
-title(strcat(sprintf('x \\in [0,%g] ',L),sprintf('     \\epsilon = %g',ep)));
+%title(strcat(sprintf('x \\in [0,%g] ',L),sprintf('     \\epsilon = %g',ep)));
 
 % Build and create the legend
 legendvals = [];
