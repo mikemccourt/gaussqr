@@ -68,12 +68,17 @@ for ep=epvec
     yp = gqr_eval(GQRreg,xx);
     errvecREG(ie) = errcompute(yp,yy);
     
+    % And now just the interpolant to data sampled from the solution
+    GQR = gqr_solve(x,y,ep,alpha);
+    yp = gqr_eval(GQR,xx);
+    errvecINT(ie) = errcompute(yp,yy);
+    
     ie = ie + 1;
 end
 
 clf reset
-loglog(epvec,[errvec;errvecREG],'linewidth',3)
+loglog(epvec,[errvec;errvecREG;errvecINT],'linewidth',3)
 title(sprintf('Collocation for u_{xx}=cosh(x), Dirichlet BC, N=%d',N))
 ylabel('Relative Error')
 xlabel('\epsilon')
-legend('RBF-QR','RBF-QRr','Location','NorthWest')
+legend('RBF-QR','RBF-QRr','RBF-QRint','Location','NorthWest')

@@ -1,4 +1,4 @@
-function p = SphereSurfGoldPoints(n, R)
+function pnts = SphereSurfGoldPoints(n, R)
 %SphereSurfGoldPoints generates a set of evenly distributed points on a 
 % sphere of given radius using the method of the Golden Section Spiral.
 % Based on Python code by P. Boucher (http://www.xsi-blog.com/archives/115)
@@ -16,5 +16,5 @@ k = 0:n-1;
 y = k * off - 1 + (off/2);
 r = sqrt(1 - (y.^2));
 phi = k * inc;
-p = R*[cos(phi).*r; y ; sin(phi).*r]';
+pnts = R*[cos(phi).*r; y ; sin(phi).*r]';
 end

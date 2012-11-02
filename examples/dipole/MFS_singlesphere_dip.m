@@ -1,7 +1,7 @@
 clear all
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %           MEG meshfree forward solver for a single sphere model
-%                            - Kansa's method -
+%                  - Method of Fundamental Solutions -
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % Calls on:
@@ -50,18 +50,16 @@ ep = 10.8;                 % RBFs shape parameter
 % dyrbf   = component along y of the gradient of the RBF
 % dzrbf   = component along z of the gradient of the RBF
 % Lrbf    = Laplacian of the RBF in 3D
-[rbf, dxrbf, dyrbf, dzrbf] = pickRBF('fund');
+[rbf, dxrbf, dyrbf, dzrbf] = pickRBF('fundamental_3d');
 
 
 % Collocation matrix and known-terms vector
 %--------------------------------------------------------------------------
 
 % Collocation points
-[bdydata, intdata, dist] = SphereRegGoldPoints(Npnts_surf, R);
-% Boundary centers outside the domain
-bdyctrs = SphereSurfGoldPoints(Npnts_surf/10, R*1.2);
-% Centers
-ctrs = [bdyctrs];
+[bdydata, ~, dist] = SphereRegGoldPoints(Npnts_surf, R);
+% Centers outside the domain
+ctrs = SphereSurfGoldPoints(Npnts_surf/10, R*1.2);
 % Evaluation points
 evalpnts = SphereRegUnifPoints(dist/3, R); % Dist/3 controls the distance 
                                            % between evaluation points
@@ -69,13 +67,9 @@ neval = size(evalpnts,1);
 
 % Compute evaluation matrix EM
 DM_eval = DistanceMatrix(evalpnts, ctrs);
-EM = rbf(ep, DM_eval);
+EM = rbf(DM_eval);
 
-% Compute blocks for collocation matrix
-% Interior points
-% DM_intdata = DistanceMatrix(intdata,ctrs);
-% LCM = Lrbf(ep,DM_intdata);
-% Boundary points
+% Compute collocation matrix CM
 DM_bdydata = DistanceMatrix(bdydata,ctrs);
 dx_bdydata = DifferenceMatrix(bdydata(:,1),ctrs(:,1));
 dy_bdydata = DifferenceMatrix(bdydata(:,2),ctrs(:,2));
@@ -83,21 +77,18 @@ dz_bdydata = DifferenceMatrix(bdydata(:,3),ctrs(:,3));
 
 NV = bdydata/R;   % Unit vectors normal to sphere surface
 
-A = bsxfun(@times,NV(:,1),dxrbf(ep,DM_bdydata,dx_bdydata));
-B = bsxfun(@times,NV(:,2),dyrbf(ep,DM_bdydata,dy_bdydata));
-C = bsxfun(@times,NV(:,3),dzrbf(ep,DM_bdydata,dz_bdydata));
+A = bsxfun(@times,NV(:,1),dxrbf(DM_bdydata,dx_bdydata));
+B = bsxfun(@times,NV(:,2),dyrbf(DM_bdydata,dy_bdydata));
+C = bsxfun(@times,NV(:,3),dzrbf(DM_bdydata,dz_bdydata));
 
-BCM = bsxfun(@plus,A,B);
-BCM = bsxfun(@plus,BCM,C);
-
-% Collocation matrix
-CM = [BCM];
+CM = bsxfun(@plus,A,B);
+CM = bsxfun(@plus,CM,C);
 
 % Compute known-terms vector (a.k.a. righthand side vector)
-gradphi_F = gradphiF(bdydata, srcpnts, dipmom, sig);% Gradient of the 
+gradphi_F = gradphiF_dip(bdydata, srcpnts, dipmom, sig);% Gradient of the 
                                                     % potential at boundary
                                                     % in the unbound case
-rhs = [ -sum(NV.*gradphi_F,2) ];
+rhs = -sum(NV.*gradphi_F,2);
 
 
 % Numerical solution for the potential
@@ -106,7 +97,7 @@ rhs = [ -sum(NV.*gradphi_F,2) ];
 % Potential at evalpnts in the source free case
 phi0 = EM * (CM\rhs);
 % Potential at evalpnts in the unbound domain case
-phi_F = phiF(evalpnts,srcpnts,dipmom,sig);
+phi_F = phiF_dip(evalpnts,srcpnts,dipmom,sig);
 % Potential at evalpnts (superposition of effects)
 phi = phi0 + phi_F;
 

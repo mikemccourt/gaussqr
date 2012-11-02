@@ -1,4 +1,5 @@
 clear all
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %           MEG meshfree forward solver for a single sphere model
 %                            - Kansa's method -
@@ -34,23 +35,24 @@ clear all
 R = 0.1;                      % Sphere radius [m]
 sig = 0.2;                    % Electric conductivity [S/m]
 % Sources data
-dipmom = 2.7e-12.*[1, 0, 0];         % Dipole moment [Am]
-srcpnts = [0, 0, 0.6*R];  % Dipole position [m]
+dipmom = 2.7e-12.*[1, 0, 0];  % Dipole moment [Am]
+srcpnts = [0, 0, 0.6*R];      % Dipole position [m]
 % Magnetic induction field observation points
 % obspnts = ; ...
 % Parameters for numerical computation
-Npnts_surf = 300;          % Number of desired points on sphere's surface
-ep = 10.8;                 % RBFs shape parameter
+radbasfun = 'imq';            % Radial basis function
+Npnts_surf = 300;             % Number of desired points on sphere's surface
+ep = 10.8;                    % RBFs shape parameter
 
 
 % RBF definition and derivatives
 %--------------------------------------------------------------------------
-% rbf     = Radial bsis function;
+% rbf     = Radial basis function;
 % dxrbf   = component along x of the gradient of the RBF
 % dyrbf   = component along y of the gradient of the RBF
 % dzrbf   = component along z of the gradient of the RBF
 % Lrbf    = Laplacian of the RBF in 3D
-[rbf, dxrbf, dyrbf, dzrbf, Lrbf] = pickRBF('imq');
+[rbf, dxrbf, dyrbf, dzrbf, Lrbf] = pickRBF(radbasfun);
 
 
 % Collocation matrix and known-terms vector
@@ -94,7 +96,7 @@ BCM = bsxfun(@plus,BCM,C);
 CM = [LCM; BCM];
 
 % Compute known-terms vector (a.k.a. righthand side vector)
-gradphi_F = gradphiF(bdydata, srcpnts, dipmom, sig);% Gradient of the 
+gradphi_F = gradphiF_dip(bdydata, srcpnts, dipmom, sig);% Gradient of the 
                                                     % potential at boundary
                                                     % in the unbound case
 rhs = [ zeros(size(intdata,1),1); -sum(NV.*gradphi_F,2) ];
@@ -106,7 +108,7 @@ rhs = [ zeros(size(intdata,1),1); -sum(NV.*gradphi_F,2) ];
 % Potential at evalpnts in the source free case
 phi0 = EM * (CM\rhs);
 % Potential at evalpnts in the unbound domain case
-phi_F = phiF(evalpnts,srcpnts,dipmom,sig);
+phi_F = phiF_dip(evalpnts,srcpnts,dipmom,sig);
 % Potential at evalpnts (superposition of effects)
 phi = phi0 + phi_F;
 

@@ -18,6 +18,8 @@ if(strfind(thisOS,'Windows')>0) % We are in Windows
       gqrexamplesDir = strcat(examplesDir,'\gaussqr');
       mqrexamplesDir = strcat(examplesDir,'\maternqr');
         testfunctionsDir = strcat(mqrexamplesDir,'\testfunctions');
+      dipoleDir = strcat(examplesDir,'\dipole');
+        dipolesourceDir = strcat(dipoleDir,'\source');
     otherDir = strcat(thisDir,'\fromothers');
 else % We are in Unix
     sourceDir = strcat(thisDir,'/source');
@@ -31,9 +33,11 @@ else % We are in Unix
       gqrexamplesDir = strcat(examplesDir,'/gaussqr');
       mqrexamplesDir = strcat(examplesDir,'/maternqr');
         testfunctionsDir = strcat(mqrexamplesDir,'/testfunctions');
+      dipoleDir = strcat(examplesDir,'/dipole');
+        dipolesourceDir = strcat(dipoleDir,'/source');
     otherDir = strcat(thisDir,'/fromothers');
 end
-addpath(sourceDir,gaussqrDir,gqrauxiliaryDir,mqrauxiliaryDir,utilitiesDir,otherDir,maternqrDir,gqrexamplesDir,mqrexamplesDir,testfunctionsDir,1);
+addpath(sourceDir,gaussqrDir,gqrauxiliaryDir,mqrauxiliaryDir,utilitiesDir,otherDir,maternqrDir,gqrexamplesDir,mqrexamplesDir,dipoleDir,testfunctionsDir,dipolesourceDir,1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Setup global constants and parameters
@@ -43,6 +47,10 @@ global GAUSSQR_PARAMETERS
 % Checks if the spline toolbox is available
 % This is used to produce some results for the MaternQR stuff
 GAUSSQR_PARAMETERS.SPLINE_TOOLBOX_AVAILABLE = length(findstr('splines',path))>0;
+
+% Checks if the curve fitting toolbox is available
+% This is used to produce some results for the MaternQR stuff
+GAUSSQR_PARAMETERS.CURVEFIT_TOOLBOX_AVAILABLE = length(findstr('curvefit',path))>0;
 
 % Checks if the symbolic toolbox is available
 % This is used to produce some results for the MaternQR stuff

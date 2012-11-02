@@ -32,14 +32,14 @@ evalpnts = SphereRegUnifPoints(dist/3, R); % Dist/3 controls the distance
 neval = size(evalpnts,1);
 
 % Compute known-terms vector (a.k.a. righthand side vector)
-gradphi_F = gradphiF(bdydata, srcpnts, dipmom, sig);% Gradient of the 
+gradphi_F = gradphiF_dip(bdydata, srcpnts, dipmom, sig);% Gradient of the 
                                                     % potential at boundary
                                                     % in the unbound case
 NV = bdydata/R; % Unit vectors normal to sphere surface
 rhs = [ zeros(size(intdata,1),1); -sum(NV.*gradphi_F,2) ];
 
 % Potential at evalpnts in the unbound domain case
-phi_F = phiF(evalpnts,srcpnts,dipmom,sig);
+phi_F = phiF_dip(evalpnts,srcpnts,dipmom,sig);
 %  Analytic solution for the potential
 phi_an = HomSpherePotential(R, sig, srcpnts, dipmom, evalpnts);
 

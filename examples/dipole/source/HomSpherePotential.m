@@ -18,6 +18,7 @@ function V = HomSpherePotential( r, sigma, srcpnts, dipmom, obspnts )
 %
 %--------------------------------------------------------------------------
 % !!WARNING!!: the formula is singular for dipoles located at sphere origin
+%              or for potential evaluation at origin
 %--------------------------------------------------------------------------
 %
 M = size(obspnts,1); N = size(srcpnts,1);
