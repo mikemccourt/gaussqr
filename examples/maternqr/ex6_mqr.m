@@ -76,7 +76,8 @@ switch fopt
         %which beta is optimal?
         HMN = fpar(1);
 %        yf = @(x) 10^(HMN+1).*(max(0,x-(1/4))).^HMN.*(max(0,(3/4)-x)).^HMN;
-        yf = @(x) 10^(HMN+1).*(max(0,x-(log(1.25)))).^HMN.*(max(0,(1-log(1.25))-x)).^HMN;
+        CC = 1/(.5-log(1.25))^2;
+        yf = @(x) CC^(HMN).*(max(0,x-(log(1.25)))).^HMN.*(max(0,(1-log(1.25))-x)).^HMN;
         fstr = ['y(x) = 10^{',num2str(HMN+1),'} (max(0,x-(1/4)))^{',num2str(HMN),'}(max(0,(3/4)-x)^{',num2str(HMN),'}'];
         embed = 0;
     otherwise
