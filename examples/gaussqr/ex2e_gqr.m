@@ -74,9 +74,10 @@ for N=Nvec
     j = j+1;
 end
 
-loglog(epvecd,errvecd,'-.','LineWidth',2)
-hold on
+figure
 loglog(epvecr,errvecr,'LineWidth',3)
+hold on
+loglog(epvecd,errvecd,'-.','LineWidth',2)
 hold off
 xlabel('\epsilon')
 ylabel('Error')
