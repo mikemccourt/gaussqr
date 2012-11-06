@@ -14,9 +14,11 @@
 rbfsetup
 global GAUSSQR_PARAMETERS
 symavail = GAUSSQR_PARAMETERS.SYMBOLIC_TOOLBOX_AVAILABLE;
+GAUSSQR_PARAMETERS.ERROR_STYLE = 2; % Relative RMS
+GAUSSQR_PARAMETERS.NORM_TYPE = inf; % Relative RMS
 
 % The range of N values to consider
-Nvec = 10:15:100;
+Nvec = [8,16,32,64,128,256];
 % The orders (smoothness) of the kernel to consider
 betavec = 1:5;
 % The kernel shape parameter
@@ -29,7 +31,7 @@ embed_cushion = .1;
 NN = 397;
 % Choice of interpolation function and associated parameters
 fopt = 8;
-fpar = 6;
+fpar = [6,.0567];
 
 % This determines how many extra basis functions should be added to the
 % RBF-QR evaluation to get the necessary accuracy: M = Mfactor*N
@@ -75,7 +77,7 @@ switch fopt
         %which beta is optimal?
         HMN = fpar(1);
 %        yf = @(x) 10^(HMN+1).*(max(0,x-(1/4))).^HMN.*(max(0,(3/4)-x)).^HMN;
-        gamval = .0567;
+        gamval = fpar(2);
         CC = 1/(.5-gamval)^2;
         yf = @(x) CC^(HMN).*(max(0,x-gamval)).^HMN.*(max(0,(1-gamval)-x)).^HMN;
         fstr = ['y(x) = 10^{',num2str(HMN+1),'} (max(0,x-(1/4)))^{',num2str(HMN),'}(max(0,(3/4)-x)^{',num2str(HMN),'}'];
