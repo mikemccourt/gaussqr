@@ -87,8 +87,19 @@ for ep=epvec
     errvec(k) = errcompute(yp,yy);
     
     
-    A = rbf(ep,DM);
-    invA = pinv(A);
+    %A = rbf(ep,DM);
+    %invA = pinv(A);
+    %EF = (invA*y)./diag(invA);
+    %loocvvec(k) = norm(EF,1);
+    Phi = gqr_phi(GQR,x);
+    Phi1 = Phi(:,1:N);
+    Psi = Phi*[eye(N);GQR.Rbar];
+    invPsi = pinv(Psi);
+    invPhi1 = pinv(Phi1');
+    nu = (2*ep/alpha)^2;
+    Lambda1 = diag((nu/(2+nu+2*sqrt(1+nu))).^(1:N));
+    invLambda1 = pinv(Lambda1);
+    invA = invPhi1*invLambda1*invPsi;
     EF = (invA*y)./diag(invA);
     loocvvec(k) = norm(EF,1);
     
