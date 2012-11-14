@@ -1,20 +1,21 @@
 % Test studying the leave half out cross-validation
+% Uses compact Matern kernels
 rbfsetup
 global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.ERROR_STYLE = 2;
 
-rbf = @(e,r) exp(-(e*r).^2);
 f = @(x) sin(2*pi*x);
 
 N = 24;
-x = pickpoints(-1,1,N);
+x = pickpoints(0,1,N);
 y = f(x);
 
 NN = 100;
-xx = pickpoints(-1,1,NN);
+xx = pickpoints(0,1,NN);
 yy = f(xx);
 
-alpha = 2;
+beta = 5;
+L = 1;
 
 h1 = 1:2:N;
 h2 = setdiff(1:N,h1);
@@ -38,9 +39,8 @@ for ep=epvec
     y_train = f(x_train);
     x_valid = x(h2);
     y_valid = f(x_valid);
-    
-    GQR = gqr_solve(x_train,y_train,ep,alpha);
-    yp = gqr_eval(GQR,x_valid);
+    MQR = mqr_solve(x_train,y_train,L,ep,beta);
+    yp = mqr_eval(MQR,x_valid);
     halfvec(k) = errcompute(yp,y_valid);
     
     x_train = x(h2);
@@ -48,8 +48,8 @@ for ep=epvec
     x_valid = x(h1);
     y_valid = f(x_valid);
     
-    GQR = gqr_solve(x_train,y_train,ep,alpha);
-    yp = gqr_eval(GQR,x_valid);
+    MQR = mqr_solve(x_train,y_train,L,ep,beta);
+    yp = mqr_eval(MQR,x_valid);
     halfvec(k) = halfvec(k) + errcompute(yp,y_valid);
     
     %%%%%%%%%%%%%%%%%%%%%%%%
@@ -59,8 +59,8 @@ for ep=epvec
     x_valid = x(t3);
     y_valid = f(x_valid);
     
-    GQR = gqr_solve(x_train,y_train,ep,alpha);
-    yp = gqr_eval(GQR,x_valid);
+    MQR = mqr_solve(x_train,y_train,L,ep,beta);
+    yp = mqr_eval(MQR,x_valid);
     thirdvec(k) = errcompute(yp,y_valid);
     
     x_train = x([t1,t3]);
@@ -68,8 +68,8 @@ for ep=epvec
     x_valid = x(t2);
     y_valid = f(x_valid);
     
-    GQR = gqr_solve(x_train,y_train,ep,alpha);
-    yp = gqr_eval(GQR,x_valid);
+    MQR = mqr_solve(x_train,y_train,L,ep,beta);
+    yp = mqr_eval(MQR,x_valid);
     thirdvec(k) = thirdvec(k) + errcompute(yp,y_valid);
     
     x_train = x([t2,t3]);
@@ -77,28 +77,23 @@ for ep=epvec
     x_valid = x(t1);
     y_valid = f(x_valid);
     
-    GQR = gqr_solve(x_train,y_train,ep,alpha);
-    yp = gqr_eval(GQR,x_valid);
+    MQR = mqr_solve(x_train,y_train,L,ep,beta);
+    yp = mqr_eval(MQR,x_valid);
     thirdvec(k) = thirdvec(k) + errcompute(yp,y_valid);
     
     
-    GQR = gqr_solve(x,y,ep,alpha);
-    yp = gqr_eval(GQR,xx);
+    MQR = mqr_solve(x,y,L,ep,beta);
+    yp = mqr_eval(MQR,xx);
     errvec(k) = errcompute(yp,yy);
     
-    
-    %A = rbf(ep,DM);
-    %invA = pinv(A);
-    %EF = (invA*y)./diag(invA);
-    %loocvvec(k) = norm(EF,1);
-    GQR = gqr_solveprep(0,x,ep,alpha);
-    Phi = gqr_phi(GQR,x);
+
+    [L,ep,beta,M] = mqr_solveprep(x,L,ep,beta);
+    Phi = mqr_phi(1:M,x,L);
     Phi1 = Phi(:,1:N);
-    Psi = Phi*[eye(N);GQR.Rbar];
+    Psi = Phi*[eye(N);MQR.Rbar];
     invPsi = pinv(Psi);
     invPhi1 = pinv(Phi1');
-    nu = (2*ep/alpha)^2;
-    Lambda1 = diag((nu/(2+nu+2*sqrt(1+nu))).^(1:N));
+    Lambda1 = diag(((pi*(1:N)/L).^2+ep^2).^(-beta));
     invLambda1 = pinv(Lambda1);
     invA = invPhi1*invLambda1*invPsi;
     EF = (invA*y)./diag(invA);
