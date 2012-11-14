@@ -6,16 +6,17 @@ GAUSSQR_PARAMETERS.ERROR_STYLE = 2;
 
 f = @(x) sin(2*pi*x);
 
+L = 1;
+
 N = 24;
-x = pickpoints(0,1,N);
+x = pickpoints(0,L,N+2);x = x(2:end-1);
 y = f(x);
 
 NN = 100;
-xx = pickpoints(0,1,NN);
+xx = pickpoints(0,L,NN);
 yy = f(xx);
 
 beta = 5;
-L = 1;
 
 h1 = 1:2:N;
 h2 = setdiff(1:N,h1);
@@ -81,12 +82,14 @@ for ep=epvec
     yp = mqr_eval(MQR,x_valid);
     thirdvec(k) = thirdvec(k) + errcompute(yp,y_valid);
     
-    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Now the actual solution
     MQR = mqr_solve(x,y,L,ep,beta);
     yp = mqr_eval(MQR,xx);
     errvec(k) = errcompute(yp,yy);
     
-
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Now an attempt at LOOCV
     [L,ep,beta,M] = mqr_solveprep(x,L,ep,beta);
     Phi = mqr_phi(1:M,x,L);
     Phi1 = Phi(:,1:N);
