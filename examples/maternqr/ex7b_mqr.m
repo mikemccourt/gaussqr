@@ -1,38 +1,21 @@
 % Test studying the leave half out cross-validation
-% Uses compact Matern kernels
+% Uses compact Matern kernels and titanium test data
 rbfsetup
 global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.ERROR_STYLE = 2;
 
 close all
 
-%f = @(x) 30*x.^2.*(L-x).^2.*sin(2*pi*x/L).^4;
-%f = @(x) 30*x.^2.*(L-x).^2.*sin(10*pi*x/L).^4;
-%f = @(x) 1./(1+(x/L).^2)-(1-.5*(x/L));
-%f = @(x) sinh(3/L*x)./(1+cosh(3/L*x));    % Interesting 1/3 out predicts clear minimum which doesn't seem to exist
-%f = @(x) cos(x)+exp(-(x-1).^2)-exp(-(x+1).^2);
-%f = @(x) (x.^2.*(1-x).^2).*(cos(10*x)+exp(-(x-1).^2)-exp(-(x+1).^2));
-%f = @(x) exp(x) - (1-x) - x*exp(1);
-%f = @(x) exp(x) - 1 + (1/6).*(x.^3 - 3.*x.^2 + 8.*x - exp(1).*(x.^3+5.*x));
-%f = @(x) min(abs(x-pi/6)-.25,0);
-%f = @(x) 1./(1+(2*x-1).^2);
-%f = @(x) 15*exp(-1./(1-4*(x-0.5).^2)).*(0.75*exp(-((9*x-2).^2)/4)+0.75*exp(-((9*x+1).^2/49))+0.5*exp(-((9*x-7).^2)/4)-0.2*exp(-((9*x-4).^2)));
-%f = @(x) (tanh(9*(x-1))+1)/9;
-%f = @(x) abs(x-1/2).^3-1/8;
-%testfuncN = 2; f = @(x) 10^(testfuncN+1).*(max(0,x-(1/4))).^testfuncN.*(max(0,(3/4)-x)).^testfuncN;
-%f = @(x) sign(max(x-1/2,0));
-f = @(x) exp(-(4*x-1).^2);
-
+[xx,yy] = titanium;
+NN = length(xx);
+xx = xx'; yy = yy';
+xx = (xx-min(xx))/(max(xx)-min(xx));
+yy = yy - min(yy);
+pick = [2 5 11 21 27 29 31 33 35 40 45 48];
+N = length(pick);
+x = xx(pick);
+y = yy(pick);
 L = 1;
-
-N = 50;
-x = pickpoints(0,L,N+2);x = x(2:end-1);
-%x = pickpoints(0,L,N+2,'cheb');x = x(2:end-1);
-y = f(x);
-
-NN = 200;
-xx = pickpoints(0,L,NN);
-yy = f(xx);
 
 h1 = 1:2:N;
 h2 = setdiff(1:N,h1);
@@ -57,17 +40,17 @@ for beta=betavec
         %%%%%%%%%%%%%%%%%%%%%%%%
         % First the leave half out
         x_train = x(h1);
-        y_train = f(x_train);
+        y_train = y(h1);
         x_valid = x(h2);
-        y_valid = f(x_valid);
+        y_valid = y(h2);
         MQR = mqr_solve(x_train,y_train,L,ep,beta);
         yp = mqr_eval(MQR,x_valid);
         halfvec(k,l) = errcompute(yp,y_valid);
         
         x_train = x(h2);
-        y_train = f(x_train);
+        y_train = y(h2);
         x_valid = x(h1);
-        y_valid = f(x_valid);
+        y_valid = y(h1);
         
         MQR = mqr_solve(x_train,y_train,L,ep,beta);
         yp = mqr_eval(MQR,x_valid);
@@ -76,27 +59,27 @@ for beta=betavec
         %%%%%%%%%%%%%%%%%%%%%%%%
         % Then the leave 1/3 out
         x_train = x([t1,t2]);
-        y_train = f(x_train);
+        y_train = y([t1,t2]);
         x_valid = x(t3);
-        y_valid = f(x_valid);
+        y_valid = y(t3);
         
         MQR = mqr_solve(x_train,y_train,L,ep,beta);
         yp = mqr_eval(MQR,x_valid);
         thirdvec(k,l) = errcompute(yp,y_valid);
         
         x_train = x([t1,t3]);
-        y_train = f(x_train);
+        y_train = y([t1,t3]);
         x_valid = x(t2);
-        y_valid = f(x_valid);
+        y_valid = y(t2);
         
         MQR = mqr_solve(x_train,y_train,L,ep,beta);
         yp = mqr_eval(MQR,x_valid);
         thirdvec(k,l) = thirdvec(k,l) + errcompute(yp,y_valid);
         
         x_train = x([t2,t3]);
-        y_train = f(x_train);
+        y_train = y([t2,t3]);
         x_valid = x(t1);
-        y_valid = f(x_valid);
+        y_valid = y(t1);
         
         MQR = mqr_solve(x_train,y_train,L,ep,beta);
         yp = mqr_eval(MQR,x_valid);
@@ -145,6 +128,8 @@ set(gca,'ZScale','log')
 xlabel('\epsilon')
 ylabel('\beta')
 zlabel('error')
+[i,j]=find(halfvec==min(min(halfvec)));
+fprintf('Half out CV: optimal epsilon=%f, optimal beta=%d\n',epvec(i),betavec(j))
 figure, surf(X,Y,thirdvec'), title('Leave 1/3 out')
 set(gca,'XScale','log')
 set(gca,'ZScale','log')
@@ -159,3 +144,5 @@ set(gca,'ZScale','log')
 xlabel('\epsilon')
 ylabel('\beta')
 zlabel('error')
+[i,j]=find(loocvvec==min(min(loocvvec)));
+fprintf('LOOCV: optimal epsilon=%f, optimal beta=%d\n',epvec(i),betavec(j))
