@@ -14,9 +14,10 @@ Nvec = [12,24,48];
 % The spacing choice for the points
 spaceopt = 'even';
 % The order (smoothness) of the kernel
-beta = 1;
+beta = 2;
 % The  range of kernel shape parameters to consider
-epvec =  logspace(0,2,30);
+epvec =  logspace(0,2,31);
+epvec = [logspace(0,1,10),logspace(1,2,35)]; % Focus on the right region
 % The length of the domain
 L = 1;
 % The embedding width for nonhomogeneous functions (must be <.5)
@@ -26,8 +27,8 @@ NN = 397;
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 8;
-fpar = [1,.0567];
+fopt = 9;
+fpar = [3,.0567];
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
@@ -66,6 +67,14 @@ switch fopt
         gamval = fpar(2);
         CC = 1/(.5-gamval)^2;
         yf = @(x) CC^(HMN).*(max(0,x-gamval)).^HMN.*(max(0,(1-gamval)-x)).^HMN;
+        fstr = ['y(x) = 10^{',num2str(HMN+1),'} (max(0,x-(1/4)))^{',num2str(HMN),'}(max(0,(3/4)-x)^{',num2str(HMN),'}'];
+        embed = 0;
+    case 9 % this function is good for beta=2, with fpar = [3,.0567]
+        HMN = fpar(1);
+        gamval = fpar(2);
+        CC = 1/(.5-gamval)^2;
+        %yf = @(x) CC^(HMN).*(max(0,x-gamval)).^HMN.*(max(0,(1-gamval)-x)).^HMN.*(2*(.5-x)-3*exp(-30^2*(x-.4).^2));
+        yf = @(x) CC^(HMN).*(max(0,x-gamval)).^HMN.*(max(0,(1-gamval)-x)).^HMN.*exp(-25^2*(x-.4).^2);
         fstr = ['y(x) = 10^{',num2str(HMN+1),'} (max(0,x-(1/4)))^{',num2str(HMN),'}(max(0,(3/4)-x)^{',num2str(HMN),'}'];
         embed = 0;
     otherwise
@@ -140,10 +149,6 @@ for N=Nvec
             yp = interp1(x,y,xx);
             errvecs(i) = errcompute(yp,yy);
         case 2
-            % This only makes sense when beta=2, i.e., cubic splines
-            % Not sure that it is right yet
-            x = [0; x; L];
-            y = yf(x);
             % Custom routine modeled after Moler's code from NCM
             % yp = splinetx_natural(x,y,xx);
             % Routine from curve fitting toolbox (also only exists for beta=2)
@@ -157,6 +162,7 @@ for N=Nvec
     i = i+1;
 end
 
+clf reset
 % Direct method plots:
 % hdLowN = loglog(epvec,errvecd(1,:),'-bx');
 % hdMedN = loglog(epvec,errvecd(2,:),'-g+');
@@ -198,8 +204,8 @@ hpLowNLabel = ['PP Spline (N = ',num2str(Nvec(1)),')'];
 hsLowNLabel = ['Natural Spline (N = ',num2str(Nvec(1)),')'];
 
 ah1 = gca;
-legend(ah1,[hsLowN,hsMedN,hsHighN],'N=12, Spline','N=24, Spline','N=48, Spline',1)
 ah2=axes('position',get(gca,'position'), 'visible','off');
+legend(ah1,[hsLowN,hsMedN,hsHighN],'N=12, Spline','N=24, Spline','N=48, Spline',1)
 legend(ah2,[hqLowN,hqMedN,hqHighN],'N=12, CMatern','N=24, CMatern','N=48, CMatern',2)
 
 % if beta==1 || beta==2
