@@ -59,7 +59,9 @@ else
     maxx = max(x);
     if minx<0
         error('Values for MaternQR must be on [0,L], min(x)=%g',minx)
-    elseif L<=maxx
+    elseif L==maxx
+        warning('Are you SURE you meant to pass x=0 or x=L?')
+    elseif L<maxx
         L = maxx;
         warning('Data passed beyond [0,L] domain, resetting L=%g',L)
     end
