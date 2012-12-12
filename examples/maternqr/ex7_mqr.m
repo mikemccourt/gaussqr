@@ -21,11 +21,12 @@ close all
 %f = @(x) abs(x-1/2).^3-1/8;
 %testfuncN = 2; f = @(x) 10^(testfuncN+1).*(max(0,x-(1/4))).^testfuncN.*(max(0,(3/4)-x)).^testfuncN;
 %f = @(x) sign(max(x-1/2,0));
-f = @(x) exp(-(4*x-1).^2);
+%f = @(x) exp(-(4*x-1).^2);
+HMN = 2; gamval = .0567; CC = 1/(.5-gamval)^2; f = @(x) CC^(HMN).*(max(0,x-gamval)).^HMN.*(max(0,(1-gamval)-x)).^HMN.*exp(-36*(x-0.4).^2);
 
 L = 1;
 
-N = 50;
+N = 24;
 x = pickpoints(0,L,N+2);x = x(2:end-1);
 %x = pickpoints(0,L,N+2,'cheb');x = x(2:end-1);
 y = f(x);
@@ -137,6 +138,7 @@ set(gca,'ZScale','log')
 xlabel('\epsilon')
 ylabel('\beta')
 zlabel('error')
+view([-115,50])
 [i,j]=find(errvec==min(min(errvec)));
 fprintf('True solution: optimal epsilon=%f, optimal beta=%d\n',epvec(i),betavec(j))
 figure, surf(X,Y,halfvec'), title('Leave 1/2 out')
@@ -145,12 +147,16 @@ set(gca,'ZScale','log')
 xlabel('\epsilon')
 ylabel('\beta')
 zlabel('error')
+view([-115,50])
+[i,j]=find(halfvec==min(min(halfvec)));
+fprintf('Half out CV: optimal epsilon=%f, optimal beta=%d\n',epvec(i),betavec(j))
 figure, surf(X,Y,thirdvec'), title('Leave 1/3 out')
 set(gca,'XScale','log')
 set(gca,'ZScale','log')
 xlabel('\epsilon')
 ylabel('\beta')
 zlabel('error')
+view([-115,50])
 [i,j]=find(thirdvec==min(min(thirdvec)));
 fprintf('Third out CV: optimal epsilon=%f, optimal beta=%d\n',epvec(i),betavec(j))
 figure, surf(X,Y,loocvvec'), title('LOOCV')
@@ -159,3 +165,6 @@ set(gca,'ZScale','log')
 xlabel('\epsilon')
 ylabel('\beta')
 zlabel('error')
+view([-115,50])
+[i,j]=find(loocvvec==min(min(loocvvec)));
+fprintf('LOOCV: optimal epsilon=%f, optimal beta=%d\n',epvec(i),betavec(j))

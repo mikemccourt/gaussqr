@@ -6,8 +6,8 @@ global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.ERROR_STYLE = 2;
 
 rbf = @(e,r) exp(-(e*r).^2);
-% f = @(x) sin(2*pi*x);
-f = @(x) 1-x.^2;
+ f = @(x) sin(2*pi*x);
+%f = @(x) 1-x.^2;
 
 N = 24;
 x = pickpoints(-1,1,N);
@@ -75,7 +75,7 @@ end
 % loglog(epvec,THSvec,'g','linewidth',3)
 semilogx(epvec,GQRvec,'r','linewidth',3), hold on
 semilogx(epvec,THSvec,'g','linewidth',3), hold off
-% loglog(epvec,errvec,'linewidth',3), hold off
+%loglog(epvec,errvec,'linewidth',3), hold off
 xlabel('\epsilon')
 ylabel('error')
 legend('MLE GaussQR','MLE Truncated','True solution')
