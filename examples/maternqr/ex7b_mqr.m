@@ -1,5 +1,6 @@
 % Test studying the leave half out cross-validation
-% Uses compact Matern kernels and titanium test data
+% Uses compact Matern kernels and titanium test data from Curve Fitting
+% Toolbox (see "doc titanium" for original reference)
 rbfsetup
 global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.ERROR_STYLE = 2;

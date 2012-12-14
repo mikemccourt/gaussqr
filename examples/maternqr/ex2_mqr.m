@@ -26,7 +26,7 @@ NN = 400;
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 6;
+fopt = 3;
 switch fopt
     case 1
         yf = @(x) sin(2*pi*x/L) + 1;
