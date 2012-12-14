@@ -21,6 +21,7 @@ if(strfind(thisOS,'Windows')>0) % We are in Windows
       dipoleDir = strcat(examplesDir,'\dipole');
         dipolesourceDir = strcat(dipoleDir,'\source');
     otherDir = strcat(thisDir,'\fromothers');
+    bookDir = strcat(thisDir,'\book');
 else % We are in Unix
     sourceDir = strcat(thisDir,'/source');
       gaussqrDir = strcat(sourceDir,'/gaussqr');
@@ -36,8 +37,9 @@ else % We are in Unix
       dipoleDir = strcat(examplesDir,'/dipole');
         dipolesourceDir = strcat(dipoleDir,'/source');
     otherDir = strcat(thisDir,'/fromothers');
+    bookDir = strcat(thisDir,'/book');
 end
-addpath(sourceDir,gaussqrDir,gqrauxiliaryDir,mqrauxiliaryDir,utilitiesDir,otherDir,maternqrDir,gqrexamplesDir,mqrexamplesDir,dipoleDir,testfunctionsDir,dipolesourceDir,1);
+addpath(sourceDir,gaussqrDir,gqrauxiliaryDir,mqrauxiliaryDir,utilitiesDir,otherDir,maternqrDir,gqrexamplesDir,mqrexamplesDir,dipoleDir,testfunctionsDir,dipolesourceDir,bookDir,1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Setup global constants and parameters
