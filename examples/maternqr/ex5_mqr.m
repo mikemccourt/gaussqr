@@ -19,7 +19,7 @@ close all
 % The range of N values to consider
 Nvec = 10:5:100;
 % The orders (smoothness) of the kernel to consider
-betavec = 1:8;
+betavec = 1:6;
 % The kernel shape parameter
 ep = 1;
 % The length of the domain
@@ -41,7 +41,7 @@ lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 % This is the function we are interested in considering
 % Depending on which function consider, it will choose embedding
-fopt = 8;
+fopt = 17;
 %potential optimal beta examples: 3, 5, 8, 12, 15, 16
 switch fopt
     case 1
@@ -201,7 +201,13 @@ switch fopt
         yf = @(x) ppsplinekernel(x,ppsz,ppsL,ppsbeta);
         fstr = char(yf);
         embed = 0;
-        
+    case 27
+        HMN = 14; gamval = .25; CC = 1/(.5-gamval)^2; 
+        yf = @(x) CC^(HMN).*(max(0,x-gamval)).^HMN.*(max(0,(1-gamval)-x)).^HMN;
+    case 28
+        HMN = 14; gamval = .25; CC = 1/(.5-gamval)^2; 
+        yf = @(x) CC^(HMN).*(max(0,x-gamval)).^HMN.*(max(0,(1-gamval)-x)).^HMN.*exp(-36*(x-0.4).^2);
+
     otherwise
         error('This function does not exist')
 end
