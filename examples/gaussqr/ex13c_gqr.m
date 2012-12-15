@@ -20,7 +20,7 @@ Lfs = @(r) -1/(2*pi)*log(r);
 NN = 25;
 GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .8;
 
-bvec = 4:15;
+bvec = 4:12;
 errMFS = [];
 
 m = 1;
