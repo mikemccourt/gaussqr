@@ -21,7 +21,7 @@ for N=Nvec
             c = K_solve\y;
             yp = K_eval*c;
         else % Work with the series form
-            M = N + floor(1/pi*sqrt(eps^(-1/beta)*(pi^2+ep^2)-ep^2));
+            M = ceil(1/pi*sqrt(eps^(-1/beta)*(pi^2+ep^2)-ep^2));
             n = 1:M;
             Lambda = diag(((pi*n).^2+ep^2).^(-beta));
             Phi = phifunc(n,x);
