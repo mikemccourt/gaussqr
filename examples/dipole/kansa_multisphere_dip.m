@@ -33,7 +33,7 @@ close all;
 
 % Medium data
 R = [0.07, 0.1];              % Sphere radii [m]
-sig = [0.2, 0.005];           % Electric conductivities [S/m]
+sig = [0.2, 0.2];           % Electric conductivities [S/m]
 % Sources data
 dipmom = 2.7e-12.*[1, 0, 0];  % Dipole moment [Am]
 srcpnts = [0, 0, 0.6*R(1)];   % Dipole position [m]
@@ -42,8 +42,8 @@ srcpnts = [0, 0, 0.6*R(1)];   % Dipole position [m]
 % Parameters for numerical computation
 radbasfun = 'gaussian';            % Radial basis function
 % Npnts_surf = [800, 1000];             % Number of desired points on sphere's surface
-Npnts_surf = 600;    
-ep = 5;                    % RBFs shape parameter
+Npnts_surf = 300;    
+ep = 50;                    % RBFs shape parameter
 
 % RBF definition and derivatives
 %--------------------------------------------------------------------------
@@ -230,7 +230,7 @@ rms_err_phi = normdiff_phi/neval;
 % subplot(2,2,2)
 % SurfacePlot_dip(evalpnts, tri_evalpnts, phi, 'Computed potential \Phi = \phi_0 + \phi_F')
 % subplot(2,2,3)
-% SurfacePlot_dip(evalpnts, tri_evalpnts, phi0, '\phi_0')
+ SurfacePlot_dip(evalpnts, tri_evalpnts, phi0, '\phi_0')
 % subplot(2,2,4)
 % SurfacePlot_dip(evalpnts, tri_evalpnts, phi_F, '\phi_F')
 

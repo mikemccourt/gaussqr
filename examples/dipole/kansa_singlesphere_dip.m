@@ -40,9 +40,9 @@ srcpnts = [0, 0, 0.6*R];      % Dipole position [m]
 % Magnetic induction field observation points
 % obspnts = ; ...
 % Parameters for numerical computation
-radbasfun = 'imq';            % Radial basis function
+radbasfun = 'gaussian';            % Radial basis function
 Npnts_surf = 300;             % Number of desired points on sphere's surface
-ep = 10.8;                    % RBFs shape parameter
+ep = 50;                    % RBFs shape parameter
 
 
 % RBF definition and derivatives
@@ -65,8 +65,9 @@ bdyctrs = SphereSurfGoldPoints(Npnts_surf, R+0*dist);
 % Centers
 ctrs = [intdata; bdyctrs];
 % Evaluation points
-evalpnts = SphereRegUnifPoints(dist/3, R); % Dist/3 controls the distance 
+%evalpnts = SphereRegUnifPoints(dist/3, R); % Dist/3 controls the distance 
                                            % between evaluation points
+[evalpnts, tri_evalpnts] = SphereSurfUniformPoints(R,3);
 neval = size(evalpnts,1);
 
 % Compute evaluation matrix EM
