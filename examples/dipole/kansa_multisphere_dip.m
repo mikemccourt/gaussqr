@@ -7,9 +7,8 @@ close all;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % Requires:
-%   SphereRegGoldPoints2.m
+%   BallGeometry.m
 %   SphereSurfGoldPoints.m
-%   SphereRegUnifPoints.m
 %   DistanceMatrix.m
 %   DifferenceMatrix.m
 %   gradphiF_dip.m
@@ -24,9 +23,6 @@ close all;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Warning: singularity of analytic potential formula for dipole at origin
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Last modified: 2012/10/17
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 
 % Input data
 %--------------------------------------------------------------------------
@@ -41,8 +37,7 @@ srcpnts = [0, 0, 0.6*R(1)];   % Dipole position [m]
 % obspnts = ; ...
 % Parameters for numerical computation
 radbasfun = 'gaussian';            % Radial basis function
-% Npnts_surf = [800, 1000];             % Number of desired points on sphere's surface
-Npnts_surf = 300;    
+Npnts = 700;    % Number of desired interior points
 ep = 50;                    % RBFs shape parameter
 
 % RBF definition and derivatives
@@ -56,17 +51,18 @@ ep = 50;                    % RBFs shape parameter
 
 
 % Collocation points
-[dsites, Npnts, NV, dist] = SphereRegGoldPoints2(Npnts_surf, R, 'kansa');
-% [dsites, Npnts, NV] = SphereRegGoldPoints3(R, Npnts_surf, 'kansa');
+[POINTS, NORMALS] = BallGeometry(R, Npnts, 'kansa');
+dsites=[POINTS.int1; POINTS.bdy11; POINTS.bdy12; POINTS.int2; POINTS.bdy22];
+NV = [NORMALS.n11; NORMALS.n12; NORMALS.n22];
 
-Na_int = Npnts(1);      % No. of interior points of the innermost layer (A)
-Na_bdy = Npnts(2);      % No. of points on internal interface considered as
-                        % belonging to the innermost layer
-Nb_bdy = Npnts(3);      % No. of points on internal interface considered as
-                        % belonging to the outermost layer
-Nb_int = Npnts(4);      % No. of interior points of the outermost layer (B)
-N0     = Npnts(5);      % No. of points on the external boundary
-Npnts_tot = sum(Npnts,1); % Total no. of points
+Na_int = length(POINTS.int1);       % No. of interior points of the innermost layer (A)
+Na_bdy = length(POINTS.bdy11);      % No. of points on internal interface considered as
+                                    % belonging to the innermost layer
+Nb_bdy = length(POINTS.bdy12);      % No. of points on internal interface considered as
+                                    % belonging to the outermost layer
+Nb_int = length(POINTS.int2);       % No. of interior points of the outermost layer (B)
+N0     = length(POINTS.bdy22);      % No. of points on the external boundary
+Npnts_tot = Na_int + Na_bdy + Nb_bdy + Nb_int + N0; % Total no. of points
 
 a_interior   = 1 : Na_int;
 a_interface  = Na_int + 1 : Na_int + Na_bdy;
