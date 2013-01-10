@@ -6,27 +6,18 @@ clear all
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % Calls on:
-%   SphereRegGoldPoints.m
+%   BallGeometry.m
 %   SphereSurfGoldPoints.m
-%   SphereRegUnifPoints.m
 %   DistanceMatrix.m
 %   DifferenceMatrix.m
-%   InfMediumPotential.m
+%   gradphiF_dip.m
+%   phiF_dip.m
 %   HomSpherePotential.m
-%   HomSphereInduction.m
-%
-% To do:
-%   -- Computation of J vector as -sig*grad(phi).
-%   -- Computation of B (magnitude?normal component?) with Ampere-Laplace
-%      formula.
 %   
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Warning: singularities of analytic potential formula for dipole located
 % at origin
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Last modified: 2012/09/22
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 
 % Input data
 %--------------------------------------------------------------------------
@@ -40,8 +31,8 @@ srcpnts = [0, 0, 0.6*R];      % Dipole position [m]
 % Magnetic induction field observation points
 % obspnts = ; ...
 % Parameters for numerical computation
-radbasfun = 'gaussian';            % Radial basis function
-Npnts_surf = 300;             % Number of desired points on sphere's surface
+radbasfun = 'gaussian';     % Radial basis function
+Npnts = 700;                % Number of desired interior points
 ep = 50;                    % RBFs shape parameter
 
 
@@ -59,11 +50,16 @@ ep = 50;                    % RBFs shape parameter
 %--------------------------------------------------------------------------
 
 % Collocation points
-[bdydata, intdata, dist] = SphereRegGoldPoints(Npnts_surf, R);
-% Boundary centers outside the domain
-bdyctrs = SphereSurfGoldPoints(Npnts_surf, R+0*dist);
+[POINTS, NORMALS] = BallGeometry(R, Npnts, 'kansa');
+intdata = POINTS.int1;
+bdydata = POINTS.bdy11;
+
+% Boundary centers (inside the domain)
+bdyctrs = bdydata;
+
 % Centers
-ctrs = [intdata; bdyctrs];
+ctrs = [intdata; bdydata];
+
 % Evaluation points
 evalpnts = SphereSurfGoldPoints(1000, R);
 neval = size(evalpnts,1);
@@ -82,11 +78,9 @@ dx_bdydata = DifferenceMatrix(bdydata(:,1),ctrs(:,1));
 dy_bdydata = DifferenceMatrix(bdydata(:,2),ctrs(:,2));
 dz_bdydata = DifferenceMatrix(bdydata(:,3),ctrs(:,3));
 
-NV = bdydata/R;   % Unit vectors normal to sphere surface
-
-A = bsxfun(@times,NV(:,1),dxrbf(ep,DM_bdydata,dx_bdydata));
-B = bsxfun(@times,NV(:,2),dyrbf(ep,DM_bdydata,dy_bdydata));
-C = bsxfun(@times,NV(:,3),dzrbf(ep,DM_bdydata,dz_bdydata));
+A = bsxfun(@times,NORMALS.n11(:,1),dxrbf(ep,DM_bdydata,dx_bdydata));
+B = bsxfun(@times,NORMALS.n11(:,2),dyrbf(ep,DM_bdydata,dy_bdydata));
+C = bsxfun(@times,NORMALS.n11(:,3),dzrbf(ep,DM_bdydata,dz_bdydata));
 
 BCM = bsxfun(@plus,A,B);
 BCM = bsxfun(@plus,BCM,C);
@@ -98,7 +92,7 @@ CM = [LCM; BCM];
 gradphi_F = gradphiF_dip(bdydata, srcpnts, dipmom, sig);% Gradient of the 
                                                     % potential at boundary
                                                     % in the unbound case
-rhs = [ zeros(size(intdata,1),1); -sum(NV.*gradphi_F,2) ];
+rhs = [ zeros(size(intdata,1),1); -sum(NORMALS.n11.*gradphi_F,2) ];
 
 
 % Numerical solution for the potential

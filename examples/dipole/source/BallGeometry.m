@@ -1,4 +1,4 @@
-function [ POINTS, NORMALS ] = BallGeometry2( R, Npnts, solvertype )
+function [ POINTS, NORMALS ] = BallGeometry( R, Npnts, solvertype )
 % BALLGEOMETRY creates a distribution of points in a multilayer (N layers)
 % ball.
 % Input data are: spheres radii, desired number of interior points, desired
