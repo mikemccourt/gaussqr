@@ -65,9 +65,7 @@ bdyctrs = SphereSurfGoldPoints(Npnts_surf, R+0*dist);
 % Centers
 ctrs = [intdata; bdyctrs];
 % Evaluation points
-%evalpnts = SphereRegUnifPoints(dist/3, R); % Dist/3 controls the distance 
-                                           % between evaluation points
-[evalpnts, tri_evalpnts] = SphereSurfUniformPoints(R,3);
+evalpnts = SphereSurfGoldPoints(1000, R);
 neval = size(evalpnts,1);
 
 % Compute evaluation matrix EM
@@ -144,4 +142,12 @@ COND = cond(CM)
 
 % Plots
 %--------------------------------------------------------------------------
+% Delaunay triangulation of the sphere
+d_evalpnts = delaunayn(evalpnts);
+tr = TriRep(d_evalpnts, evalpnts);
+tr_surf = freeBoundary(tr);
 
+subplot(1,2,1)
+SurfacePlot_dip(evalpnts, tr_surf, phi_an, 'Analytic potential [V]')
+subplot(1,2,2)
+SurfacePlot_dip(evalpnts, tr_surf, phi, 'Computed potential [V]')

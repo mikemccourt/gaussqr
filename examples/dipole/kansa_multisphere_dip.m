@@ -80,8 +80,7 @@ b_all        = Na_int + Na_bdy + 1 : Npnts_tot;
 ctrs = dsites;
 
 % Evaluation points
-% evalpnts = SphereSurfGoldPoints(Npnts_surf/2, R(size(R,2))); 
-[evalpnts, tri_evalpnts] = SphereSurfUniformPoints(R(2),3);
+evalpnts = SphereSurfGoldPoints(1000, R(length(R))); 
 neval = size(evalpnts,1);
 
 % Compute evaluation matrix EM
@@ -223,19 +222,23 @@ rms_err_phi = normdiff_phi/neval;
 
 % Plots
 %--------------------------------------------------------------------------
+% Delaunay triangulation of the sphere
+d_evalpnts = delaunayn(evalpnts);
+tr = TriRep(d_evalpnts, evalpnts);
+tr_surf = freeBoundary(tr);
 
 % figure('Color',[1 1 1]);
 % subplot(2,2,1)
-% SurfacePlot_dip(evalpnts, tri_evalpnts, phi_an, 'Analytic potential')
+% SurfacePlot_dip(evalpnts, tr_surf, phi_an, 'Analytic potential')
 % subplot(2,2,2)
-% SurfacePlot_dip(evalpnts, tri_evalpnts, phi, 'Computed potential \Phi = \phi_0 + \phi_F')
+% SurfacePlot_dip(evalpnts, tr_surf, phi, 'Computed potential \Phi = \phi_0 + \phi_F')
 % subplot(2,2,3)
- SurfacePlot_dip(evalpnts, tri_evalpnts, phi0, '\phi_0')
+ SurfacePlot_dip(evalpnts, tr_surf, phi0, '\phi_0')
 % subplot(2,2,4)
-% SurfacePlot_dip(evalpnts, tri_evalpnts, phi_F, '\phi_F')
+% SurfacePlot_dip(evalpnts, tr_surf, phi_F, '\phi_F')
 
 % figure('Color',[1 1 1]);
-% SurfacePlot_dip(evalpnts, tri_evalpnts, abs(err./phi_an), 'Relative error')
+% SurfacePlot_dip(evalpnts, tr_surf, abs(err./phi_an), 'Relative error')
 
 
 % figure('Color',[1 1 1]);
