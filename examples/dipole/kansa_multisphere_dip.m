@@ -15,11 +15,6 @@ close all;
 %   phiF_dip.m
 %   MultiSpherePotential.m
 %
-% To do:
-%   -- Computation of J vector as -sig*grad(phi).
-%   -- Computation of B (magnitude?normal component?) with Ampere-Laplace
-%      formula.
-%   
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Warning: singularity of analytic potential formula for dipole at origin
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

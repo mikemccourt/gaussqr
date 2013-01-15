@@ -1,311 +1,96 @@
 clear all
 
-a=0;
-delta_ep = 0.05;
-epsilon = [0.05:delta_ep:20];
+delta_ep = 0.1;
+epsilon = 0.01:delta_ep:50;
+% epsilon = logspace(-2,2,50);
 
-N=size(epsilon,2)
-rms_err_phi = zeros(N,1);
+N=size(epsilon,2);
 rel_err_phi = zeros(N,1);
-max_err_phi = zeros(N,1);
 COND = zeros(N,1);
-
 
 % Medium data
 R = 0.1;                      % Sphere radius [m]
 sig = 0.2;                    % Electric conductivity [S/m]
 % Sources data
-dipmom = 2.7e-12.*[1, 0, 0];         % Dipole moment [Am]
-srcpnts = [0, 0, 0.6*R];  % Dipole position [m]
+dipmom = 2.7e-12.*[1, 0, 0];  % Dipole moment [Am]
+srcpnts = [0, 0, 0.6*R];      % Dipole position [m]
+% Magnetic induction field observation points
+% obspnts = ; ...
 % Parameters for numerical computation
-Npnts_surf = 300;      % Number of desired points on sphere's surface 300
+Npnts = 700;                % Number of desired interior points
+
+rbfset = { 'Gaussian' 'IMQ' 'MQ' 'LinearMatern' ...
+           'Wendland_C2' 'Wendland_C4' 'Wendland_C6' };
+% rbfset = { 'Gaussian' };
 
 % Collocation points
-[bdydata, intdata, dist] = SphereRegGoldPoints(Npnts_surf, R);
-% Boundary centers outside the domain
-bdyctrs = SphereSurfGoldPoints(Npnts_surf, R+a*dist);
+[POINTS, NORMALS] = BallGeometry(R, Npnts, 'kansa');
+intdata = POINTS.int1;
+bdydata = POINTS.bdy11;
+
+Npnts_int = length(intdata);
+Npnts_bdy = length(bdydata);
+
+% Boundary centers (inside the domain)
+bdyctrs = bdydata;
+
 % Centers
-ctrs = [intdata; bdyctrs];
+ctrs = [intdata; bdydata];
+
 % Evaluation points
-evalpnts = SphereRegUnifPoints(dist/3, R); % Dist/3 controls the distance 
-                                           % between evaluation points
+evalpnts = SphereSurfGoldPoints(1000, R);
 neval = size(evalpnts,1);
 
-% Compute known-terms vector (a.k.a. righthand side vector)
-gradphi_F = gradphiF_dip(bdydata, srcpnts, dipmom, sig);% Gradient of the 
-                                                    % potential at boundary
-                                                    % in the unbound case
-NV = bdydata/R; % Unit vectors normal to sphere surface
-rhs = [ zeros(size(intdata,1),1); -sum(NV.*gradphi_F,2) ];
-
-% Potential at evalpnts in the unbound domain case
-phi_F = phiF_dip(evalpnts,srcpnts,dipmom,sig);
-%  Analytic solution for the potential
-phi_an = HomSpherePotential(R, sig, srcpnts, dipmom, evalpnts);
-
+% Compute evaluation matrix EM
 DM_eval = DistanceMatrix(evalpnts, ctrs);
+
+% Compute blocks for collocation matrix
+% Interior points
 DM_intdata = DistanceMatrix(intdata,ctrs);
+
+% Boundary points
 DM_bdydata = DistanceMatrix(bdydata,ctrs);
 dx_bdydata = DifferenceMatrix(bdydata(:,1),ctrs(:,1));
 dy_bdydata = DifferenceMatrix(bdydata(:,2),ctrs(:,2));
 dz_bdydata = DifferenceMatrix(bdydata(:,3),ctrs(:,3));
 
-% %% IMQ, bdycenters on the boundary, 300 pnts on surface
-% [rbf, dxrbf, dyrbf, dzrbf, Lrbf] = pickRBF('imq');
-% for i=1:N
-%     [rms_err_phi(i,1), rel_err_phi(i,1), max_err_phi(i,1), COND(i) ] = epskansa(epsilon(i), NV, rhs, DM_eval, DM_intdata, DM_bdydata, dx_bdydata, dy_bdydata, dz_bdydata, phi_F, phi_an, rbf, dxrbf, dyrbf, dzrbf, Lrbf, neval);
-%     i
-% end
-% 
-% figure('Name','IMQ, 300 pnts on surface');
-% 
-% subplot(2,2,1)
-% plot(epsilon, rel_err_phi);
-% set(gca,'Yscale','log');
-% xlabel('\epsilon');
-% ylabel('Relative Error');
-% 
-% subplot(2,2,2)
-% plot(epsilon, rms_err_phi);
-% set(gca,'Yscale','log');
-% xlabel('\epsilon');
-% ylabel('RMS Error');
-% 
-% subplot(2,2,3)
-% plot(epsilon, max_err_phi);
-% set(gca,'Yscale','log');
-% xlabel('\epsilon');
-% ylabel('Max Error');
-% 
-% subplot(2,2,4)
-% plot(epsilon, COND);
-% set(gca,'Yscale','log');
-% xlabel('\epsilon');
-% ylabel('cond(CM)');
-% 
-% save('IMQ_300pnts')
-% 
-% 
-% %% Gaussian, bdycenters on the boundary, 300 pnts on surface
-% 
-% [rbf, dxrbf, dyrbf, dzrbf, Lrbf] = pickRBF('gaussian');
-% 
-% for i=1:N
-%     [rms_err_phi(i,1), rel_err_phi(i,1), max_err_phi(i,1), COND(i) ] = epskansa(epsilon(i), NV, rhs, DM_eval, DM_intdata, DM_bdydata, dx_bdydata, dy_bdydata, dz_bdydata, phi_F, phi_an, rbf, dxrbf, dyrbf, dzrbf, Lrbf, neval);
-%     i
-% end
-% 
-% figure('Name','Gaussian, 300 pnts on surface');
-% 
-% subplot(2,2,1)
-% plot(epsilon, rel_err_phi);
-% set(gca,'Yscale','log');
-% xlabel('\epsilon');
-% ylabel('Relative Error');
-% 
-% subplot(2,2,2)
-% plot(epsilon, rms_err_phi);
-% set(gca,'Yscale','log');
-% xlabel('\epsilon');
-% ylabel('RMS Error');
-% 
-% subplot(2,2,3)
-% plot(epsilon, max_err_phi);
-% set(gca,'Yscale','log');
-% xlabel('\epsilon');
-% ylabel('Max Error');
-% 
-% subplot(2,2,4)
-% plot(epsilon, COND);
-% set(gca,'Yscale','log');
-% xlabel('\epsilon');
-% ylabel('cond(CM)');
-% 
-% save('Gaussian_300pnts')
-% 
-% %% Matern linear, bdycenters on the boundary, 300 pnts on surface
-% 
-% [rbf, dxrbf, dyrbf, dzrbf, Lrbf] = pickRBF('linearmatern');
-% 
-% for i=1:N
-%     [rms_err_phi(i,1), rel_err_phi(i,1), max_err_phi(i,1), COND(i) ] = epskansa(epsilon(i), NV, rhs, DM_eval, DM_intdata, DM_bdydata, dx_bdydata, dy_bdydata, dz_bdydata, phi_F, phi_an, rbf, dxrbf, dyrbf, dzrbf, Lrbf, neval);
-%     i
-% end
-% 
-% figure('Name','Matern (linear), 300 pnts on surface');
-% 
-% subplot(2,2,1)
-% plot(epsilon, rel_err_phi);
-% set(gca,'Yscale','log');
-% xlabel('\epsilon');
-% ylabel('Relative Error');
-% 
-% subplot(2,2,2)
-% plot(epsilon, rms_err_phi);
-% set(gca,'Yscale','log');
-% xlabel('\epsilon');
-% ylabel('RMS Error');
-% 
-% subplot(2,2,3)
-% plot(epsilon, max_err_phi);
-% set(gca,'Yscale','log');
-% xlabel('\epsilon');
-% ylabel('Max Error');
-% 
-% subplot(2,2,4)
-% plot(epsilon, COND);
-% set(gca,'Yscale','log');
-% xlabel('\epsilon');
-% ylabel('cond(CM)');
-% 
-% save('maternlin_300pnts')
-% 
-% 
-% %% MQ, bdycenters on the boundary, 300 pnts on surface
-% 
-% [rbf, dxrbf, dyrbf, dzrbf, Lrbf] = pickRBF('mq');
-% 
-% for i=1:N
-%     [rms_err_phi(i,1), rel_err_phi(i,1), max_err_phi(i,1), COND(i) ] = epskansa(epsilon(i), NV, rhs, DM_eval, DM_intdata, DM_bdydata, dx_bdydata, dy_bdydata, dz_bdydata, phi_F, phi_an, rbf, dxrbf, dyrbf, dzrbf, Lrbf, neval);
-%     i
-% end
-% 
-% figure('Name','MQ, 300 pnts on surface');
-% 
-% subplot(2,2,1)
-% plot(epsilon, rel_err_phi);
-% set(gca,'Yscale','log');
-% xlabel('\epsilon');
-% ylabel('Relative Error');
-% 
-% subplot(2,2,2)
-% plot(epsilon, rms_err_phi);
-% set(gca,'Yscale','log');
-% xlabel('\epsilon');
-% ylabel('RMS Error');
-% 
-% subplot(2,2,3)
-% plot(epsilon, max_err_phi);
-% set(gca,'Yscale','log');
-% xlabel('\epsilon');
-% ylabel('Max Error');
-% 
-% subplot(2,2,4)
-% plot(epsilon, COND);
-% set(gca,'Yscale','log');
-% xlabel('\epsilon');
-% ylabel('cond(CM)');
-% 
-% save('MQ_300pnts')
+% Potential at evalpnts in the unbound domain case
+phi_F = phiF_dip(evalpnts,srcpnts,dipmom,sig);
 
-%% Wendland C2, bdycenters on the boundary, 300 pnts on surface
+phi_an = HomSpherePotential(R, sig, srcpnts, dipmom, evalpnts);
 
-[rbf, dxrbf, dyrbf, dzrbf, Lrbf] = pickRBF('wendland_c2');
+% Compute known-terms vector (a.k.a. righthand side vector)
+gradphi_F = gradphiF_dip(bdydata, srcpnts, dipmom, sig);% Gradient of the 
+                                                    % potential at boundary
+                                                    % in the unbound case
+rhs = [ zeros(size(intdata,1),1); -sum(NORMALS.n11.*gradphi_F,2) ];
+
+
+for j = 1:length(rbfset)
+[rbf, dxrbf, dyrbf, dzrbf, Lrbf] = pickRBF(rbfset{j});
 
 for i=1:N
-    [rms_err_phi(i,1), rel_err_phi(i,1), max_err_phi(i,1), COND(i) ] = epskansa(epsilon(i), NV, rhs, DM_eval, DM_intdata, DM_bdydata, dx_bdydata, dy_bdydata, dz_bdydata, phi_F, phi_an, rbf, dxrbf, dyrbf, dzrbf, Lrbf, neval);
-    i
+    [rel_err_phi(i,1), COND(i) ] = ...
+        epskansa_dip(epsilon(i), NORMALS, rhs, DM_eval, DM_intdata, DM_bdydata, ...
+                 dx_bdydata, dy_bdydata, dz_bdydata, phi_F, phi_an, ...
+                 rbf, dxrbf, dyrbf, dzrbf, Lrbf);
+    fprintf('%1s RBF, epsilon %4u out of %4u\n', rbfset{j}, i, N)
 end
 
-figure('Name','Wendland C2, 300 pnts on surface');
-
-subplot(2,2,1)
-plot(epsilon, rel_err_phi);
-set(gca,'Yscale','log');
+h = figure('Name', strcat(rbfset{j}, ' RBF, ', ...
+                          num2str(Npnts_int), ' interior points, ', ...
+                          num2str(Npnts_bdy), ' boundary points'));
+subplot(2,1,1)
+loglog(epsilon, rel_err_phi);
 xlabel('\epsilon');
 ylabel('Relative Error');
-
-subplot(2,2,2)
-plot(epsilon, rms_err_phi);
-set(gca,'Yscale','log');
-xlabel('\epsilon');
-ylabel('RMS Error');
-
-subplot(2,2,3)
-plot(epsilon, max_err_phi);
-set(gca,'Yscale','log');
-xlabel('\epsilon');
-ylabel('Max Error');
-
-subplot(2,2,4)
-plot(epsilon, COND);
-set(gca,'Yscale','log');
+subplot(2,1,2)
+loglog(epsilon, COND);
 xlabel('\epsilon');
 ylabel('cond(CM)');
 
-save('WC2_300pnts')
+filename = strcat(rbfset{j},'_',num2str(Npnts_int),'int_',num2str(Npnts_bdy),'bdy');
+saveas(h, filename,'fig')
+save(filename, 'rel_err_phi', 'COND', 'epsilon')
 
-%% Wendland C4, bdycenters on the boundary, 300 pnts on surface
-
-[rbf, dxrbf, dyrbf, dzrbf, Lrbf] = pickRBF('wendland_c4');
-
-for i=1:N
-    [rms_err_phi(i,1), rel_err_phi(i,1), max_err_phi(i,1), COND(i) ] = epskansa(epsilon(i), NV, rhs, DM_eval, DM_intdata, DM_bdydata, dx_bdydata, dy_bdydata, dz_bdydata, phi_F, phi_an, rbf, dxrbf, dyrbf, dzrbf, Lrbf, neval);
-    i
 end
-
-figure('Name','Wendland C4, 300 pnts on surface');
-
-subplot(2,2,1)
-plot(epsilon, rel_err_phi);
-set(gca,'Yscale','log');
-xlabel('\epsilon');
-ylabel('Relative Error');
-
-subplot(2,2,2)
-plot(epsilon, rms_err_phi);
-set(gca,'Yscale','log');
-xlabel('\epsilon');
-ylabel('RMS Error');
-
-subplot(2,2,3)
-plot(epsilon, max_err_phi);
-set(gca,'Yscale','log');
-xlabel('\epsilon');
-ylabel('Max Error');
-
-subplot(2,2,4)
-plot(epsilon, COND);
-set(gca,'Yscale','log');
-xlabel('\epsilon');
-ylabel('cond(CM)');
-
-save('WC4_300pnts')
-
-
-%% Wendland C6, bdycenters on the boundary, 300 pnts on surface
-
-[rbf, dxrbf, dyrbf, dzrbf, Lrbf] = pickRBF('wendland_c6');
-
-for i=1:N
-    [rms_err_phi(i,1), rel_err_phi(i,1), max_err_phi(i,1), COND(i) ] = epskansa(epsilon(i), NV, rhs, DM_eval, DM_intdata, DM_bdydata, dx_bdydata, dy_bdydata, dz_bdydata, phi_F, phi_an, rbf, dxrbf, dyrbf, dzrbf, Lrbf, neval);
-    i
-end
-
-figure('Name','Wendland C6, 300 pnts on surface');
-
-subplot(2,2,1)
-plot(epsilon, rel_err_phi);
-set(gca,'Yscale','log');
-xlabel('\epsilon');
-ylabel('Relative Error');
-
-subplot(2,2,2)
-plot(epsilon, rms_err_phi);
-set(gca,'Yscale','log');
-xlabel('\epsilon');
-ylabel('RMS Error');
-
-subplot(2,2,3)
-plot(epsilon, max_err_phi);
-set(gca,'Yscale','log');
-xlabel('\epsilon');
-ylabel('Max Error');
-
-subplot(2,2,4)
-plot(epsilon, COND);
-set(gca,'Yscale','log');
-xlabel('\epsilon');
-ylabel('cond(CM)');
-
-save('WC6_300pnts')
