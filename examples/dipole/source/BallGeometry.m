@@ -1,4 +1,4 @@
-function [ POINTS, NORMALS ] = BallGeometry( R, Npnts, solvertype )
+function [ POINTS, NORMALS ] = BallGeometry( R, Npnts, solvertype, ptstype )
 % BALLGEOMETRY creates a distribution of points in a multilayer (N layers)
 % ball.
 % Input data are: spheres radii, desired number of interior points, desired
@@ -28,6 +28,10 @@ function [ POINTS, NORMALS ] = BallGeometry( R, Npnts, solvertype )
 %                            Fundamental Solutions
 %                   If 'mfs' is selected, only boundary data will be 
 %                   provided as output.
+%
+% ptstype       =   'even'   Points uniformly distributed in the cube
+%                   'halton' Points should have a Halton distribution
+%                   the default choice is 'halton'
 %
 % Outputs:
 % POINTS        =   data structure containing points' coordinates as
@@ -68,12 +72,36 @@ if iscolumn(R)
     R = R';
 end
 
+% Run checks to make sure that the point distribution is okay
+if nargin==3
+    ptstype = 'halton';
+else
+    if ischar(ptstype)
+        if ~(strcmp(ptstype,'even') || strcmp(ptstype,'halton'))
+            warning('ptstype=%s unacceptable, defaulting to halton',ptstype)
+            ptstype = 'halton';
+        end
+    else
+        warning('ptstype=%g unacceptable, defaulting to halton',ptstype)
+        ptstype = 'halton';
+    end
+end
+
 switch lower(solvertype)
     case 'kansa'
-        Rest = R(length(R));
+        Rest = R(end);
         d = 2*Rest / ( 6/pi * Npnts(1) )^(1/3);
-        x = -Rest:d:Rest;
-        [x, y, z] = meshgrid(x, x, x);
+        if strcmp(ptstype,'even')
+            x = -Rest:d:Rest;
+            [x, y, z] = meshgrid(x, x, x);
+        elseif strcmp(ptstype,'halton')
+            ptsvec = Rest*(2*haltonseq(ceil(6/pi*Npnts(1)),3)-1);
+            x = ptsvec(:,1);
+            y = ptsvec(:,2);
+            z = ptsvec(:,3);
+        else
+            error('Unknown point distribution style')
+        end
         R = [0 R];
         ll = 0;
         for l = 1:N
