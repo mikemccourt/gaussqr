@@ -15,7 +15,14 @@
 % explicitly, i.e.  
 %         (x1 - x2)^2 = x1.^2 + x2.^2 - 2*x1*x2;
 % Should be faster
-  T1 = sum(dsites.*dsites,2);
-  T2 = -2*dsites*ctrs';
-  T3 = (sum(ctrs.*ctrs,2))';
-  DM = sqrt(T1(:,ones(N,1)) + T2 + T3(ones(M,1),:));
+
+  % Allow user to pass [] and get back []
+  % In case no points fit some condition which is considered
+  if (length(dsites)==0 || length(ctrs)==0)
+      DM = [];
+  else % Otherwise, compute distance matrix
+      T1 = sum(dsites.*dsites,2);
+      T2 = -2*dsites*ctrs';
+      T3 = (sum(ctrs.*ctrs,2))';
+      DM = sqrt(T1(:,ones(N,1)) + T2 + T3(ones(M,1),:));
+  end

@@ -1,4 +1,9 @@
 function [rbf, dxrbf, dyrbf, dzrbf, Lrbf] = pickRBF(type)
+% At the moment, this function is only appropriate for 3D problems.  We'l
+% make it more general eventually.
+%
+% We also need to fix this to throw an error if the user tries to call it
+% with too many derivatives
 % 
 % Input:
 % type   = function type (string: gaussian, imq, mq, linearmatern,

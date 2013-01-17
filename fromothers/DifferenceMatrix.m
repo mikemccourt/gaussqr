@@ -10,5 +10,11 @@
   %       (each containing the M data sites)
   %   cc, consisting of M identical rows
   %       (each containing the N centers)
-  [dr,cc] = ndgrid(datacoord(:),centercoord(:));
-  DM = dr-cc;
+  
+  % Test to allow for user to pass [] and return []
+  if (length(datacoord)==0 || length(centercoord)==0)
+      DM = [];
+  else
+      [dr,cc] = ndgrid(datacoord(:),centercoord(:));
+      DM = dr-cc;
+  end
