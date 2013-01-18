@@ -34,7 +34,7 @@ for i = 1:M
              srcpnts(j,1)*dipmom(j,3) - srcpnts(j,3)*dipmom(j,1), ...
              srcpnts(j,2)*dipmom(j,1) - srcpnts(j,1)*dipmom(j,2)];
         e = d*obspnts(i,:)';
-        B(i) = B(i) + (F*d-e*DF)/F2;
+        B(i,:) = B(i,:) + (F*d-e*DF)/F2;
     end
 end
 B = 1e-07*B;
