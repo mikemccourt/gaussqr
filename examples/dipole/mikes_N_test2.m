@@ -41,7 +41,7 @@ srcpnts = [0, 0, 0.6*R];      % Dipole position [m]
 % Parameters for numerical computation
 radbasfun = 'imq';     % Radial basis function
 Nvec = 100:100:2200;                % Number of desired interior points
-ep = 20;                % RBF shape parameter
+ep = 10;                % RBF shape parameter
 
 % This is a value you can set to prevent points from being too close to the
 % dipoles, which would cause weirdness in the answer
@@ -50,7 +50,7 @@ ep = 20;                % RBF shape parameter
 dipole_cushion = .003;
 
 % What boundary conditions do we consider
-BC_choice = 3;          % 1 - neumann, 2 - dirichlet, 3 - mixed
+BC_choice = 1;          % 1 - neumann, 2 - dirichlet, 3 - mixed
 % If we want mixed BC, what is the max (likely) number of dirichlet points
 N_dir_suggested = 12;
 
