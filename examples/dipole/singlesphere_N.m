@@ -51,6 +51,9 @@
 %                 distribution in a sphere is tricky
 %     errvec - Errors computed at Nvec_true
 %     condvec - Collocation matrix condition numbers at Nvec_true
+%
+%  Note that if MFS with fewer centers than collocation points is chosen,
+%  condition doesn't make sense (rectangular, not square, system)
 
 R = 0.1;
 sig = 0.2;

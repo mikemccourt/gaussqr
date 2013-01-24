@@ -1,4 +1,10 @@
-function [ POINTS, NORMALS ] = BallGeometry( R, Npnts, solvertype, ptstype )
+function [ POINTS, NORMALS ] = BallGeometry( R, ...
+                                             Npnts, ...
+                                             solvertype, ...
+                                             ptstype , ...
+                                             avoidpts, ...
+                                             avoidcushion)
+% function [POINTS,NORMALS] = BallGeometry(R,Npnts,solvertype,ptstype,avoidpts,avoidcushion)
 % BALLGEOMETRY creates a distribution of points in a multilayer (N layers)
 % ball.
 % Input data are: spheres radii, desired number of interior points, desired
@@ -31,7 +37,22 @@ function [ POINTS, NORMALS ] = BallGeometry( R, Npnts, solvertype, ptstype )
 %
 % ptstype       =   'even'   Points uniformly distributed in the cube
 %                   'halton' Points should have a Halton distribution
-%                   the default choice is 'halton'
+%                   'random' Points are uniform randomly chosen
+%                   ** the default choice is 'halton', which can be
+%                   selected by passing []
+%
+% avoidpts      =   Vector of points that there should be no points in the
+%                   BallGeometry touching
+%                   pass [] to include no such points
+%
+% avoidcushion  =   Size of the ball around the avoidpts which no points in
+%                   the BallGeometry will be inside.
+%                   This value can be as small as you would like, but the
+%                   maximum allowable size is R, since that could negate
+%                   the whole sphere.
+%                   ** the default choice is R/30, which can be selected by
+%                   passing []
+%                   
 %
 % Outputs:
 % POINTS        =   data structure containing points' coordinates as
@@ -57,9 +78,12 @@ function [ POINTS, NORMALS ] = BallGeometry( R, Npnts, solvertype, ptstype )
 %
 % Required functions: 
 %   SphereSurfGoldPoints.m
+%
+% To do list: Consider a Chebyshev points distribution
 
 N = length(R); % Number of layers
 lNpnts = length(Npnts);
+
 
 % Check input data
 if not(isvector(R)) || not(isvector(Npnts)) || not(ischar(solvertype))
@@ -68,34 +92,76 @@ end
 if N ~= 1 && not(issorted(R))
     error('R must be sorted in ascending order')
 end
-if iscolumn(R)
-    R = R';
+if any(Npnts<=0) || any(R<=0)
+    error('All radii and point requests must be positive')
 end
+R = R(:)'; % Make sure it's a row vector
+
+Rend = R(end);
+ptstype_DEFAULT = 'halton';
+avoidcushion_DEFAULT = Rend/30;
 
 % Run checks to make sure that the point distribution is okay
 if nargin==3
-    ptstype = 'halton';
+    ptstype = ptstype_DEFAULT;
+elseif isempty(ptstype)
+    ptstype = ptstype_DEFAULT;
 else
     if ischar(ptstype)
-        if ~(strcmp(ptstype,'even') || strcmp(ptstype,'halton'))
-            warning('ptstype=%s unacceptable, defaulting to halton',ptstype)
-            ptstype = 'halton';
+        if ~(strcmp(ptstype,'even') || strcmp(ptstype,'halton') || strcmp(ptstype,'random'))
+            warning('ptstype=%s unacceptable, defaulting to %s',ptstype,ptstype_DEFAULT)
+            ptstype = ptstype_DEFAULT;
         end
     else
-        warning('ptstype=%g unacceptable, defaulting to halton',ptstype)
-        ptstype = 'halton';
+        warning('ptstype=%g unacceptable, defaulting to %s',ptstype,ptstype_DEFAULT)
+        ptstype = ptstype_DEFAULT;
     end
 end
 
+% Run checks to make sure the avoidance values are acceptable
+if nargin<5
+    avoidpts = [];
+else
+    if ~isempty(avoidpts)
+        avoid_dim = size(avoidpts,2);
+        if avoid_dim~=3
+            error('Cushion points must be 3D, size(avoidpts,2)=%d',avoid_dim)
+        end
+        if sum(any(real(avoidpts)~=avoidpts))~=0
+            error('Some cushion points are complex ... come on')
+        elseif sum(any(sqrt(sum(avoidpts.^2,2))>Rend))~=0
+            warning('Some of the cushion points are outside the ball')
+        end
+        avoid_on = 1;
+        
+        if not(exist('avoidcushion','var'))
+            avoidcushion = avoidcusion_DEFAULT;
+        else
+            if abs(avoidcushion)~=avoidcushion || avoidcushion==0
+                warning('Cushion = %g unacceptable, reverting to %g',avoidcushion,avoidcushion_DEFAULT)
+                avoidcushion = avoidcusion_DEFAULT;
+            elseif avoidcushion>Rend
+                warning('Cushion = %g too large, reverting to %g',avoidcushion,avoidcushion_DEFAULT)
+                avoidcushion = avoidcusion_DEFAULT;
+            end
+        end
+    end
+end
+
+% Actually determine the point distribution in and on the ball
 switch lower(solvertype)
     case 'kansa'
-        Rest = R(end);
-        d = 2*Rest / ( 6/pi * Npnts(1) )^(1/3);
+        d = 2*Rend / ( 6/pi * Npnts(1) )^(1/3);
         if strcmp(ptstype,'even')
-            x = -Rest:d:Rest;
-            [x, y, z] = meshgrid(x, x, x);
+            x = -Rend:d:Rend;
+            [x, y, z] = meshgrid(x);
         elseif strcmp(ptstype,'halton')
-            ptsvec = Rest*(2*haltonseq(ceil(6/pi*Npnts(1)),3)-1);
+            ptsvec = Rend*(2*haltonseq(ceil(6/pi*Npnts(1)),3)-1);
+            x = ptsvec(:,1);
+            y = ptsvec(:,2);
+            z = ptsvec(:,3);
+        elseif strcmp(ptstype,'random')
+            ptsvec = Rend*(2*rand(ceil(6/pi*Npnts(1)),3)-1);
             x = ptsvec(:,1);
             y = ptsvec(:,2);
             z = ptsvec(:,3);
@@ -171,4 +237,7 @@ switch lower(solvertype)
     otherwise
         error('Method not recognized: check the input string')
 end
+
+% Enforce the avoidance condition
+
 end
