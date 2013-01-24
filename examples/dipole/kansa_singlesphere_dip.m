@@ -1,5 +1,3 @@
-clear all
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %           MEG meshfree forward solver for a single sphere model
 %                            - Kansa's method -
@@ -136,12 +134,9 @@ COND = cond(CM)
 
 % Plots
 %--------------------------------------------------------------------------
-% Delaunay triangulation of the sphere
-d_evalpnts = delaunayn(evalpnts);
-tr = TriRep(d_evalpnts, evalpnts);
-tr_surf = freeBoundary(tr);
-
 subplot(1,2,1)
-SurfacePlot_dip(evalpnts, tr_surf, phi_an, 'Analytic potential [V]')
+SurfacePlot_dip(evalpnts, phi_an)
+title('Analytic potential [V]')
 subplot(1,2,2)
-SurfacePlot_dip(evalpnts, tr_surf, phi, 'Computed potential [V]')
+SurfacePlot_dip(evalpnts, phi)
+title('Computed potential [V]')
