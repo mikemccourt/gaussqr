@@ -147,10 +147,13 @@ switch lower(solvertype)
         for l = 1:N
             lstring = num2str(l);
             lstring1 = num2str(l+1);
+            name_int = strcat('int', lstring);
             name_bdy = strcat('bdy', lstring, lstring);
             name_bdy1 = strcat('bdy', lstring, lstring1);
             name_normals = strcat('n', lstring, lstring);
             name_normals1 = strcat('n', lstring, lstring1);
+            % Interior points are not relevant
+            POINTS.(name_int) = [];
             % Boundary points only
             POINTS.(name_bdy) = SphereSurfGoldPoints(Npnts(l), R(l));
             if l == N

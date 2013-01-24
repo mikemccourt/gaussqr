@@ -14,8 +14,15 @@
 %  of different RBFs and different epsilon values.
 %
 %  The solution parameters to be considered are
+%     sol_type - How you want to solve the system <default = 'kansa'>
+%                'kansa' : Nonsymmetric collocation
+%                          rbf_choice and ep must also be chosen
+%                'mfs' : Method of fundamental solutions
+%                        MFS_frac and ctr_sphere must also be chosen
 %     rbf_choice - RBF for collocation <default = 'imq'>
 %     ep - RBF shape parameter <default = 10>
+%     mfs_frac - How many centers for MFS, in [0.0,1.0]*N <default = 1.0>
+%     mfs_sphere - Fraction beyond R (eg, 1.3R) for centers <default = 1.3>
 %     BC_choice - How to choose the boundary conditions <default = 1>
 %                 1 : Neumann
 %                 2 : Dirichlet
@@ -50,9 +57,12 @@ sig = 0.2;
 dipmom = 2.7e-12.*[1, 0, 0];
 srcpnts = [0, 0, 0.6*R];
 
+sol_type = 'mfs';
 radbasfun = 'imq';
 ep = 11;
-BC_choice = 3;
+mfs_frac = 1.0;
+mfs_sphere = 1.3;
+BC_choice = 1;
 eval_diff = 1;
 
 Nvec = 100:100:2200;
@@ -87,7 +97,11 @@ rng(0);
 % This is the start of the solver
 
 % RBF definition and derivatives
-[rbf, dxrbf, dyrbf, dzrbf, Lrbf] = pickRBF(radbasfun);
+if strcmp(sol_type,'kansa')
+    [rbf, dxrbf, dyrbf, dzrbf, Lrbf] = pickRBF(radbasfun);
+else
+    [rbf, dxrbf, dyrbf, dzrbf, Lrbf] = pickRBF('fundamental_3d');
+end
 
 % Determine the evaluation points (all on the boundary)
 evalpnts = SphereSurfGoldPoints(N_eval, R);
@@ -118,14 +132,19 @@ for Npnts = Nvec
     end
     
     % Determine collocation points
-    [POINTS, NORMALS] = BallGeometry(R, Npnts, 'kansa');
+    [POINTS, NORMALS] = BallGeometry(R, Npnts, sol_type);
     intdata = POINTS.int1;
     bdydata = POINTS.bdy11;
     N_int = size(intdata,1);
     N_bdy = size(bdydata,1);
     
     % Compose a vector of all the RBF centers
-    ctrs = [intdata; bdydata];
+    % In the MFS setting, these are chosen in a sphere around the ball
+    if strcmp(sol_type,'mfs')
+        ctrs = SphereSurfGoldPoints(floor(mfs_frac*Npnts), mfs_sphere*R);
+    else % For kansa, the centers and collocation points coincide
+        ctrs = [intdata; bdydata];
+    end
     
     
     % Compute the collocation block for the interior
