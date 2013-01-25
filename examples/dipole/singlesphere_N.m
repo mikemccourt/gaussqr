@@ -60,7 +60,7 @@ sig = 0.2;
 dipmom = 2.7e-12.*[1, 0, 0];
 srcpnts = [0, 0, 0.6*R];
 
-sol_type = 'mfs';
+sol_type = 'kansa';
 radbasfun = 'imq';
 ep = 11;
 mfs_frac = 1.0;
@@ -135,7 +135,7 @@ for Npnts = Nvec
     end
     
     % Determine collocation points
-    [POINTS, NORMALS] = BallGeometry(R, Npnts, sol_type);
+    [POINTS, NORMALS] = BallGeometry(R,Npnts,sol_type,[],dipmom);
     intdata = POINTS.int1;
     bdydata = POINTS.bdy11;
     N_int = size(intdata,1);

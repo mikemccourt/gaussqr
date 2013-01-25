@@ -50,7 +50,7 @@ function [ POINTS, NORMALS ] = BallGeometry( R, ...
 %                   This value can be as small as you would like, but the
 %                   maximum allowable size is R, since that could negate
 %                   the whole sphere.
-%                   ** the default choice is R/30, which can be selected by
+%                   ** the default choice is R/5, which can be selected by
 %                   passing []
 %                   
 %
@@ -99,7 +99,7 @@ R = R(:)'; % Make sure it's a row vector
 
 Rend = R(end);
 ptstype_DEFAULT = 'halton';
-avoidcushion_DEFAULT = Rend/30;
+avoidcushion_DEFAULT = Rend/5;
 
 % Run checks to make sure that the point distribution is okay
 if nargin==3
@@ -119,6 +119,7 @@ else
 end
 
 % Run checks to make sure the avoidance values are acceptable
+avoid_on = 0;
 if nargin<5
     avoidpts = [];
 else
@@ -135,12 +136,12 @@ else
         avoid_on = 1;
         
         if not(exist('avoidcushion','var'))
-            avoidcushion = avoidcusion_DEFAULT;
+            avoidcushion = avoidcushion_DEFAULT;
         else
             if abs(avoidcushion)~=avoidcushion || avoidcushion==0
                 warning('Cushion = %g unacceptable, reverting to %g',avoidcushion,avoidcushion_DEFAULT)
                 avoidcushion = avoidcusion_DEFAULT;
-            elseif avoidcushion>Rend
+            elseif avoidcushion>=Rend
                 warning('Cushion = %g too large, reverting to %g',avoidcushion,avoidcushion_DEFAULT)
                 avoidcushion = avoidcusion_DEFAULT;
             end
@@ -155,22 +156,27 @@ switch lower(solvertype)
         if strcmp(ptstype,'even')
             x = -Rend:d:Rend;
             [x, y, z] = meshgrid(x);
+            ptsvec = [x(:),y(:),z(:)];
         elseif strcmp(ptstype,'halton')
             ptsvec = Rend*(2*haltonseq(ceil(6/pi*Npnts(1)),3)-1);
-            x = ptsvec(:,1);
-            y = ptsvec(:,2);
-            z = ptsvec(:,3);
         elseif strcmp(ptstype,'random')
             ptsvec = Rend*(2*rand(ceil(6/pi*Npnts(1)),3)-1);
-            x = ptsvec(:,1);
-            y = ptsvec(:,2);
-            z = ptsvec(:,3);
         else
             error('Unknown point distribution style')
         end
         R = [0 R];
         ll = 0;
+        
+        % Remove the points in the avoidance areas
+        if avoid_on
+            avoid_DM = DistanceMatrix(ptsvec,avoidpts);
+            keep_ind = logical(sum(avoid_DM>avoidcushion,2));
+            ptsvec = ptsvec(keep_ind,:);
+        end
+            
+        int_DM = DistanceMatrix(ptsvec,[0,0,0]);
         for l = 1:N
+            % Design necessary strings for final object
             lstring = num2str(l);
             lstring1 = num2str(l+1);
             name_int = strcat('int', lstring);
@@ -178,14 +184,11 @@ switch lower(solvertype)
             name_bdy1 = strcat('bdy', lstring, lstring1);
             name_normals = strcat('n', lstring, lstring);
             name_normals1 = strcat('n', lstring, lstring1);
+            
             % Interior points
-            ind = find( (x(:).^2 + y(:).^2 + z(:).^2) < R(l+1)^2 & ...
-                        (x(:).^2 + y(:).^2 + z(:).^2) > R(l)^2);
-            n = length(ind);
-            POINTS.(name_int) = zeros(n,3);
-            for j = 1:n
-                POINTS.(name_int)(j,:) = [x(ind(j)) y(ind(j)) z(ind(j))];
-            end
+            ind = logical( int_DM < R(l+1) & int_DM > R(l));
+            POINTS.(name_int) = ptsvec(ind,:);
+            
             % Boundary points
             if lNpnts == 1
                 ll = ll + length(POINTS.(name_int));
@@ -237,7 +240,5 @@ switch lower(solvertype)
     otherwise
         error('Method not recognized: check the input string')
 end
-
-% Enforce the avoidance condition
 
 end
