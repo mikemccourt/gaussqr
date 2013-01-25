@@ -55,7 +55,7 @@ srcpnts = [0, 0, 0.6*R];
 rbfset = { 'Gaussian' 'IMQ' 'MQ' 'LinearMatern' ...
            'Wendland_C2' 'Wendland_C4' 'Wendland_C6' };
 epvec = logspace(0,2,100);
-BC_choice = 3;
+BC_choice = 1;
 eval_diff = 1;
 
 Npnts = 500;
