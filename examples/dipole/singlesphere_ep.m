@@ -14,8 +14,8 @@
 %
 %  The solution parameters to be considered are
 %     rbfset - set of RBFs for collocation to be tested
-%               <default = { 'Gaussian' 'IMQ' 'MQ' 'LinearMatern' ...
-%                            'Wendland_C2' 'Wendland_C4' 'Wendland_C6' }>
+%               <default = { 'Gaussian' 'IMQ' 'MQ' ...
+%                            'Wendland_C4' 'Wendland_C6' }>
 %     BC_choice - How to choose the boundary conditions <default = 1>
 %                 1 : Neumann
 %                 2 : Dirichlet
@@ -52,15 +52,14 @@ sig = 0.2;
 dipmom = 2.7e-12.*[1, 0, 0];
 srcpnts = [0, 0, 0.6*R];
  
-rbfset = { 'Gaussian' 'IMQ' 'MQ' 'LinearMatern' ...
-           'Wendland_C2' 'Wendland_C4' 'Wendland_C6' };
+rbfset = { 'Gaussian' 'IMQ' 'MQ' 'Wendland_C4' 'Wendland_C6' };
 epvec = logspace(0,2,100);
 BC_choice = 1;
 eval_diff = 1;
 
 Npnts = 500;
 BC_frac = .3; % Not yet implemented
-dip_cushion = .005; % Not yet implemented
+dip_cushion = .01;
 N_eval = 1001;
 
 iter_out = 1;
@@ -109,7 +108,7 @@ else
 end
 
 % Determine collocation points
-[POINTS, NORMALS] = BallGeometry(R,Npnts,'kansa',[],dipmom);
+[POINTS, NORMALS] = BallGeometry(R,Npnts,'kansa',[],dipmom,dip_cushion);
 intdata = POINTS.int1;
 bdydata = POINTS.bdy11;
 N_int = size(intdata,1);

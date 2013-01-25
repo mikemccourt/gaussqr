@@ -70,7 +70,7 @@ eval_diff = 1;
 
 Nvec = 100:100:2200;
 BC_frac = .3; % Not yet implemented
-dip_cushion = .005; % Not yet implemented
+dip_cushion = .01;
 N_eval = 1001;
 
 iter_out = 1;
@@ -135,7 +135,7 @@ for Npnts = Nvec
     end
     
     % Determine collocation points
-    [POINTS, NORMALS] = BallGeometry(R,Npnts,sol_type,[],dipmom);
+    [POINTS, NORMALS] = BallGeometry(R,Npnts,sol_type,[],dipmom,dip_cushion);
     intdata = POINTS.int1;
     bdydata = POINTS.bdy11;
     N_int = size(intdata,1);
