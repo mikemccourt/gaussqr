@@ -60,11 +60,11 @@ switch lower(type)
         dzrbf = @(e,r,dz) -dz*22*e^2.*(16*(e*r).^2+7*(e*r)+1).*max(1-e*r,0).^7;
         Lrbf = @(e,r) 22*e^2*(192*(e*r).^3-3*(e*r).^2-18*e*r-3).*max(1-e*r,0).^6;
     case 'fundamental_3d' % To use in the Method of Fundamental Solutions (MFS)
-        rbf = @(r) 1./r;
-        dxrbf = @(r,dx) -dx./r.^3;
-        dyrbf = @(r,dy) -dy./r.^3;
-        dzrbf = @(r,dz) -dz./r.^3;
-        Lrbf = 0; % MFS doesn't require Laplacian!
+        rbf = @(e,r) 1./r;
+        dxrbf = @(e,r,dx) -dx./r.^3;
+        dyrbf = @(e,r,dy) -dy./r.^3;
+        dzrbf = @(e,r,dz) -dz./r.^3;
+        Lrbf = @(e,r) zeros(size(r)); % Laplacian is identically zero
     otherwise
         error('Function not recognized: check the input string')
 end

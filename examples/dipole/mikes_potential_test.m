@@ -35,8 +35,6 @@ end
 [POINTS,NORMALS] = BallGeometry(R,N,'kansa');
 x = [POINTS.int1;POINTS.bdy11];
 u = uf(x);
-% u = HomSpherePotential( R, sig, srcpnts, dipmom, x );
-% u = 1e-10*ones(size(x,1),1);
 
 xx = SphereSurfGoldPoints(NN, R);
 uu = uf(xx);
@@ -55,11 +53,6 @@ uu = uf(xx);
 % loglog(epvec,errvec)
 % pause
 
-% Delaunay triangulation of the sphere
-d_evalpnts = delaunayn(xx);
-tr = TriRep(d_evalpnts, xx);
-tr_surf = freeBoundary(tr);
-
 GQR = gqr_solve(x,u,ep,alpha);
 us = gqr_eval(GQR,xx);
 us_x = gqr_eval(GQR,xx,[1,0,0]);
@@ -71,10 +64,14 @@ us_n = sum(normvecs.*[us_x,us_y,us_z],2);
 
 clf reset
 subplot(2,2,1)
-SurfacePlot_dip(evalpnts, tr_surf, uu, 'True solution')
+SurfacePlot_dip(evalpnts, uu)
+title('True solution')
 subplot(2,2,2)
-SurfacePlot_dip(evalpnts, tr_surf, us, 'Computed solution')
+SurfacePlot_dip(evalpnts, us)
+title('Computed solution')
 subplot(2,2,3)
-SurfacePlot_dip(evalpnts, tr_surf, uu-us, 'Error')
+SurfacePlot_dip(evalpnts, uu-us)
+title('Error')
 subplot(2,2,4)
-SurfacePlot_dip(evalpnts, tr_surf, us_n, 'Normal Derivative')
+SurfacePlot_dip(evalpnts, us_n)
+title('Normal Derivative')
