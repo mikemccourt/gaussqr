@@ -55,14 +55,14 @@
 %  Note that if MFS with fewer centers than collocation points is chosen,
 %  condition doesn't make sense (rectangular, not square, system)
 
-R = 0.1;
+R = 1;
 sig = 0.2;
-dipmom = 2.7e-12.*[1, 0, 0];
+dipmom = 2.7.*[1, 0, 0];
 srcpnts = [0, 0, 0.6*R];
 
 sol_type = 'kansa';
 radbasfun = 'imq';
-ep = 11;
+ep = 1;
 mfs_frac = 1.0;
 mfs_sphere = 1.3;
 BC_choice = 1;
