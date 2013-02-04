@@ -13,7 +13,7 @@
   
   % Test to allow for user to pass [] and return []
   if (length(datacoord)==0 || length(centercoord)==0)
-      DM = [];
+      DM = zeros(size(datacoord,1),size(centercoord,1));
   else
       [dr,cc] = ndgrid(datacoord(:),centercoord(:));
       DM = dr-cc;

@@ -19,7 +19,7 @@
   % Allow user to pass [] and get back []
   % In case no points fit some condition which is considered
   if (length(dsites)==0 || length(ctrs)==0)
-      DM = [];
+      DM = zeros(size(dsites,1),size(ctrs,1));
   else % Otherwise, compute distance matrix
       T1 = sum(dsites.*dsites,2);
       T2 = -2*dsites*ctrs';
