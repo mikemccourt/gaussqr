@@ -129,10 +129,10 @@ evalpnts = SphereSurfGoldPoints(N_eval, R(end));
 
 % Potential at evalpnts in the unbound domain case
 % This is the analytic component of the computed solution
-phi_F = phiF_dip(evalpnts,srcpnts,dipmom,sig);
+phi_F = phiF_dip(evalpnts,srcpnts,dipmom,sig(end));
 
 % Analytic solution for the potential
-phi_an = HomSpherePotential(R(end), sig, srcpnts, dipmom, evalpnts);
+phi_an = HomSpherePotential(R(end), sig(end), srcpnts, dipmom, evalpnts);
 
 % If requested, compute the difference of the solution with a reference
 % point, arbitrarily chosen as evalpnts(1)
@@ -169,7 +169,7 @@ for Npnts = Nvec
     
     N_A_int = size(A_int,1);
     N_A_cpl_out = size(A_cpl_out,1);
-    N_B_cpl_out = size(B_cpl_out,1);
+    N_B_cpl_in = size(B_cpl_in,1);
     N_B_int = size(B_int,1);
     N_B_bdy = size(B_bdy,1);
     
@@ -244,16 +244,16 @@ for Npnts = Nvec
     
     % Compute known-terms vector (a.k.a. righthand side vector)
     % This requires the gradient of the unbounded potential at boundary
-    gradphi_F_bdy_neu = gradphiF_dip(B_bdy_neu, srcpnts, dipmom, sig);
-    rhs_B_bdy_neu = -sum(normvecs.*gradphi_F_bdy_neu,2);
+    gradphi_F_bdy_neu = gradphiF_dip(B_bdy_neu, srcpnts, dipmom, sig(end));
+    rhs_B_bdy_neu = -sum(B_bdy_neu_nv.*gradphi_F_bdy_neu,2);
     
     % Now we consider the Dirichlet BC component
     DM_B_bdy_dir = DistanceMatrix(B_bdy_dir,B_ctrs);
     BCM_B_bdy_dir = rbf(ep,DM_B_bdy_dir);
     
     % Compute the true solution to be used as Dirichlet BC
-    phi_F_bdy_dir = phiF_dip(B_bdy_dir,srcpnts,dipmom,sig);
-    phi_bdy_dir = HomSpherePotential(R, sig, srcpnts, dipmom, B_bdy_dir);
+    phi_F_bdy_dir = phiF_dip(B_bdy_dir,srcpnts,dipmom,sig(end));
+    phi_bdy_dir = HomSpherePotential(R, sig(end), srcpnts, dipmom, B_bdy_dir);
     rhs_B_bdy_dir = phi_bdy_dir - phi_F_bdy_dir;
     
     % Combine the BC components
@@ -265,7 +265,8 @@ for Npnts = Nvec
     % First we consider the Dirichlet coupling condition
     % This requires values from B to be mapped to points on A
     % Because we want the values to be equal, we use B-A=0
-    CCM_A_cpl_out_dir = -eye(N_A_cpl_out); % (-) for B-A
+    DM_A_cpl_out_dir = DistanceMatrix(A_cpl_out,A_ctrs);
+    CCM_A_cpl_out_dir = -rbf(ep,DM_A_cpl_out_dir); % (-) for B-A
     
     DM_B_cpl_in_dir = DistanceMatrix(A_cpl_out,B_ctrs);
     CCM_B_cpl_in_dir = rbf(ep,DM_B_cpl_in_dir);
@@ -275,13 +276,13 @@ for Npnts = Nvec
     % Now we consider the Neumann coupling condition
     % Here, normal derivatives need to be mapped from A to points on B
     % The RHS is confusing, need to ask Sal for comments
-    DM_A_cpl_out_neu = DistanceMatrix(A_cpl_out,A_ctrs);
-    A_cpl_in_dx_neu = DifferenceMatrix(A_cpl_out(:,1),A_ctrs(:,1));
-    A_cpl_in_dy_neu = DifferenceMatrix(A_cpl_out(:,2),A_ctrs(:,2));
-    A_cpl_in_dz_neu = DifferenceMatrix(A_cpl_out(:,3),A_ctrs(:,3));
-    D1 = repmat(A_cpl_out_nv(:,1),1,N_A).*dxrbf(ep,DM_A_cpl_out_neu,A_cpl_out_dx_neu);
-    D2 = repmat(A_cpl_out_nv(:,2),1,N_A).*dyrbf(ep,DM_A_cpl_out_neu,A_cpl_out_dy_neu);
-    D3 = repmat(A_cpl_out_nv(:,3),1,N_A).*dzrbf(ep,DM_A_cpl_out_neu,A_cpl_out_dz_neu);
+    DM_A_cpl_out_neu = DistanceMatrix(B_cpl_in,A_ctrs);
+    A_cpl_out_dx_neu = DifferenceMatrix(B_cpl_in(:,1),A_ctrs(:,1));
+    A_cpl_out_dy_neu = DifferenceMatrix(B_cpl_in(:,2),A_ctrs(:,2));
+    A_cpl_out_dz_neu = DifferenceMatrix(B_cpl_in(:,3),A_ctrs(:,3));
+    D1 = repmat(B_cpl_in_nv(:,1),1,N_A).*dxrbf(ep,DM_A_cpl_out_neu,A_cpl_out_dx_neu);
+    D2 = repmat(B_cpl_in_nv(:,2),1,N_A).*dyrbf(ep,DM_A_cpl_out_neu,A_cpl_out_dy_neu);
+    D3 = repmat(B_cpl_in_nv(:,3),1,N_A).*dzrbf(ep,DM_A_cpl_out_neu,A_cpl_out_dz_neu);
     CCM_A_cpl_out_neu = D1 + D2 + D3;
     
     DM_B_cpl_in_neu = DistanceMatrix(B_cpl_in,B_ctrs);
