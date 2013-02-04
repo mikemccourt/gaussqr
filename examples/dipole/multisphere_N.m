@@ -133,6 +133,7 @@ phi_F = phiF_dip(evalpnts,srcpnts,dipmom,sig(end));
 
 % Analytic solution for the potential
 phi_an = HomSpherePotential(R(end), sig(end), srcpnts, dipmom, evalpnts);
+% phi_an = MultiSpherePotential(R, sig, srcpnts, dipmom, evalpnts, 100);
 
 % If requested, compute the difference of the solution with a reference
 % point, arbitrarily chosen as evalpnts(1)
