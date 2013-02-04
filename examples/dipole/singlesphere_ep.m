@@ -108,7 +108,7 @@ else
 end
 
 % Determine collocation points
-[POINTS, NORMALS] = BallGeometry(R,Npnts,'kansa',[],dipmom,dip_cushion);
+[POINTS, NORMALS] = BallGeometry(R,Npnts,'kansa',[],srcpnts,dip_cushion);
 intdata = POINTS.int1;
 bdydata = POINTS.bdy11;
 N_int = size(intdata,1);

@@ -98,7 +98,7 @@ phi_an = HomSpherePotential(R, sig, srcpnts, dipmom, evalpnts);
 % Loop through the requested N values
 
 % Determine collocation points
-[POINTS, NORMALS] = BallGeometry(R,Npnts,sol_type,[],dipmom);
+[POINTS, NORMALS] = BallGeometry(R,Npnts,sol_type,[],srcpnts);
 intdata = POINTS.int1;
 bdydata = POINTS.bdy11;
 N_int = size(intdata,1);

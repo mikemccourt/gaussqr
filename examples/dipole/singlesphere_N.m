@@ -135,7 +135,7 @@ for Npnts = Nvec
     end
     
     % Determine collocation points
-    [POINTS, NORMALS] = BallGeometry(R,Npnts,sol_type,[],dipmom,dip_cushion);
+    [POINTS, NORMALS] = BallGeometry(R,Npnts,sol_type,[],srcpnts,dip_cushion);
     intdata = POINTS.int1;
     bdydata = POINTS.bdy11;
     N_int = size(intdata,1);
@@ -290,6 +290,6 @@ if plot_sol
     SurfacePlot_dip(evalpnts, phi_true)
     title('Analytic potential [V]')
     subplot(1,2,2)
-    SurfacePlot_dip(evalpnts, phi_comp)
-    title('Computed potential [V]')
+    SurfacePlot_dip(evalpnts, abs(phi_true - phi_comp))
+    title('Absolute error [V]')
 end
