@@ -15,7 +15,7 @@
 %
 %  The solution parameters to be considered are
 %     ep - Gaussian shape parameter <default = 1e-5>
-%     alpha - GaussQR scale parameter <default = 100>
+%     alpha - GaussQR scale parameter <default = 1>
 %     lowrank - Use the low rank GaussQR method <default = 1>
 %     BC_choice - How to choose the boundary conditions <default = 1>
 %                 1 : Neumann
@@ -55,7 +55,7 @@ dipmom = 2.7*[1, 0, 0];
 srcpnts = [0, 0, 0.6*R];
 
 ep = 1e-5;
-alpha = 100;
+alpha = 1;
 lowrank = 1;
 BC_choice = 1;
 eval_diff = 1;
@@ -133,6 +133,7 @@ for N_requested = Nvec
     
     % Set up the GaussQR solver
     GQR = gqr_solveprep(lowrank,ctrs,ep,alpha);
+    M = size(GQR.Marr,2);
     
     
     % Compute the Laplacian block and RHS for the interior
@@ -174,9 +175,9 @@ for N_requested = Nvec
     Phi_neu_dz = gqr_phi(GQR,bdydata_neu,[0,0,1]);
     
     % Compute normal derivative collocation matrix for boundary
-    A = bsxfun(@times,normvecs(:,1),Phi_neu_dx);
-    B = bsxfun(@times,normvecs(:,2),Phi_neu_dy);
-    C = bsxfun(@times,normvecs(:,3),Phi_neu_dz);
+    A = repmat(normvecs(:,1),1,M).*Phi_neu_dx;
+    B = repmat(normvecs(:,2),1,M).*Phi_neu_dy;
+    C = repmat(normvecs(:,3),1,M).*Phi_neu_dz;
     Phi_neu = A + B + C;
     
     % Compute known-terms vector (a.k.a. righthand side vector)
@@ -279,6 +280,6 @@ if plot_sol
     SurfacePlot_dip(evalpnts, phi_true)
     title('Analytic potential')
     subplot(1,2,2)
-    SurfacePlot_dip(evalpnts, phi_true-phi_comp)
+    SurfacePlot_dip(evalpnts, abs(phi_true-phi_comp))
     title('Absolute error')
 end

@@ -25,7 +25,7 @@
 %
 %  The value we are interested in studying is the effect of varying epsilon
 %  so you must specify a vector of epsilon values that you want to study
-%     epvec - Row vector of epsilon values <default = logspace(0,2,100)>
+%     epvec - Row vector of epsilon values <default = logspace(-1,1,50)>
 %
 %     Npnts - desired number of interior points <default = 500>
 %     BC_frac - The fraction of the total points to be used to enforce
@@ -53,7 +53,7 @@ dipmom = 2.7*[1, 0, 0];
 srcpnts = [0, 0, 0.6*R];
  
 rbfset = { 'Gaussian' 'IMQ' 'MQ' 'Wendland_C4' 'Wendland_C6' };
-epvec = logspace(0,2,100);
+epvec = logspace(-1,1,50);
 BC_choice = 1;
 eval_diff = 1;
 
@@ -113,6 +113,7 @@ intdata = POINTS.int1;
 bdydata = POINTS.bdy11;
 N_int = size(intdata,1);
 N_bdy = size(bdydata,1);
+N_tot = N_int + N_bdy;
 
 % Compose a vector of all the RBF centers
 % For kansa, the centers and collocation points coincide
@@ -186,9 +187,9 @@ for j = 1:length(rbfset)
         LCM = Lrbf(ep,DM_intdata);
         
         % Compute normal derivative collocation matrix for boundary
-        A = bsxfun(@times,normvecs(:,1),dxrbf(ep,DM_bdydata_neu,dx_bdydata_neu));
-        B = bsxfun(@times,normvecs(:,2),dyrbf(ep,DM_bdydata_neu,dy_bdydata_neu));
-        C = bsxfun(@times,normvecs(:,3),dzrbf(ep,DM_bdydata_neu,dz_bdydata_neu));
+        A = repmat(normvecs(:,1),1,N_tot).*dxrbf(ep,DM_bdydata_neu,dx_bdydata_neu);
+        B = repmat(normvecs(:,2),1,N_tot).*dyrbf(ep,DM_bdydata_neu,dy_bdydata_neu);
+        C = repmat(normvecs(:,3),1,N_tot).*dzrbf(ep,DM_bdydata_neu,dz_bdydata_neu);
         BCM_neu = A + B + C;
         
         % Now we consider the Dirichlet BC component

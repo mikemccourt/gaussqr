@@ -140,6 +140,7 @@ for Npnts = Nvec
     bdydata = POINTS.bdy11;
     N_int = size(intdata,1);
     N_bdy = size(bdydata,1);
+    N_tot = N_int + N_bdy;
     
     % Compose a vector of all the RBF centers
     % In the MFS setting, these are chosen in a sphere around the ball
@@ -193,9 +194,9 @@ for Npnts = Nvec
     dz_bdydata_neu = DifferenceMatrix(bdydata_neu(:,3),ctrs(:,3));
     
     % Compute normal derivative collocation matrix for boundary
-    A = bsxfun(@times,normvecs(:,1),dxrbf(ep,DM_bdydata_neu,dx_bdydata_neu));
-    B = bsxfun(@times,normvecs(:,2),dyrbf(ep,DM_bdydata_neu,dy_bdydata_neu));
-    C = bsxfun(@times,normvecs(:,3),dzrbf(ep,DM_bdydata_neu,dz_bdydata_neu));
+    A = repmat(normvecs(:,1),1,N_tot).*dxrbf(ep,DM_bdydata_neu,dx_bdydata_neu);
+    B = repmat(normvecs(:,2),1,N_tot).*dyrbf(ep,DM_bdydata_neu,dy_bdydata_neu);
+    C = repmat(normvecs(:,3),1,N_tot).*dzrbf(ep,DM_bdydata_neu,dz_bdydata_neu);
     BCM_neu = A + B + C;
     
     % Compute known-terms vector (a.k.a. righthand side vector)
@@ -238,7 +239,7 @@ for Npnts = Nvec
     % Compute the total errors
     errvec(k) = errcompute(phi_comp,phi_true);
     condvec(k) = 1/recip_cond;
-    Nvec_true(k) = N_int + N_bdy;
+    Nvec_true(k) = N_tot;
     
     if iter_out
         fprintf('\terr = %g\n\tcond = %g\n\tN = %d\n',errvec(k),condvec(k),Nvec_true(k));
@@ -288,7 +289,7 @@ if plot_sol
     
     subplot(1,2,1)
     SurfacePlot_dip(evalpnts, phi_true)
-    title('Analytic potential')
+    title('Analytic solution')
     subplot(1,2,2)
     SurfacePlot_dip(evalpnts, abs(phi_true - phi_comp))
     title('Absolute error')

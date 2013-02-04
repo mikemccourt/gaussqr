@@ -103,6 +103,7 @@ intdata = POINTS.int1;
 bdydata = POINTS.bdy11;
 N_int = size(intdata,1);
 N_bdy = size(bdydata,1);
+N_tot = N_int + N_bdy;
 
 % Compose a vector of all the RBF centers
 % In the MFS setting, these are chosen in a sphere around the ball
@@ -139,9 +140,9 @@ dy_bdydata_neu = DifferenceMatrix(bdydata_neu(:,2),ctrs(:,2));
 dz_bdydata_neu = DifferenceMatrix(bdydata_neu(:,3),ctrs(:,3));
 
 % Compute normal derivative collocation matrix for boundary
-A = bsxfun(@times,normvecs(:,1),dxrbf(ep,DM_bdydata_neu,dx_bdydata_neu));
-B = bsxfun(@times,normvecs(:,2),dyrbf(ep,DM_bdydata_neu,dy_bdydata_neu));
-C = bsxfun(@times,normvecs(:,3),dzrbf(ep,DM_bdydata_neu,dz_bdydata_neu));
+A = repmat(normvecs(:,1),1,N_tot).*dxrbf(ep,DM_bdydata_neu,dx_bdydata_neu);
+B = repmat(normvecs(:,2),1,N_tot).*dyrbf(ep,DM_bdydata_neu,dy_bdydata_neu);
+C = repmat(normvecs(:,3),1,N_tot).*dzrbf(ep,DM_bdydata_neu,dz_bdydata_neu);
 BCM_neu = A + B + C;
 
 % Compute known-terms vector (a.k.a. righthand side vector)
