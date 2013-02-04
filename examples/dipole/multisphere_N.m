@@ -67,6 +67,9 @@
 %  condition doesn't make sense (rectangular, not square, system)
 %
 %  WARNING: This does not yet work for the MFS setting
+%
+%  ERROR: Need to only use sigma where the dipole is when evaluating phi_F.
+%         Go through and correct this where it occurs.
 
 R = [0.7, 1];
 sig = [0.02, 0.02];
@@ -133,7 +136,7 @@ phi_F = phiF_dip(evalpnts,srcpnts,dipmom,sig(end));
 
 % Analytic solution for the potential
 phi_an = HomSpherePotential(R(end), sig(end), srcpnts, dipmom, evalpnts);
-% phi_an = MultiSpherePotential(R, sig, srcpnts, dipmom, evalpnts, 100);
+% phi_an = MultiSpherePotential(R, sig, srcpnts, dipmom, evalpnts, 100); % Make 100 a parameter
 
 % If requested, compute the difference of the solution with a reference
 % point, arbitrarily chosen as evalpnts(1)
