@@ -81,9 +81,9 @@ mfs_sphere = 1.3;
 BC_choice = 1;
 eval_diff = 1;
 
-match_couple = 0;
+match_couple = 0; % Not yet implemented
 
-Nvec = 100:100:300;
+Nvec = 100:100:2500;
 BC_frac = .3; % Not yet implemented
 dip_cushion = .01;
 N_eval = 1001;
@@ -163,10 +163,15 @@ for Npnts = Nvec
     B_int = POINTS.int2;
     B_bdy = POINTS.bdy22;
     
+    % These are the normal vectors to the interface and boundary
+    % Note that the interface normals both point toward the boundary, even
+    % though that is technically the 'negative' normal for the outer ball,
+    % since it is pointing in to rather than out of the outer domain
     A_cpl_out_nv = NORMALS.n11;
     B_cpl_in_nv = NORMALS.n12;
     B_bdy_nv = NORMALS.n22;
     
+    % Classify all the sizes of each domain
     N_A_int = size(A_int,1);
     N_A_cpl_out = size(A_cpl_out,1);
     N_B_cpl_in = size(B_cpl_in,1);
@@ -218,7 +223,7 @@ for Npnts = Nvec
         % Could be variable, but not important
         N_B_dir = min(6,N_B_bdy);
         i_dir = randperm(N_B_bdy,N_B_dir);
-        i_neu = setdiff(1:N_bdy,i_dir);
+        i_neu = setdiff(1:N_B_bdy,i_dir);
         
         B_bdy_neu = B_bdy(i_neu,:);
         B_bdy_neu_nv = B_bdy_nv(i_neu,:);
@@ -253,7 +258,7 @@ for Npnts = Nvec
     
     % Compute the true solution to be used as Dirichlet BC
     phi_F_bdy_dir = phiF_dip(B_bdy_dir,srcpnts,dipmom,sig(end));
-    phi_bdy_dir = HomSpherePotential(R, sig(end), srcpnts, dipmom, B_bdy_dir);
+    phi_bdy_dir = HomSpherePotential(R(end), sig(end), srcpnts, dipmom, B_bdy_dir);
     rhs_B_bdy_dir = phi_bdy_dir - phi_F_bdy_dir;
     
     % Combine the BC components
@@ -264,9 +269,8 @@ for Npnts = Nvec
     % Deal with the coupling region
     % First we consider the Dirichlet coupling condition
     % This requires values from B to be mapped to points on A
-    % Because we want the values to be equal, we use B-A=0
     DM_A_cpl_out_dir = DistanceMatrix(A_cpl_out,A_ctrs);
-    CCM_A_cpl_out_dir = -rbf(ep,DM_A_cpl_out_dir); % (-) for B-A
+    CCM_A_cpl_out_dir = rbf(ep,DM_A_cpl_out_dir); % (-) for B-A
     
     DM_B_cpl_in_dir = DistanceMatrix(A_cpl_out,B_ctrs);
     CCM_B_cpl_in_dir = rbf(ep,DM_B_cpl_in_dir);
@@ -294,7 +298,8 @@ for Npnts = Nvec
     D3 = repmat(B_cpl_in_nv(:,3),1,N_B).*dzrbf(ep,DM_B_cpl_in_neu,B_cpl_in_dz_neu);
     CCM_B_cpl_in_neu = D1 + D2 + D3;
     
-    %%%% ARE WE SURE ABOUT THE sig(1) HERE? IT SEEMS OUT OF PLACE
+    % Gotta check to make sure these are correct for different sig values
+    % in the different domains.  No issues if they are all equal though.
     gradphiF_B_cpl_in = gradphiF_dip(B_cpl_in,srcpnts,dipmom,sig(1));
     rhs_B_cpl_in_neu = -(sig(1)-sig(2))*sum(B_cpl_in_nv.*gradphiF_B_cpl_in, 2);
     
@@ -306,9 +311,11 @@ for Npnts = Nvec
            rhs_B_int; ...
            rhs_B_bdy];
     % Compose collocation matrix in same order as rhs
+    % Notice the coupling conditions are of the form B-A
+    % That's why the (-) appears before the A coupling components
     CM = [LCM_A_int,zeros(N_A_int,N_B); ...
-          CCM_A_cpl_out_dir,CCM_B_cpl_in_dir; ...
-          CCM_A_cpl_out_neu,CCM_B_cpl_in_neu; ...
+          -CCM_A_cpl_out_dir,CCM_B_cpl_in_dir; ...
+          -CCM_A_cpl_out_neu,CCM_B_cpl_in_neu; ...
           zeros(N_B_int,N_A),LCM_B_int; ...
           zeros(N_B_bdy,N_A),BCM_B_bdy];
       

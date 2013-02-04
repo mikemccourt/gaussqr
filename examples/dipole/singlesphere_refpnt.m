@@ -39,7 +39,11 @@
 %
 %  The results of these experiments are stored in
 %     errvec - Errors computed considering each evaluation point over the 
-%              sphere as a reference point 
+%              sphere as a reference point
+%
+%  May need to consider the results of this experiment on the choice of
+%  reference point for future experiment.  It seems to have quite an
+%  effect, as should be expected.
 
 
 R = 1;
