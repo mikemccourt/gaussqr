@@ -5,10 +5,10 @@
 %
 %  The problem has several physical parameters relating to the
 %  underlying EEG/MEG physical system.  These parameters are:
-%    R - Sphere radius [m] <default = .1>
-%    sig - Electric conductivity [S/m] <default = .2>
-%    dipmom - Dipole moment [Am] <default = 2.7e-12.*[1,0,0]>
-%    srcpnts - Dipole position [m] <default = [0,0,0.6*R]>
+%    R - Sphere radius [dm] <default = 1>
+%    sig - Electric conductivity [S/dm] <default = .02>
+%    dipmom - Dipole moment [x10^-12 Am] <default = 2.7e*[1,0,0]>
+%    srcpnts - Dipole position [dm] <default = [0,0,0.6*R]>
 %
 %  This script allows you to test the convergence rate (with respect to N
 %  of different RBFs and different epsilon values.
@@ -56,7 +56,7 @@
 %  condition doesn't make sense (rectangular, not square, system)
 
 R = 1;
-sig = 0.2;
+sig = 0.02;
 dipmom = 2.7.*[1, 0, 0];
 srcpnts = [0, 0, 0.6*R];
 
@@ -288,8 +288,8 @@ if plot_sol
     
     subplot(1,2,1)
     SurfacePlot_dip(evalpnts, phi_true)
-    title('Analytic potential [V]')
+    title('Analytic potential')
     subplot(1,2,2)
     SurfacePlot_dip(evalpnts, abs(phi_true - phi_comp))
-    title('Absolute error [V]')
+    title('Absolute error')
 end

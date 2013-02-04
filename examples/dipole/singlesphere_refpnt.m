@@ -11,10 +11,10 @@
 %
 %  The problem has several physical parameters relating to the
 %  underlying EEG/MEG physical system.  These parameters are:
-%    R - Sphere radius [m] <default = .1>
-%    sig - Electric conductivity [S/m] <default = .2>
-%    dipmom - Dipole moment [Am] <default = 2.7e-12.*[1,0,0]>
-%    srcpnts - Dipole position [m] <default = [0,0,0.6*R]>
+%    R - Sphere radius [dm] <default = 1>
+%    sig - Electric conductivity [S/dm] <default = .02>
+%    dipmom - Dipole moment [x10^-12 Am] <default = 2.7e*[1,0,0]>
+%    srcpnts - Dipole position [dm] <default = [0,0,0.6*R]>
 %
 %  This script allows you to test the error with respect to the reference
 %  point for the potential.
@@ -42,9 +42,9 @@
 %              sphere as a reference point 
 
 
-R = 0.1;
-sig = 0.2;
-dipmom = 2.7e-12.*[1, 0, 0];
+R = 1;
+sig = 0.02;
+dipmom = 2.7*[1, 0, 0];
 srcpnts = [0, 0, 0.6*R];
 
 sol_type = 'kansa';
