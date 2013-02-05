@@ -75,7 +75,7 @@
 
 R = [0.7, 1];
 sig = [0.02, 0.02];
-dipmom = 2.7.*[1, 0, 0];
+dipmom = 2.7*[1, 0, 0];
 srcpnts = [0, 0, 0.6*R(1)];
 
 sol_type = 'kansa';
@@ -176,6 +176,14 @@ for Npnts = Nvec
     A_cpl_out_nv = NORMALS.n11;
     B_cpl_in_nv = NORMALS.n12;
     B_bdy_nv = NORMALS.n22;
+    
+    % IF the user wants, we can require the values and derivatives to be
+    % matched at the same points rather than different points.  I don't
+    % think it matters, but it's nice to have this option.
+    if match_couple
+        B_cpl_in = A_cpl_out;
+        B_cpl_in_nv = A_cpl_out_nv;
+    end
     
     % Classify all the sizes of each domain
     N_A_int = size(A_int,1);
@@ -374,7 +382,7 @@ if plot_err
         case 2
             bcstr = 'Dirichlet BC';
         case 3
-            bcstr = sprintf('Mixed BC');
+            bcstr = 'Mixed BC';
     end
     epstr = sprintf(', \\epsilon=%g',ep);
     
