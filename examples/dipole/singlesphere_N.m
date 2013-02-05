@@ -7,7 +7,7 @@
 %  underlying EEG/MEG physical system.  These parameters are:
 %    R - Sphere radius [dm] <default = 1>
 %    sig - Electric conductivity [S/dm] <default = .02>
-%    dipmom - Dipole moment [x10^-12 Am] <default = 2.7e*[1,0,0]>
+%    dipmom - Dipole moment [x10^-12 Am] <default = 2.7*[1,0,0]>
 %    srcpnts - Dipole position [dm] <default = [0,0,0.6*R]>
 %
 %  This script allows you to test the convergence rate (with respect to N
@@ -27,6 +27,10 @@
 %                 1 : Neumann
 %                 2 : Dirichlet
 %                 3 : Mixed (6 random Dirichlet, the rest Neumann)
+%                 4 : Neumann and one Dirichlet at a reference point (zero 
+%                     potential point)
+%     refpnt - Reference point (zero potential); this is used only if
+%              BC_choice = 4 <default = [0,0,R]>
 %     eval_diff - Consider the solution as the difference between all
 %                 values and a reference point <default = 1>
 %
@@ -66,9 +70,10 @@ ep = 1;
 mfs_frac = 1.0;
 mfs_sphere = 1.3;
 BC_choice = 1;
+refpnt = [0, 0, R];
 eval_diff = 1;
 
-Nvec = 100:100:2200;
+Nvec = 100:100:1900;
 BC_frac = .3; % Not yet implemented
 dip_cushion = .01;
 N_eval = 1001;
@@ -118,8 +123,16 @@ phi_an = HomSpherePotential(R, sig, srcpnts, dipmom, evalpnts);
 
 % If requested, compute the difference of the solution with a reference
 % point, arbitrarily chosen as evalpnts(1)
-if eval_diff
-    phi_true = phi_an - phi_an(1);
+% Similarly, if Neumann BC with a Dirichlet condition at the reference 
+% point are used, compute the difference of the solution with the reference
+% point 
+if eval_diff || BC_choice == 4
+    if BC_choice == 4 
+        phi_ref = HomSpherePotential(R, sig, srcpnts, dipmom, refpnt);
+        phi_true = phi_an - phi_ref;
+    else
+        phi_true = phi_an - phi_an(1);
+    end
 else
     phi_true = phi_an;
 end
@@ -147,9 +160,14 @@ for Npnts = Nvec
     if strcmp(sol_type,'mfs')
         ctrs = SphereSurfGoldPoints(floor(mfs_frac*Npnts), mfs_sphere*R);
     else % For kansa, the centers and collocation points coincide
-        ctrs = [intdata; bdydata];
+        if BC_choice == 4 % In this case we need an "extra" center
+                          % (reference point)
+            ctrs = [intdata; bdydata; refpnt];
+            N_tot = N_tot + 1;
+        else
+            ctrs = [intdata; bdydata];
+        end
     end
-    
     
     % Compute the collocation block for the interior
     DM_intdata = DistanceMatrix(intdata,ctrs);
@@ -171,7 +189,7 @@ for Npnts = Nvec
         bdydata_neu = zeros(0,3);
         normvecs = zeros(0,3);
         bdydata_dir = bdydata;
-    else % Run a test with Mixed BC
+    elseif BC_choice==3 % Run a test with Mixed BC
         % Right now, fixed at 6 Dirichlet BC points
         % Could be variable, but not important
         N_dir = min(6,N_bdy);
@@ -181,6 +199,11 @@ for Npnts = Nvec
         bdydata_neu = bdydata(i_neu,:);
         normvecs = NORMALS.n11(i_neu,:);
         bdydata_dir = bdydata(i_dir,:);
+    else % Run a test with Neumann BC + Dirichlet BC at the reference point
+         % (zero potential point) 
+        bdydata_neu = bdydata;
+        normvecs = NORMALS.n11;
+        bdydata_dir = refpnt;
     end
     
     % Compute the collocation block for the boundary conditions
@@ -209,11 +232,15 @@ for Npnts = Nvec
     DM_bdydata_dir = DistanceMatrix(bdydata_dir,ctrs);
     BCM_dir = rbf(ep,DM_bdydata_dir);
     
-    % Compute the true solution to be used as Dirichlet BC
-    phi_F_bdy_dir = phiF_dip(bdydata_dir,srcpnts,dipmom,sig);
-    phi_bdy_dir = HomSpherePotential(R, sig, srcpnts, dipmom, bdydata_dir);
-    rhs_bdy_dir = phi_bdy_dir - phi_F_bdy_dir;
-    
+    if BC_choice == 4
+        % Dirichlet condition at the reference point (zero potential)
+        rhs_bdy_dir = 0;
+    else
+        % Compute the true solution to be used as Dirichlet BC
+        phi_F_bdy_dir = phiF_dip(bdydata_dir,srcpnts,dipmom,sig);
+        phi_bdy_dir = HomSpherePotential(R, sig, srcpnts, dipmom, bdydata_dir);
+        rhs_bdy_dir = phi_bdy_dir - phi_F_bdy_dir;
+    end
     
     % Create the full linear system from the blocksand solve it
     % Compose rhs
@@ -228,14 +255,14 @@ for Npnts = Nvec
     % Potential at evalpnts (superposition of effects)
     phi = phi0 + phi_F;
 
-    % If requested, compute the difference of the solution with a\
+    % If requested, compute the difference of the solution with a
     % reference point, arbitrarily chosen as evalpnts(1)
-    if eval_diff
+    if eval_diff && BC_choice ~= 4 
         phi_comp = phi - phi(1);
     else
         phi_comp = phi;
     end
-    
+  
     % Compute the total errors
     errvec(k) = errcompute(phi_comp,phi_true);
     condvec(k) = 1/recip_cond;
@@ -267,7 +294,9 @@ if plot_err
         case 2
             bcstr = 'Dirichlet BC';
         case 3
-            bcstr = sprintf('Mixed BC');
+            bcstr = 'Mixed BC';
+        case 4
+            bcstr = 'Neumann BC and one Dirichlet condition at a reference point';
     end
     epstr = sprintf(', \\epsilon=%g',ep);
     
