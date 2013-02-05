@@ -33,8 +33,12 @@
 %                 1 : Neumann
 %                 2 : Dirichlet
 %                 3 : Mixed (6 random Dirichlet, the rest Neumann)
+%                 4 : Neumann + 1 Dirichlet at reference, set to 0
 %     eval_diff - Consider the solution as the difference between all
 %                 values and a reference point <default = 1>
+%     reference - The point chosen to evaluate the difference at, or set to
+%                 0 for BC_choice=4 <default = [R(end),0,0]>
+%                 Use reference=[] for no additional reference point
 %
 %  These are parameters directly related to the coupling between the
 %  concentric balls
@@ -85,8 +89,9 @@ mfs_frac = 1.0;
 mfs_sphere = 1.3;
 BC_choice = 1;
 eval_diff = 1;
+reference = [R(end),0,0];
 
-match_couple = 0; % Not yet implemented
+match_couple = 1;
 sol_acc = 100;
 
 Nvec = 100:100:2500;
@@ -132,6 +137,7 @@ end
 
 % Determine the evaluation points (all on the boundary)
 evalpnts = SphereSurfGoldPoints(N_eval, R(end));
+evalpnts = [reference;evalpnts];
 
 % Potential at evalpnts in the unbound domain case
 % This is the analytic component of the computed solution
@@ -141,7 +147,7 @@ phi_F = phiF_dip(evalpnts,srcpnts,dipmom,sig(end));
 phi_an = MultiSpherePotential(R, sig, srcpnts, dipmom, evalpnts, sol_acc);
 
 % If requested, compute the difference of the solution with a reference
-% point, arbitrarily chosen as evalpnts(1)
+% point, which was attached at the top of evalpnts earlier
 if eval_diff
     phi_true = phi_an - phi_an(1);
 else
@@ -177,7 +183,7 @@ for Npnts = Nvec
     B_cpl_in_nv = NORMALS.n12;
     B_bdy_nv = NORMALS.n22;
     
-    % IF the user wants, we can require the values and derivatives to be
+    % If the user wants, we can require the values and derivatives to be
     % matched at the same points rather than different points.  I don't
     % think it matters, but it's nice to have this option.
     if match_couple
@@ -199,7 +205,11 @@ for Npnts = Nvec
         ctrs = SphereSurfGoldPoints(floor(mfs_frac*Npnts), mfs_sphere*R);
     else % For kansa, the centers and collocation points coincide
         A_ctrs = [A_int;A_cpl_out];
-        B_ctrs = [B_cpl_in;B_int;B_bdy];
+        if BC_choice~=4
+            B_ctrs = [B_cpl_in;B_int;B_bdy];
+        else
+            B_ctrs = [B_cpl_in;B_int;B_bdy;reference];
+        end
         N_A = size(A_ctrs,1);
         N_B = size(B_ctrs,1);
     end
@@ -224,24 +234,32 @@ for Npnts = Nvec
     % This only applies to the boundary, not the interface
     %   Notice the use of zeros(0,3), not []
     %   To allow for bdydata_neu(:,1) calls later
-    if BC_choice==1 % Do the standard Neumann BC
-        B_bdy_neu = B_bdy;
-        B_bdy_neu_nv = B_bdy_nv;
-        B_bdy_dir = zeros(0,3);
-    elseif BC_choice==2 % Run a test with Dirichlet BC
-        B_bdy_neu = zeros(0,3);
-        B_bdy_neu_nv = zeros(0,3);
-        B_bdy_dir = B_bdy;
-    else % Run a test with Mixed BC
-        % Right now, fixed at 6 Dirichlet BC points
-        % Could be variable, but not important
-        N_B_dir = min(6,N_B_bdy);
-        i_dir = randperm(N_B_bdy,N_B_dir);
-        i_neu = setdiff(1:N_B_bdy,i_dir);
-        
-        B_bdy_neu = B_bdy(i_neu,:);
-        B_bdy_neu_nv = B_bdy_nv(i_neu,:);
-        B_bdy_dir = B_bdy(i_dir,:);
+    switch BC_choice
+        case 1 % Do the standard Neumann BC
+            B_bdy_neu = B_bdy;
+            B_bdy_neu_nv = B_bdy_nv;
+            B_bdy_dir = zeros(0,3);
+        case 2 % Run a test with Dirichlet BC
+            B_bdy_neu = zeros(0,3);
+            B_bdy_neu_nv = zeros(0,3);
+            B_bdy_dir = B_bdy;
+        case 3 % Run a test with Mixed BC
+            % Right now, fixed at 6 Dirichlet BC points
+            % Could be variable, but not important
+            N_B_dir = min(6,N_B_bdy);
+            i_dir = randperm(N_B_bdy,N_B_dir);
+            i_neu = setdiff(1:N_B_bdy,i_dir);
+            
+            B_bdy_neu = B_bdy(i_neu,:);
+            B_bdy_neu_nv = B_bdy_nv(i_neu,:);
+            B_bdy_dir = B_bdy(i_dir,:);
+        case 4
+            B_bdy_neu = B_bdy;
+            B_bdy_neu_nv = B_bdy_nv;
+            B_bdy_dir = reference;
+            N_B_bdy = N_B_bdy + 1;
+        otherwise
+            error('What was this BC_choice %d that you passed?',BC_choice)
     end
     
     
@@ -271,9 +289,13 @@ for Npnts = Nvec
     BCM_B_bdy_dir = rbf(ep,DM_B_bdy_dir);
     
     % Compute the true solution to be used as Dirichlet BC
-    phi_F_bdy_dir = phiF_dip(B_bdy_dir,srcpnts,dipmom,sig(end));
-    phi_bdy_dir = HomSpherePotential(R(end), sig(end), srcpnts, dipmom, B_bdy_dir);
-    rhs_B_bdy_dir = phi_bdy_dir - phi_F_bdy_dir;
+    if BC_choice==4
+        rhs_B_bdy_dir = 0;
+    else
+        phi_F_bdy_dir = phiF_dip(B_bdy_dir,srcpnts,dipmom,sig(end));
+        phi_bdy_dir = HomSpherePotential(R(end), sig(end), srcpnts, dipmom, B_bdy_dir);
+        rhs_B_bdy_dir = phi_bdy_dir - phi_F_bdy_dir;
+    end
     
     % Combine the BC components
     rhs_B_bdy = [rhs_B_bdy_neu;rhs_B_bdy_dir];
