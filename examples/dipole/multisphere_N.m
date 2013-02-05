@@ -79,19 +79,19 @@ sig = [0.02, 0.02];
 dipmom = 2.7*[1, 0, 0];
 srcpnts = [0, 0, 0.6*R(1)];
 
-sol_type = 'kansa';
+sol_type = 'mfs';
 radbasfun = 'imq';
 ep = 1;
 mfs_frac = 1.0;
-mfs_sphere = 1.3;
+mfs_sphere = 1.4;
 BC_choice = 1;
 eval_diff = 1;
 reference = [R(end),0,0];
 
-match_couple = 1;
+match_couple = 0;
 sol_acc = 100;
 
-Nvec = 100:100:2500;
+Nvec = 100:100:2000;
 BC_frac = .3; % Not yet implemented
 dip_cushion = .01;
 N_eval = 1001;
@@ -133,7 +133,6 @@ sig_dip = sig(find(src_loc<R,1,'first'));
 if strcmp(sol_type,'kansa')
     [rbf, dxrbf, dyrbf, dzrbf, Lrbf] = pickRBF(radbasfun);
 else
-    error('Not yet implemented, will work on it')
     [rbf, dxrbf, dyrbf, dzrbf, Lrbf] = pickRBF('fundamental_3d');
 end
 
@@ -202,9 +201,14 @@ for Npnts = Nvec
     
     % Compose a vector of all the RBF centers
     % In the MFS setting, these are chosen in a sphere around the ball
-    % Need to think about centers for MFS in multisphere setting
+    % The MFS center choices may not be the best, but it will work for now
     if strcmp(sol_type,'mfs')
-        ctrs = SphereSurfGoldPoints(floor(mfs_frac*Npnts), mfs_sphere*R);
+        N_ctrs = N_A_cpl_out+N_B_cpl_in+N_B_bdy;
+        all_ctrs = SphereSurfGoldPoints(N_ctrs, mfs_sphere*R(end));
+        A_ctrs_ind = randperm(N_ctrs,N_A_cpl_out);
+        B_ctrs_ind = setdiff(1:N_ctrs,A_ctrs_ind);
+        A_ctrs = all_ctrs(A_ctrs_ind,:);
+        B_ctrs = all_ctrs(B_ctrs_ind,:);
     else % For kansa, the centers and collocation points coincide
         A_ctrs = [A_int;A_cpl_out];
         if BC_choice~=4
@@ -212,9 +216,9 @@ for Npnts = Nvec
         else
             B_ctrs = [B_cpl_in;B_int;B_bdy;reference];
         end
-        N_A = size(A_ctrs,1);
-        N_B = size(B_ctrs,1);
     end
+    N_A = size(A_ctrs,1);
+    N_B = size(B_ctrs,1);
     
     
     % Compute the collocation block for the interior portions

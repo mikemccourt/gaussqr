@@ -210,9 +210,12 @@ switch lower(solvertype)
             end
         end
     case 'mfs'
-        if N ~= lNpnts
-            error('R and Npnts must have the same lenght for ''mfs'' solvertype')
+        if lNpnts==1
+            Npnts = Npnts*ones(N,1);
         end
+%         if N ~= lNpnts
+%             error('R and Npnts must have the same lenght for ''mfs'' solvertype')
+%         end
         for l = 1:N
             lstring = num2str(l);
             lstring1 = num2str(l+1);
