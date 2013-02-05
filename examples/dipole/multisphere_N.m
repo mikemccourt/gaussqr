@@ -40,6 +40,8 @@
 %  concentric balls
 %     match_couple - Use the same points on the interface to couple the
 %                    values and the fluxes <default = 0>
+%     sol_acc - How long a series should be used in computing the true
+%               solution on the boundary <default = 100>
 %
 %  The value we are interested in studying is the effect of increasing N,
 %  so you must specify a vector of N values that you want to study
@@ -85,6 +87,7 @@ BC_choice = 1;
 eval_diff = 1;
 
 match_couple = 0; % Not yet implemented
+sol_acc = 100;
 
 Nvec = 100:100:2500;
 BC_frac = .3; % Not yet implemented
@@ -135,8 +138,7 @@ evalpnts = SphereSurfGoldPoints(N_eval, R(end));
 phi_F = phiF_dip(evalpnts,srcpnts,dipmom,sig(end));
 
 % Analytic solution for the potential
-phi_an = HomSpherePotential(R(end), sig(end), srcpnts, dipmom, evalpnts);
-% phi_an = MultiSpherePotential(R, sig, srcpnts, dipmom, evalpnts, 100); % Make 100 a parameter
+phi_an = MultiSpherePotential(R, sig, srcpnts, dipmom, evalpnts, sol_acc);
 
 % If requested, compute the difference of the solution with a reference
 % point, arbitrarily chosen as evalpnts(1)
@@ -394,8 +396,8 @@ if plot_sol
     
     subplot(1,2,1)
     SurfacePlot_dip(evalpnts, phi_true)
-    title('Analytic potential [V]')
+    title('Analytic potential')
     subplot(1,2,2)
     SurfacePlot_dip(evalpnts, abs(phi_true - phi_comp))
-    title('Absolute error [V]')
+    title('Absolute error')
 end
