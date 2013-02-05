@@ -73,9 +73,6 @@
 %  condition doesn't make sense (rectangular, not square, system)
 %
 %  WARNING: This does not yet work for the MFS setting
-%
-%  ERROR: Need to only use sigma where the dipole is when evaluating phi_F.
-%         Go through and correct this where it occurs.
 
 R = [0.7, 1];
 sig = [0.02, 0.02];
@@ -123,6 +120,11 @@ GAUSSQR_PARAMETERS.NORM_TYPE = 2;
 % version of Matlab you are running.  Think about it ...
 rng(0);
 
+% Find the sigma value where the dipole is located
+% This is needed to evaluate phi_F and gradphi_F
+src_loc = DistanceMatrix(srcpnts,[0,0,0]);
+sig_dip = sig(find(src_loc<R,1,'first'));
+
 
 %%%%%%%%%%%%%%%%%%%%%
 % This is the start of the solver
@@ -141,7 +143,7 @@ evalpnts = [reference;evalpnts];
 
 % Potential at evalpnts in the unbound domain case
 % This is the analytic component of the computed solution
-phi_F = phiF_dip(evalpnts,srcpnts,dipmom,sig(end));
+phi_F = phiF_dip(evalpnts,srcpnts,dipmom,sig_dip);
 
 % Analytic solution for the potential
 phi_an = MultiSpherePotential(R, sig, srcpnts, dipmom, evalpnts, sol_acc);
@@ -281,7 +283,7 @@ for Npnts = Nvec
     
     % Compute known-terms vector (a.k.a. righthand side vector)
     % This requires the gradient of the unbounded potential at boundary
-    gradphi_F_bdy_neu = gradphiF_dip(B_bdy_neu, srcpnts, dipmom, sig(end));
+    gradphi_F_bdy_neu = gradphiF_dip(B_bdy_neu, srcpnts, dipmom, sig_dip);
     rhs_B_bdy_neu = -sum(B_bdy_neu_nv.*gradphi_F_bdy_neu,2);
     
     % Now we consider the Dirichlet BC component
@@ -292,8 +294,8 @@ for Npnts = Nvec
     if BC_choice==4
         rhs_B_bdy_dir = 0;
     else
-        phi_F_bdy_dir = phiF_dip(B_bdy_dir,srcpnts,dipmom,sig(end));
-        phi_bdy_dir = HomSpherePotential(R(end), sig(end), srcpnts, dipmom, B_bdy_dir);
+        phi_F_bdy_dir = phiF_dip(B_bdy_dir,srcpnts,dipmom,sig_dip);
+        phi_bdy_dir = HomSpherePotential(R(end), sig_dip, srcpnts, dipmom, B_bdy_dir);
         rhs_B_bdy_dir = phi_bdy_dir - phi_F_bdy_dir;
     end
     
@@ -336,7 +338,7 @@ for Npnts = Nvec
     
     % Gotta check to make sure these are correct for different sig values
     % in the different domains.  No issues if they are all equal though.
-    gradphiF_B_cpl_in = gradphiF_dip(B_cpl_in,srcpnts,dipmom,sig(1));
+    gradphiF_B_cpl_in = gradphiF_dip(B_cpl_in,srcpnts,dipmom,sig_dip);
     rhs_B_cpl_in_neu = -(sig(1)-sig(2))*sum(B_cpl_in_nv.*gradphiF_B_cpl_in, 2);
     
     % Create the full linear system from the blocks
@@ -366,7 +368,7 @@ for Npnts = Nvec
     phi = phi0 + phi_F;
 
     % If requested, compute the difference of the solution with a
-    % reference point, arbitrarily chosen as evalpnts(1)
+    % reference point, which was put at the top earlier
     if eval_diff
         phi_comp = phi - phi(1);
     else
