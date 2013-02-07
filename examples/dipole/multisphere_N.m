@@ -82,12 +82,12 @@ srcpnts = [0, 0, 0.6*R(1)];
 sol_type = 'kansa';
 radbasfun = 'imq';
 ep = 1;
-mfs_frac = 1.0;
+mfs_frac = 0.1;
 mfs_sphere = 1.4;
 BC_choice = 1;
 eval_diff = 1;
 reference = [R(end),0,0];
-
+%reference = [-0.5955    0.0699    0.8003];
 match_couple = 0;
 sol_acc = 100;
 
@@ -211,9 +211,9 @@ for Npnts = Nvec
     % In the MFS setting, these are chosen in a sphere around the ball
     % The MFS center choices may not be the best, but it will work for now
     if strcmp(sol_type,'mfs')
-        N_ctrs = N_A_cpl_out+N_B_cpl_in+N_B_bdy;
+        N_ctrs = floor(mfs_frac*(N_A_cpl_out+N_B_cpl_in+N_B_bdy));
         all_ctrs = SphereSurfGoldPoints(N_ctrs, mfs_sphere*R(end));
-        A_ctrs_ind = randperm(N_ctrs,N_A_cpl_out);
+        A_ctrs_ind = randperm(N_ctrs,floor(mfs_frac*N_A_cpl_out));
         B_ctrs_ind = setdiff(1:N_ctrs,A_ctrs_ind);
         A_ctrs = all_ctrs(A_ctrs_ind,:);
         B_ctrs = all_ctrs(B_ctrs_ind,:);
@@ -445,5 +445,6 @@ if plot_sol
     title('Analytic potential')
     subplot(1,2,2)
     SurfacePlot_dip(evalpnts, abs(phi_true - phi_comp))
+    %SurfacePlot_dip(evalpnts, log10(abs(phi_true - phi_comp)./(abs(phi_true)+eps)+eps))
     title('Absolute error')
 end
