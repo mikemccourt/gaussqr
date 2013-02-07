@@ -75,11 +75,11 @@
 %  WARNING: This does not yet work for the MFS setting
 
 R = [0.7, 1];
-sig = [0.02, 0.02];
+sig = [0.02, 0.002];
 dipmom = 2.7*[1, 0, 0];
 srcpnts = [0, 0, 0.6*R(1)];
 
-sol_type = 'mfs';
+sol_type = 'kansa';
 radbasfun = 'imq';
 ep = 1;
 mfs_frac = 1.0;
@@ -148,9 +148,17 @@ phi_F = phiF_dip(evalpnts,srcpnts,dipmom,sig_dip);
 phi_an = MultiSpherePotential(R, sig, srcpnts, dipmom, evalpnts, sol_acc);
 
 % If requested, compute the difference of the solution with a reference
-% point, which was attached at the top of evalpnts earlier
-if eval_diff
-    phi_true = phi_an - phi_an(1);
+% point, arbitrarily chosen as evalpnts(1)
+% Similarly, if Neumann BC plus a Dirichlet condition at the reference 
+% point are used, compute the difference of the solution with the reference
+% point 
+if eval_diff || BC_choice == 4
+    if BC_choice == 4 
+        phi_ref = MultiSpherePotential(R, sig, srcpnts, dipmom, reference, sol_acc);
+        phi_true = phi_an - phi_ref;
+    else
+        phi_true = phi_an - phi_an(1);
+    end
 else
     phi_true = phi_an;
 end
@@ -299,7 +307,7 @@ for Npnts = Nvec
         rhs_B_bdy_dir = 0;
     else
         phi_F_bdy_dir = phiF_dip(B_bdy_dir,srcpnts,dipmom,sig_dip);
-        phi_bdy_dir = HomSpherePotential(R(end), sig_dip, srcpnts, dipmom, B_bdy_dir);
+        phi_bdy_dir = MultiSpherePotential(R, sig, srcpnts, dipmom, B_bdy_dir, sol_acc);
         rhs_B_bdy_dir = phi_bdy_dir - phi_F_bdy_dir;
     end
     
@@ -329,7 +337,7 @@ for Npnts = Nvec
     D1 = repmat(B_cpl_in_nv(:,1),1,N_A).*dxrbf(ep,DM_A_cpl_out_neu,A_cpl_out_dx_neu);
     D2 = repmat(B_cpl_in_nv(:,2),1,N_A).*dyrbf(ep,DM_A_cpl_out_neu,A_cpl_out_dy_neu);
     D3 = repmat(B_cpl_in_nv(:,3),1,N_A).*dzrbf(ep,DM_A_cpl_out_neu,A_cpl_out_dz_neu);
-    CCM_A_cpl_out_neu = D1 + D2 + D3;
+    CCM_A_cpl_out_neu = sig(1)*( D1 + D2 + D3 );
     
     DM_B_cpl_in_neu = DistanceMatrix(B_cpl_in,B_ctrs);
     B_cpl_in_dx_neu = DifferenceMatrix(B_cpl_in(:,1),B_ctrs(:,1));
@@ -338,7 +346,7 @@ for Npnts = Nvec
     D1 = repmat(B_cpl_in_nv(:,1),1,N_B).*dxrbf(ep,DM_B_cpl_in_neu,B_cpl_in_dx_neu);
     D2 = repmat(B_cpl_in_nv(:,2),1,N_B).*dyrbf(ep,DM_B_cpl_in_neu,B_cpl_in_dy_neu);
     D3 = repmat(B_cpl_in_nv(:,3),1,N_B).*dzrbf(ep,DM_B_cpl_in_neu,B_cpl_in_dz_neu);
-    CCM_B_cpl_in_neu = D1 + D2 + D3;
+    CCM_B_cpl_in_neu = sig(2)*( D1 + D2 + D3 );
     
     % Gotta check to make sure these are correct for different sig values
     % in the different domains.  No issues if they are all equal though.
@@ -357,7 +365,7 @@ for Npnts = Nvec
     % That's why the (-) appears before the A coupling components
     CM = [LCM_A_int,zeros(N_A_int,N_B); ...
           -CCM_A_cpl_out_dir,CCM_B_cpl_in_dir; ...
-          -CCM_A_cpl_out_neu,CCM_B_cpl_in_neu; ...
+          CCM_A_cpl_out_neu,-CCM_B_cpl_in_neu; ...
           zeros(N_B_int,N_A),LCM_B_int; ...
           zeros(N_B_bdy,N_A),BCM_B_bdy];
       
@@ -373,7 +381,7 @@ for Npnts = Nvec
 
     % If requested, compute the difference of the solution with a
     % reference point, which was put at the top earlier
-    if eval_diff
+    if eval_diff && BC_choice ~= 4
         phi_comp = phi - phi(1);
     else
         phi_comp = phi;
@@ -411,6 +419,8 @@ if plot_err
             bcstr = 'Dirichlet BC';
         case 3
             bcstr = 'Mixed BC';
+        case 4
+            bcstr = 'Neumann BC + 1 Dirichlet at reference';
     end
     epstr = sprintf(', \\epsilon=%g',ep);
     
