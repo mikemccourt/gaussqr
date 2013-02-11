@@ -82,10 +82,10 @@ sig = [0.02, 0.02];
 dipmom = 2.7*[1, 0, 0];
 srcpnts = [0, 0, 0.6*R(1)];
 
-sol_type = 'kansa';
+sol_type = 'mfs';
 radbasfun = 'imq';
 ep = 1;
-mfs_frac = 1.0;
+mfs_frac = .4;
 mfs_sphere = 1.4;
 BC_choice = 1;
 eval_diff = 1;
@@ -102,7 +102,7 @@ N_eval = 1001;
 
 iter_out = 1;
 plot_sol = 1;
-sol_err_style = 1;
+sol_err_style = 3;
 plot_err = 1;
 errcolor = 'b';
 condcolor = 'r';
@@ -446,12 +446,16 @@ if plot_sol
     switch sol_err_style
         case 0
             sol_err = phi_comp;
+            plotstr = 'Computed Solution';
         case 1
             sol_err = abs(phi_true - phi_comp);
+            plotstr = 'Absolute Error';
         case 2
             sol_err = log10(abs(phi_true - phi_comp));
+            plotstr = 'Log10 of Absolute Error';
         case 3
             sol_err = log10(abs(phi_true - phi_comp)./(abs(phi_true)+eps)+eps);
+            plotstr = 'Log10 of Pointwise Relative Error';
         otherwise
             error('Unknown 3D plot error style %g',sol_err_style)
     end
@@ -461,5 +465,5 @@ if plot_sol
     title('Analytic potential')
     subplot(1,2,2)
     SurfacePlot_dip(evalpnts, sol_err);
-    title('Absolute error')
+    title(plotstr)
 end
