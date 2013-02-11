@@ -38,6 +38,7 @@ function [ POINTS, NORMALS ] = BallGeometry( R, ...
 % ptstype       =   'even'   Points uniformly distributed in the cube
 %                   'halton' Points should have a Halton distribution
 %                   'random' Points are uniform randomly chosen
+%                   'cheb'   Points are Chebyshev spaced along radii
 %                   ** the default choice is 'halton', which can be
 %                   selected by passing []
 %
@@ -100,6 +101,7 @@ R = R(:)'; % Make sure it's a row vector
 Rend = R(end);
 ptstype_DEFAULT = 'halton';
 avoidcushion_DEFAULT = Rend/5;
+chebNumRegion = 12*lNpnts; % Maybe this should be passed or adaptive ...
 
 % Run checks to make sure that the point distribution is okay
 if nargin==3
@@ -108,7 +110,7 @@ elseif isempty(ptstype)
     ptstype = ptstype_DEFAULT;
 else
     if ischar(ptstype)
-        if ~(strcmp(ptstype,'even') || strcmp(ptstype,'halton') || strcmp(ptstype,'random'))
+        if ~any(strcmp(ptstype,{'even','halton','random','cheb'}))
             warning('ptstype=%s unacceptable, defaulting to %s',ptstype,ptstype_DEFAULT)
             ptstype = ptstype_DEFAULT;
         end
@@ -152,6 +154,8 @@ end
 % Actually determine the point distribution in and on the ball
 switch lower(solvertype)
     case 'kansa'
+        R = [0 R];
+        
         d = 2*Rend / ( 6/pi * Npnts(1) )^(1/3);
         if strcmp(ptstype,'even')
             x = -Rend:d:Rend;
@@ -161,11 +165,21 @@ switch lower(solvertype)
             ptsvec = Rend*(2*haltonseq(ceil(6/pi*Npnts(1)),3)-1);
         elseif strcmp(ptstype,'random')
             ptsvec = Rend*(2*rand(ceil(6/pi*Npnts(1)),3)-1);
+        elseif strcmp(ptstype,'cheb')
+            Nc = chebNumRegion;
+            Nradii = Npnts(1)/Nc;
+            radii = SphereSurfGoldPoints(Nradii, Rend);
+            temp = pickpoints(-R(2),R(2),Nc,'cheb');
+            cfact = temp(ceil(Nc/2)+1:end-1);
+            radMat = kron(radii,ones(length(cfact),1));
+            cMat = repmat(cfact,length(radii),3);
+            ptsvec = radMat.*cMat;
+%             for k=1:lNpnts-1
+%                 
+%             end
         else
             error('Unknown point distribution style')
         end
-        R = [0 R];
-        ll = 0;
         
         % Remove the points in the avoidance areas
         if avoid_on
@@ -173,6 +187,8 @@ switch lower(solvertype)
             keep_ind = logical(sum(avoid_DM>avoidcushion,2));
             ptsvec = ptsvec(keep_ind,:);
         end
+        
+        ll = 0;
             
         int_DM = DistanceMatrix(ptsvec,[0,0,0]);
         for l = 1:N
