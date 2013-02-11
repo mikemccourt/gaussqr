@@ -59,6 +59,11 @@
 %  Some outputs are available if you would like them
 %     iter_out - Print output during the solves <default = 0>
 %     plot_sol - 3D surface plot of boundary solution <default = 0>
+%     sol_err_style - How do you want the 3D solution error displayed
+%                     0 : No error computed, just the solution
+%                     1 : Absolute error <default>
+%                     2 : Log absolute error
+%                     3 : Log pointwise relative error
 %     plot_err - log-log plot of error vs. N <default = 1>
 %     errcolor - Color for error line in log-log plot <default = 'b'>
 %     condcolor - Color for condition line in log-log plot <default = 'r'>
@@ -77,16 +82,17 @@ sig = [0.02, 0.02];
 dipmom = 2.7*[1, 0, 0];
 srcpnts = [0, 0, 0.6*R(1)];
 
-sol_type = 'mfs';
+sol_type = 'kansa';
 radbasfun = 'imq';
 ep = 1;
-mfs_frac = .4;
+mfs_frac = 1.0;
 mfs_sphere = 1.4;
 BC_choice = 1;
 eval_diff = 1;
 reference = [R(end),0,0];
+%reference = [-0.5955 0.0699 0.8003]; % Minimum potential
 
-match_couple = 0;
+match_couple = 1;
 sol_acc = 100;
 
 Nvec = 100:100:2000;
@@ -96,6 +102,7 @@ N_eval = 1001;
 
 iter_out = 1;
 plot_sol = 1;
+sol_err_style = 1;
 plot_err = 1;
 errcolor = 'b';
 condcolor = 'r';
@@ -297,7 +304,7 @@ for Npnts = Nvec
         rhs_B_bdy_dir = 0;
     else
         phi_F_bdy_dir = phiF_dip(B_bdy_dir,srcpnts,dipmom,sig_dip);
-        phi_bdy_dir = HomSpherePotential(R(end), sig_dip, srcpnts, dipmom, B_bdy_dir);
+        phi_bdy_dir = MultiSpherePotential(R, sig, srcpnts, dipmom, B_bdy_dir, sol_acc);
         rhs_B_bdy_dir = phi_bdy_dir - phi_F_bdy_dir;
     end
     
@@ -310,7 +317,7 @@ for Npnts = Nvec
     % First we consider the Dirichlet coupling condition
     % This requires values from B to be mapped to points on A
     DM_A_cpl_out_dir = DistanceMatrix(A_cpl_out,A_ctrs);
-    CCM_A_cpl_out_dir = rbf(ep,DM_A_cpl_out_dir); % (-) for B-A
+    CCM_A_cpl_out_dir = rbf(ep,DM_A_cpl_out_dir);
     
     DM_B_cpl_in_dir = DistanceMatrix(A_cpl_out,B_ctrs);
     CCM_B_cpl_in_dir = rbf(ep,DM_B_cpl_in_dir);
@@ -327,7 +334,7 @@ for Npnts = Nvec
     D1 = repmat(B_cpl_in_nv(:,1),1,N_A).*dxrbf(ep,DM_A_cpl_out_neu,A_cpl_out_dx_neu);
     D2 = repmat(B_cpl_in_nv(:,2),1,N_A).*dyrbf(ep,DM_A_cpl_out_neu,A_cpl_out_dy_neu);
     D3 = repmat(B_cpl_in_nv(:,3),1,N_A).*dzrbf(ep,DM_A_cpl_out_neu,A_cpl_out_dz_neu);
-    CCM_A_cpl_out_neu = D1 + D2 + D3;
+    CCM_A_cpl_out_neu = sig(1)*(D1 + D2 + D3);
     
     DM_B_cpl_in_neu = DistanceMatrix(B_cpl_in,B_ctrs);
     B_cpl_in_dx_neu = DifferenceMatrix(B_cpl_in(:,1),B_ctrs(:,1));
@@ -336,7 +343,7 @@ for Npnts = Nvec
     D1 = repmat(B_cpl_in_nv(:,1),1,N_B).*dxrbf(ep,DM_B_cpl_in_neu,B_cpl_in_dx_neu);
     D2 = repmat(B_cpl_in_nv(:,2),1,N_B).*dyrbf(ep,DM_B_cpl_in_neu,B_cpl_in_dy_neu);
     D3 = repmat(B_cpl_in_nv(:,3),1,N_B).*dzrbf(ep,DM_B_cpl_in_neu,B_cpl_in_dz_neu);
-    CCM_B_cpl_in_neu = D1 + D2 + D3;
+    CCM_B_cpl_in_neu = sig(2)*(D1 + D2 + D3);
     
     % Gotta check to make sure these are correct for different sig values
     % in the different domains.  No issues if they are all equal though.
@@ -351,11 +358,11 @@ for Npnts = Nvec
            rhs_B_int; ...
            rhs_B_bdy];
     % Compose collocation matrix in same order as rhs
-    % Notice the coupling conditions are of the form B-A
-    % That's why the (-) appears before the A coupling components
+    % Notice the coupling conditions are of the form A-B
+    % That's why the (-) appears before the B coupling components
     CM = [LCM_A_int,zeros(N_A_int,N_B); ...
-          -CCM_A_cpl_out_dir,CCM_B_cpl_in_dir; ...
-          -CCM_A_cpl_out_neu,CCM_B_cpl_in_neu; ...
+          CCM_A_cpl_out_dir,-CCM_B_cpl_in_dir; ...
+          CCM_A_cpl_out_neu,-CCM_B_cpl_in_neu; ...
           zeros(N_B_int,N_A),LCM_B_int; ...
           zeros(N_B_bdy,N_A),BCM_B_bdy];
       
@@ -436,11 +443,23 @@ end
 
 if plot_sol
     figure
+    switch sol_err_style
+        case 0
+            sol_err = phi_comp;
+        case 1
+            sol_err = abs(phi_true - phi_comp);
+        case 2
+            sol_err = log10(abs(phi_true - phi_comp));
+        case 3
+            sol_err = log10(abs(phi_true - phi_comp)./(abs(phi_true)+eps)+eps);
+        otherwise
+            error('Unknown 3D plot error style %g',sol_err_style)
+    end
     
     subplot(1,2,1)
     SurfacePlot_dip(evalpnts, phi_true)
     title('Analytic potential')
     subplot(1,2,2)
-    SurfacePlot_dip(evalpnts, abs(phi_true - phi_comp))
+    SurfacePlot_dip(evalpnts, sol_err);
     title('Absolute error')
 end
