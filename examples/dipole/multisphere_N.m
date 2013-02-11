@@ -28,7 +28,7 @@
 %     rbf_choice - RBF for collocation <default = 'imq'>
 %     ep - RBF shape parameter <default = 10>
 %     mfs_frac - How many centers for MFS, in (0.0->1.0)*N <default = 1.0>
-%     mfs_sphere - Fraction beyond R (eg, 1.3R) for centers <default = 1.3>
+%     mfs_sphere - Fraction beyond R (eg, 1.3R) for centers <default = 1.4>
 %     BC_choice - How to choose the boundary conditions <default = 1>
 %                 1 : Neumann
 %                 2 : Dirichlet
@@ -70,9 +70,7 @@
 %     condvec - Collocation matrix condition numbers at Nvec_true
 %
 %  Note that if MFS with fewer centers than collocation points is chosen,
-%  condition doesn't make sense (rectangular, not square, system)
-%
-%  WARNING: This does not yet work for the MFS setting
+%  the value in condvec is the rank of the matrix, not the condition
 
 R = [0.7, 1];
 sig = [0.02, 0.02];
@@ -82,7 +80,7 @@ srcpnts = [0, 0, 0.6*R(1)];
 sol_type = 'mfs';
 radbasfun = 'imq';
 ep = 1;
-mfs_frac = 1.0;
+mfs_frac = .4;
 mfs_sphere = 1.4;
 BC_choice = 1;
 eval_diff = 1;
@@ -203,9 +201,9 @@ for Npnts = Nvec
     % In the MFS setting, these are chosen in a sphere around the ball
     % The MFS center choices may not be the best, but it will work for now
     if strcmp(sol_type,'mfs')
-        N_ctrs = N_A_cpl_out+N_B_cpl_in+N_B_bdy;
+        N_ctrs = floor(mfs_frac*(N_A_cpl_out+N_B_cpl_in+N_B_bdy));
         all_ctrs = SphereSurfGoldPoints(N_ctrs, mfs_sphere*R(end));
-        A_ctrs_ind = randperm(N_ctrs,N_A_cpl_out);
+        A_ctrs_ind = randperm(N_ctrs,floor(mfs_frac*N_A_cpl_out));
         B_ctrs_ind = setdiff(1:N_ctrs,A_ctrs_ind);
         A_ctrs = all_ctrs(A_ctrs_ind,:);
         B_ctrs = all_ctrs(B_ctrs_ind,:);
@@ -381,7 +379,14 @@ for Npnts = Nvec
     
     % Compute the total errors
     errvec(k) = errcompute(phi_comp,phi_true);
-    condvec(k) = 1/recip_cond;
+    % Store the condition of the system
+    % For a low-rank system, instead store the rank
+    % This may happen for some MFS problems
+    if floor(recip_cond)==recip_cond
+        condvec(k) = recip_cond;
+    else
+        condvec(k) = 1/recip_cond;
+    end
     Nvec_true(k) = N_A + N_B;
     
     if iter_out
@@ -411,6 +416,8 @@ if plot_err
             bcstr = 'Dirichlet BC';
         case 3
             bcstr = 'Mixed BC';
+        case 4
+            bcstr = 'Zero Reference BC'
     end
     epstr = sprintf(', \\epsilon=%g',ep);
     

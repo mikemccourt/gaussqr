@@ -227,7 +227,13 @@ for N_requested = Nvec
     
     % Compute the total errors
     errvec(k) = errcompute(phi_comp,phi_true);
-    condvec(k) = 1/recip_cond;
+    % Store the condition of the system
+    % For a low-rank system, instead store the rank
+    if floor(recip_cond)==recip_cond
+        condvec(k) = recip_cond;
+    else
+        condvec(k) = 1/recip_cond;
+    end
     Nvec_true(k) = N;
     
     if iter_out
