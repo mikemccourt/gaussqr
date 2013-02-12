@@ -51,6 +51,11 @@
 %  Some outputs are available if you would like them
 %     iter_out - Print output during the solves <default = 0>
 %     plot_sol - 3D surface plot of boundary solution <default = 0>
+%     sol_err_style - How do you want the 3D solution error displayed
+%                     0 : No error computed, just the solution
+%                     1 : Absolute error <default>
+%                     2 : Log absolute error
+%                     3 : Log pointwise relative error
 %     plot_err - log-log plot of error vs. N <default = 1>
 %     errcolor - Color for error line in log-log plot <default = 'b'>
 %     condcolor - Color for condition line in log-log plot <default = 'r'>
@@ -86,6 +91,7 @@ N_eval = 1001;
 
 iter_out = 1;
 plot_sol = 1;
+sol_err_style = 1;
 plot_err = 1;
 errcolor = 'b';
 condcolor = 'r';
@@ -159,17 +165,18 @@ for Npnts = Nvec
     bdydata = POINTS.bdy11;
     N_int = size(intdata,1);
     N_bdy = size(bdydata,1);
-    N_tot = N_int + N_bdy;
+    N_ctrs = N_int + N_bdy;
     
     % Compose a vector of all the RBF centers
     % In the MFS setting, these are chosen in a sphere around the ball
     if strcmp(sol_type,'mfs')
-        ctrs = SphereSurfGoldPoints(floor(mfs_frac*Npnts), mfs_sphere*R);
+        N_ctrs = floor(mfs_frac*Npnts);
+        ctrs = SphereSurfGoldPoints(N_ctrs, mfs_sphere*R);
     else % For kansa, the centers and collocation points coincide
         if BC_choice == 4 % In this case we need an "extra" center
                           % (reference point)
             ctrs = [intdata; bdydata; refpnt];
-            N_tot = N_tot + 1;
+            N_ctrs = N_ctrs + 1;
         else
             ctrs = [intdata; bdydata];
         end
@@ -223,9 +230,9 @@ for Npnts = Nvec
     dz_bdydata_neu = DifferenceMatrix(bdydata_neu(:,3),ctrs(:,3));
     
     % Compute normal derivative collocation matrix for boundary
-    A = repmat(normvecs(:,1),1,N_tot).*dxrbf(ep,DM_bdydata_neu,dx_bdydata_neu);
-    B = repmat(normvecs(:,2),1,N_tot).*dyrbf(ep,DM_bdydata_neu,dy_bdydata_neu);
-    C = repmat(normvecs(:,3),1,N_tot).*dzrbf(ep,DM_bdydata_neu,dz_bdydata_neu);
+    A = repmat(normvecs(:,1),1,N_ctrs).*dxrbf(ep,DM_bdydata_neu,dx_bdydata_neu);
+    B = repmat(normvecs(:,2),1,N_ctrs).*dyrbf(ep,DM_bdydata_neu,dy_bdydata_neu);
+    C = repmat(normvecs(:,3),1,N_ctrs).*dzrbf(ep,DM_bdydata_neu,dz_bdydata_neu);
     BCM_neu = A + B + C;
     
     % Compute known-terms vector (a.k.a. righthand side vector)
@@ -272,7 +279,7 @@ for Npnts = Nvec
     % Compute the total errors
     errvec(k) = errcompute(phi_comp,phi_true);
     condvec(k) = 1/recip_cond;
-    Nvec_true(k) = N_tot;
+    Nvec_true(k) = N_ctrs;
     
     if iter_out
         fprintf('\terr = %g\n\tcond = %g\n\tN = %d\n',errvec(k),condvec(k),Nvec_true(k));
@@ -302,7 +309,7 @@ if plot_err
         case 3
             bcstr = 'Mixed BC';
         case 4
-            bcstr = 'Neumann BC and one Dirichlet condition at a reference point';
+            bcstr = 'Zero Reference BC';
     end
     epstr = sprintf(', \\epsilon=%g',ep);
     
@@ -321,11 +328,27 @@ end
 
 if plot_sol
     figure
+    switch sol_err_style
+        case 0
+            sol_err = phi_comp;
+            plotstr = 'Computed Solution';
+        case 1
+            sol_err = abs(phi_true - phi_comp);
+            plotstr = 'Absolute Error';
+        case 2
+            sol_err = log10(abs(phi_true - phi_comp));
+            plotstr = 'Log10 of Absolute Error';
+        case 3
+            sol_err = log10(abs(phi_true - phi_comp)./(abs(phi_true)+eps)+eps);
+            plotstr = 'Log10 of Pointwise Relative Error';
+        otherwise
+            error('Unknown 3D plot error style %g',sol_err_style)
+    end
     
     subplot(1,2,1)
     SurfacePlot_dip(evalpnts, phi_true)
-    title('Analytic solution')
+    title('Analytic potential','FontWeight','bold','FontSize',12)
     subplot(1,2,2)
-    SurfacePlot_dip(evalpnts, abs(phi_true - phi_comp))
-    title('Absolute error')
+    SurfacePlot_dip(evalpnts, sol_err);
+    title(plotstr,'FontWeight','bold','FontSize',12)
 end
