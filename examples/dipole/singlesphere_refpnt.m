@@ -37,10 +37,10 @@
 %                     potential point)
 %
 %  Other parameters to be set:
-%     Npnts - Number of desired collocation points <default = 800>
+%     Npnts - Number of desired collocation points <default = 1500>
 %     dip_cushion - How much space should be given around the dipole where
 %                   no RBF centers are allowed <default = .005>
-%     N_eval - # evaluation points <default = 500>
+%     N_eval - # evaluation points <default = 1001>
 %
 %
 %  The results of these experiments are stored in
@@ -61,11 +61,11 @@ radbasfun = 'imq';
 ep = 1;
 mfs_frac = 1.0;
 mfs_sphere = 1.3;
-BC_choice = 2;
+BC_choice = 1;
 
-Npnts = 800;
+Npnts = 1500;
 dip_cushion = .005; % Not yet implemented
-N_eval = 500;
+N_eval = 1001;
 
 
 %%%%%%%%%%%%%%%%%%%%%
@@ -235,4 +235,5 @@ end
 
 figure
 SurfacePlot_dip(evalpnts, errvec)
-title('Error on the solution (potential difference) vs. reference point')
+title('Relative error on the solution vs. reference point',...
+      'FontWeight','bold','FontSize',12)

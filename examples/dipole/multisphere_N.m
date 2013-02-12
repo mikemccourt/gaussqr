@@ -102,7 +102,7 @@ N_eval = 1001;
 
 iter_out = 1;
 plot_sol = 1;
-sol_err_style = 3;
+sol_err_style = 1;
 plot_err = 1;
 errcolor = 'b';
 condcolor = 'r';
@@ -424,7 +424,7 @@ if plot_err
         case 3
             bcstr = 'Mixed BC';
         case 4
-            bcstr = 'Zero Reference BC'
+            bcstr = 'Zero Reference BC';
     end
     epstr = sprintf(', \\epsilon=%g',ep);
     
@@ -462,8 +462,8 @@ if plot_sol
     
     subplot(1,2,1)
     SurfacePlot_dip(evalpnts, phi_true)
-    title('Analytic potential')
+    title('Analytic potential','FontWeight','bold','FontSize',12)
     subplot(1,2,2)
     SurfacePlot_dip(evalpnts, sol_err);
-    title(plotstr)
+    title(plotstr,'FontWeight','bold','FontSize',12)
 end
