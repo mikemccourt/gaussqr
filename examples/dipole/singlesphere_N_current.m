@@ -1,0 +1,290 @@
+% singlesphere_N.m
+%
+%  For this problem, we consider the solution to the Laplace equation on a
+%  sphere with Neumann boundary conditions.
+%
+%  The problem has several physical parameters relating to the
+%  underlying EEG/MEG physical system.  These parameters are:
+%    R - Sphere radius [dm] <default = 1>
+%    sig - Electric conductivity [S/dm] <default = .02>
+%    dipmom - Dipole moment [x10^-12 Am] <default = 2.7*[1,0,0]>
+%    srcpnts - Dipole position [dm] <default = [0,0,0.6*R]>
+%
+%  This script allows you to test the convergence rate (with respect to N
+%  of different RBFs and different epsilon values.
+%
+%  The solution parameters to be considered are
+%     sol_type - How you want to solve the system <default = 'kansa'>
+%                'kansa' : Nonsymmetric collocation
+%                          rbf_choice and ep must also be chosen
+%                'mfs' : Method of fundamental solutions
+%                        MFS_frac and ctr_sphere must also be chosen
+%     rbf_choice - RBF for collocation <default = 'imq'>
+%     point_dist - How the points are spread in the ball
+%                  'halton' : Halton cube, restricted to ball <default>
+%                  'even' : Gridden points, restricted to ball
+%                  'random' : Uniform random
+%                  'cheb' : Chebyshev spaced along radii of the ball
+%     ep - RBF shape parameter <default = 10>
+%     mfs_frac - How many centers for MFS, in [0.0,1.0]*N <default = 1.0>
+%     mfs_sphere - Fraction beyond R (eg, 1.3R) for centers <default = 1.3>
+%
+%  The value we are interested in studying is the effect of increasing N,
+%  so you must specify a vector of N values that you want to study
+%     Nvec - Row vector of N values <default = 100:50:500>
+%     BC_frac - The fraction of the total points to be used to enforce
+%               boundary conditions <default = .3>
+%     dip_cushion - How much space should be given around the dipole where
+%               no RBF centers are allowed <default = .005>
+%     N_eval - # points to evaluate error <default = 1001>
+%
+%  Some outputs are available if you would like them
+%     iter_out - Print output during the solves <default = 0>
+%     plot_sol - 3D surface plot of boundary solution <default = 0>
+%     sol_err_style - How do you want the 3D solution error displayed
+%                     0 : No error computed, just the solution
+%                     1 : Absolute error <default>
+%                     2 : Log absolute error
+%                     3 : Log pointwise relative error
+%     plot_err - log-log plot of error vs. N <default = 1>
+%     errphicolor - Color for phi error line in log-log plot <default = 'b'>
+%     errJcolor - Color for J error line in log-log plot <default = 'r'>
+%
+%  The results of these experiments are stored in
+%     Nvec_true - Actual number of collocation points, because the point
+%                 distribution in a sphere is tricky
+%     errvec_phi - Errors on potential computed at Nvec_true
+%     errvec_J - Errors on current density computed at Nvec_true
+%
+%  Note that if MFS with fewer centers than collocation points is chosen,
+%  condition doesn't make sense (rectangular, not square, system)
+
+R = 1;
+sig = 0.02;
+dipmom = 2.7.*[1, 0, 0];
+srcpnts = [0, 0, 0.6*R];
+
+sol_type = 'kansa'; % mfs not yet tested
+radbasfun = 'imq';
+point_dist = 'halton';
+ep = 1;
+mfs_frac = 1.0;
+mfs_sphere = 1.3;
+
+Nvec = 100:100:2000;
+BC_frac = .3; % Not yet implemented
+dip_cushion = .05;
+N_eval = 1001;
+
+iter_out = 1;
+plot_sol = 1;
+sol_err_style = 1;
+plot_err = 1;
+errphicolor = 'b';
+errJcolor = 'r';
+
+
+%%%%%%%%%%%%%%%%%%%%%
+% Basic setup stuff independent of this problem
+
+% Consider the standard GQR parameters for the errcompute function
+global GAUSSQR_PARAMETERS
+if ~isstruct(GAUSSQR_PARAMETERS)
+    error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
+end
+GAUSSQR_PARAMETERS.ERROR_STYLE = 3;
+GAUSSQR_PARAMETERS.NORM_TYPE = 2;
+
+% Set random number generator to constant
+% This is used in choosing which BC points are Dirichlet in the mixed case
+rng(0);
+
+
+%%%%%%%%%%%%%%%%%%%%%
+% This is the start of the solver
+
+% RBF definition and derivatives
+if strcmp(sol_type,'kansa')
+    [rbf, dxrbf, dyrbf, dzrbf, Lrbf] = pickRBF(radbasfun);
+else
+    [rbf, dxrbf, dyrbf, dzrbf, Lrbf] = pickRBF('fundamental_3d');
+end
+
+% Determine the evaluation points (all on the boundary)
+evalpnts = SphereSurfGoldPoints(N_eval, R);
+
+% Potential at evalpnts in the unbound domain case
+% This is the analytic component of the computed solution
+phi_F = phiF_dip(evalpnts,srcpnts,dipmom,sig);
+
+% Analytic solution for the potential (difference)
+% The first evaluation point is taken as reference point
+phi_true = HomSpherePotential(R, sig, srcpnts, dipmom, evalpnts);
+phi_true = phi_true - phi_true(1);
+
+% Analytic solution for the current density
+J_true = -sig * HomSphereGradient(R, sig, srcpnts, dipmom, evalpnts);
+J_true = (J_true(:,1).^2 + J_true(:,2).^2 + J_true(:,3).^2).^(1/2);
+
+% Loop through the requested N values
+errvec_phi = [];
+errvec_J = [];
+condvec = [];
+Nvec_true = [];
+k = 1;
+for Npnts = Nvec
+    if iter_out
+        fprintf('k=%d\n',k)
+    end
+    
+    % Determine collocation points
+    [POINTS, NORMALS] = BallGeometry(R,Npnts,sol_type,point_dist,srcpnts,dip_cushion);
+    intdata = POINTS.int1;
+    bdydata = POINTS.bdy11;
+    N_int = size(intdata,1);
+    N_bdy = size(bdydata,1);
+    N_ctrs = N_int + N_bdy;
+    
+    % Compose a vector of all the RBF centers
+    % In the MFS setting, these are chosen in a sphere around the ball
+    if strcmp(sol_type,'mfs')
+        N_ctrs = floor(mfs_frac*Npnts);
+        ctrs = SphereSurfGoldPoints(N_ctrs, mfs_sphere*R);
+    else % For kansa, the centers and collocation points coincide
+        ctrs = [intdata; bdydata];
+    end
+    
+    % Compute the collocation block for the interior
+    DM_intdata = DistanceMatrix(intdata,ctrs);
+    LCM = Lrbf(ep,DM_intdata);
+    rhs_int = zeros(N_int,1);
+    
+    % Compute the evaluation matrix
+    DM_eval = DistanceMatrix(evalpnts, ctrs);
+    EM = rbf(ep, DM_eval);
+    
+    % Neumann BC points
+    bdydata_neu = bdydata;
+    normvecs = NORMALS.n11;
+    
+    % Compute the collocation block for the boundary conditions
+    % This also computes the RHS for the problem
+    DM_bdydata_neu = DistanceMatrix(bdydata_neu,ctrs);
+
+    % Find all the necessary difference matrices
+    dx_bdydata_neu = DifferenceMatrix(bdydata_neu(:,1),ctrs(:,1));
+    dy_bdydata_neu = DifferenceMatrix(bdydata_neu(:,2),ctrs(:,2));
+    dz_bdydata_neu = DifferenceMatrix(bdydata_neu(:,3),ctrs(:,3));
+    
+    % Compute normal derivative collocation matrix for boundary
+    A = repmat(normvecs(:,1),1,N_ctrs).*dxrbf(ep,DM_bdydata_neu,dx_bdydata_neu);
+    B = repmat(normvecs(:,2),1,N_ctrs).*dyrbf(ep,DM_bdydata_neu,dy_bdydata_neu);
+    C = repmat(normvecs(:,3),1,N_ctrs).*dzrbf(ep,DM_bdydata_neu,dz_bdydata_neu);
+    BCM_neu = A + B + C;
+    
+    % Compute known-terms vector (a.k.a. righthand side vector)
+    % This requires the gradient of the unbounded potential at boundary
+    gradphi_F_neu = gradphiF_dip(bdydata_neu, srcpnts, dipmom, sig);
+    rhs_bdy_neu = -sum(normvecs.*gradphi_F_neu,2);
+        
+    % Create the full linear system from the blocksand solve it
+    % Compose rhs
+    rhs = [rhs_int;rhs_bdy_neu];
+    % Compose collocation matrix in same order as rhs
+    CM = [LCM;BCM_neu];
+    % Coefficients for evaluation
+    [coefs,recip_cond] = linsolve(CM,rhs);
+    
+    % Potential at evalpnts in the source free case
+    phi0 = EM * coefs;
+    % Potential at evalpnts (superposition of effects)
+    phi_comp = phi0 + phi_F;
+    phi_comp = phi_comp - phi_comp(1); 
+    
+    % Current density
+    Jvol = -sig * gradphi0_dip(ep, coefs, evalpnts, ctrs, radbasfun);
+    Jp = -sig * gradphiF_dip(evalpnts, srcpnts, dipmom, sig);
+    J_comp = Jp+Jvol;
+    J_comp = (J_comp(:,1).^2 + J_comp(:,2).^2 + J_comp(:,3).^2).^(1/2);
+  
+    % Compute the total errors
+    errvec_phi(k) = errcompute(phi_comp, phi_true);
+    errvec_J(k) = errcompute(J_comp, J_true); 
+    condvec(k) = 1/recip_cond;
+    Nvec_true(k) = N_ctrs;
+    
+    if iter_out
+        fprintf('\terr_phi = %g\n\terr_J = %g\n\tcond = %g\n\tN = %d\n',...
+                errvec_phi(k),errvec_J(k),condvec(k),Nvec_true(k));
+    end
+    
+    k = k + 1;
+end
+
+if plot_err
+    clf reset
+    
+    switch GAUSSQR_PARAMETERS.ERROR_STYLE
+        case 1
+            errstr = 'Pointwise Rel Err';
+        case 2
+            errstr = 'Absolute Error';
+        case 3
+            errstr = 'Relative Error';
+        case 4
+            errstr = 'RMS Relative Error';
+    end
+    
+    bcstr = 'Neumann BC';
+
+    epstr = sprintf(', \\epsilon=%g',ep);
+    
+    [AX,H1,H2] = plotyy(Nvec_true,errvec_phi,Nvec_true,errvec_J,@loglog);
+    xlabel('Total collocation points')
+    set(AX(1),'Xlim',[Nvec_true(1),Nvec_true(end)])
+    set(get(AX(1),'Ylabel'),'String',strcat(errstr, ' on potential difference'))
+    set(AX(1),'Ycolor',errphicolor)
+    set(AX(2),'Xlim',[Nvec_true(1),Nvec_true(end)])
+    set(get(AX(2),'Ylabel'),'String',strcat(errstr, ' on current density'))
+    set(AX(2),'Ycolor',errJcolor)
+    set(H1,'LineWidth',3,'Color',errphicolor)
+    set(H2,'LineWidth',3,'Color',errJcolor)
+    title(strcat(bcstr,epstr))
+end
+
+if plot_sol
+    figure
+    switch sol_err_style
+        case 0
+            sol_err_phi = phi_comp;
+            sol_err_J = J_comp;
+            plotstr = 'Computed Solution';
+        case 1
+            sol_err_phi = abs(phi_true - phi_comp);
+            sol_err_J = abs(J_true - J_comp);
+            plotstr = 'Absolute Error';
+        case 2
+            sol_err_phi = log10(abs(phi_true - phi_comp));
+            sol_err_J = log10(abs(J_true - J_comp));
+            plotstr = 'Log10 of Absolute Error';
+        case 3
+            sol_err_phi = log10(abs(phi_true - phi_comp)./(abs(phi_true)+eps)+eps);
+            sol_err_J = log10(abs(J_true - J_comp)./(abs(J_true)+eps)+eps);
+            plotstr = 'Log10 of Pointwise Relative Error';
+        otherwise
+            error('Unknown 3D plot error style %g',sol_err_style)
+    end
+    
+    subplot(2,2,1)
+    SurfacePlot_dip(evalpnts, phi_true)
+    title('Analytic potential','FontWeight','bold','FontSize',12)
+    subplot(2,2,2)
+    SurfacePlot_dip(evalpnts, sol_err_phi);
+    title(plotstr,'FontWeight','bold','FontSize',12)
+    subplot(2,2,3)
+    SurfacePlot_dip(evalpnts, J_true)
+    title('Analytic current density','FontWeight','bold','FontSize',12)
+    subplot(2,2,4)
+    SurfacePlot_dip(evalpnts, sol_err_J);
+    title(plotstr,'FontWeight','bold','FontSize',12)
+end

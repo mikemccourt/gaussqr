@@ -1,5 +1,5 @@
 function grad_phi = gradphiF_dip( obspnts, srcpnts, dipmom, sigma )
-% gradphiF calculates the gradiet of electric potential at M observation 
+% gradphiF calculates the gradient of electric potential at M observation 
 % points in a homogeneus and infinite medium by superposing the effects of 
 % N current dipoles.
 %
