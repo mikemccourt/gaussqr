@@ -165,7 +165,7 @@ for Npnts = Nvec
     bdydata = POINTS.bdy11;
     N_int = size(intdata,1);
     N_bdy = size(bdydata,1);
-    N_ctrs = N_int + N_bdy;
+    N_tot = N_int + N_bdy;  % Total number of collocation points
     
     % Compose a vector of all the RBF centers
     % In the MFS setting, these are chosen in a sphere around the ball
@@ -176,10 +176,11 @@ for Npnts = Nvec
         if BC_choice == 4 % In this case we need an "extra" center
                           % (reference point)
             ctrs = [intdata; bdydata; refpnt];
-            N_ctrs = N_ctrs + 1;
+            N_tot = N_tot + 1;
         else
             ctrs = [intdata; bdydata];
         end
+        N_ctrs = N_tot;
     end
     
     % Compute the collocation block for the interior
@@ -279,7 +280,7 @@ for Npnts = Nvec
     % Compute the total errors
     errvec(k) = errcompute(phi_comp,phi_true);
     condvec(k) = 1/recip_cond;
-    Nvec_true(k) = N_ctrs;
+    Nvec_true(k) = N_tot;
     
     if iter_out
         fprintf('\terr = %g\n\tcond = %g\n\tN = %d\n',errvec(k),condvec(k),Nvec_true(k));

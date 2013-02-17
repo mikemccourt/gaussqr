@@ -143,7 +143,7 @@ for Npnts = Nvec
     bdydata = POINTS.bdy11;
     N_int = size(intdata,1);
     N_bdy = size(bdydata,1);
-    N_ctrs = N_int + N_bdy;
+    N_tot = N_int + N_bdy;
     
     % Compose a vector of all the RBF centers
     % In the MFS setting, these are chosen in a sphere around the ball
@@ -152,6 +152,7 @@ for Npnts = Nvec
         ctrs = SphereSurfGoldPoints(N_ctrs, mfs_sphere*R);
     else % For kansa, the centers and collocation points coincide
         ctrs = [intdata; bdydata];
+        N_ctrs = N_tot;
     end
     
     % Compute the collocation block for the interior
@@ -211,7 +212,7 @@ for Npnts = Nvec
     errvec_phi(k) = errcompute(phi_comp, phi_true);
     errvec_J(k) = errcompute(J_comp, J_true); 
     condvec(k) = 1/recip_cond;
-    Nvec_true(k) = N_ctrs;
+    Nvec_true(k) = N_tot;
     
     if iter_out
         fprintf('\terr_phi = %g\n\terr_J = %g\n\tcond = %g\n\tN = %d\n',...
