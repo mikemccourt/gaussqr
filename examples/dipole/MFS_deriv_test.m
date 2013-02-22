@@ -31,15 +31,16 @@
 
 R = 1;
 
-mfs_frac = 1.0;
+mfs_frac = 1;
 mfs_sphere = 1.2;
 
-N_eval = 1000;
+N_eval = 10000;
 evalpnts = SphereSurfGoldPoints(N_eval,R);
 
-Nvec = 100:100:1500;
+Nvec = 100:400:5300;
+Nvec = 5000;
 
-sol_err_style = 1;
+sol_err_style = 3;
 errcolor = 'b';
 condcolor = 'r';
 
