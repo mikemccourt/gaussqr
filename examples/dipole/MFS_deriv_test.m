@@ -34,18 +34,19 @@ R = 1;
 mfs_frac = 1;
 mfs_sphere = 1.2;
 
-N_eval = 10000;
+N_eval = 1000;
 evalpnts = SphereSurfGoldPoints(N_eval,R);
 
-Nvec = 100:400:5300;
-Nvec = 5000;
+Nvec = 100:400:4100;
 
-sol_err_style = 3;
+sol_err_style = 0;
 errcolor = 'b';
 condcolor = 'r';
 
 % The normal derivative of the solution is equal to 1 on the boundary
-u_n_true = ones(N_eval,1);
+u_n_true = zeros(N_eval,1);
+u_b = @(x) sum(x,2);
+u_n_true = u_b(evalpnts);
 
 %%%%%%%%%%%%%%%%%%%%%
 % Basic setup stuff independent of this problem
@@ -55,7 +56,7 @@ global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
 end
-GAUSSQR_PARAMETERS.ERROR_STYLE = 3;
+GAUSSQR_PARAMETERS.ERROR_STYLE = 2;
 GAUSSQR_PARAMETERS.NORM_TYPE = 2;
 
 radbasfun = 'fundamental_3d';
@@ -89,7 +90,8 @@ for N = Nvec
     % Compute known-terms vector (a.k.a. righthand side vector)
     % We impose the normal derivative of the function to be 1 on the
     % boundary
-    rhs = ones(N,1);
+    rhs = zeros(N,1);
+rhs = u_b(bdydata);
     
     % Solve the system
     [coefs,recip_cond] = linsolve(CM,rhs);
