@@ -14,13 +14,13 @@
 rbfsetup
 global GAUSSQR_PARAMETERS
 symavail = GAUSSQR_PARAMETERS.SYMBOLIC_TOOLBOX_AVAILABLE;
-GAUSSQR_PARAMETERS.ERROR_STYLE = 2; % Relative RMS
-GAUSSQR_PARAMETERS.NORM_TYPE = inf; % Relative RMS
+GAUSSQR_PARAMETERS.ERROR_STYLE = 2;
+GAUSSQR_PARAMETERS.NORM_TYPE = inf;
 
 % The range of N values to consider
 Nvec = [8,16,32,64,128,256];
 % The orders (smoothness) of the kernel to consider
-betavec = 1:5;
+betavec = 1:4;
 % The kernel shape parameter
 ep = 1;
 % The length of the domain
@@ -30,7 +30,7 @@ embed_cushion = .1;
 % The number of evenly spaced points at which to sample error
 NN = 397;
 % Choice of interpolation function and associated parameters
-fopt = 8;
+fopt = 11;
 fpar = [6,.0567];
 
 % This determines how many extra basis functions should be added to the
@@ -82,6 +82,18 @@ switch fopt
         yf = @(x) CC^(HMN).*(max(0,x-gamval)).^HMN.*(max(0,(1-gamval)-x)).^HMN;
         fstr = ['y(x) = 10^{',num2str(HMN+1),'} (max(0,x-(1/4)))^{',num2str(HMN),'}(max(0,(3/4)-x)^{',num2str(HMN),'}'];
         embed = 0;
+    case 9
+        fstr = 'y(x) = 1-x';
+        yf = @(x) ones(size(x));
+        embed = 0;
+    case 10
+        fstr = 'y(x) = -(x-.5)^2+.25';
+        yf = @(x) -(x-.5).^2+.25;
+        embed = 0;
+    case 11
+        fstr = 'y(x) = x-2x^3+x^4';
+        yf = @(x) x - 2*x.^3 + x.^4;
+        embed = 0;
     otherwise
         error('This function does not exist')
 end
@@ -116,7 +128,7 @@ for N=Nvec
     
     j = 1;
     for beta=betavec
-        if beta==1 || beta==2 % Work with the kernel form
+        if beta==1% || beta==2 % Work with the kernel form
             K_solve = zeros(N);
             K_eval = zeros(NN,N);
             for n=1:N
@@ -144,7 +156,7 @@ warning on
 loglog(Nvec,errvec,'linewidth',2);
 % semilogy(Nvec,errvec,'linewidth',2)
 xlabel('input points N');
-ylabel('RMS relative error');
+ylabel('absolute error');
 %title(strcat(sprintf('x \\in [0,%g] ',L),sprintf('     \\epsilon = %g',ep)));
 
 % Build and create the legend
