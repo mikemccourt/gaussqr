@@ -10,9 +10,10 @@ global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.ERROR_STYLE = 2;
 GAUSSQR_PARAMETERS.NORM_TYPE = inf;
 
-epvec =  logspace(-2,2,20);
-Nvec = [10,20,80];
+Nvec = [10,20,40,80,160,320];
+betavec = [2,3,4];
 NN = 100;
+ep = 1;
 
 spaceopt = 'even';
 
@@ -20,6 +21,9 @@ L = 1;
 fstr = 'y(x)=exp(x)+x(1-e)-1';
 yf = @(x) exp(x)+x*(1-exp(1))-1; % True solution
 ff = @(x) exp(x); % Source
+
+yf = @(x) exp(x) - 1 + (1/6).*(x.^3 - 3.*x.^2 + 8.*x - exp(1).*(x.^3+5.*x));
+ff = @(x) exp(x) + x*(1-exp(1)) - 1;
 
 % Define the eigenvalues
 lamfunc = mqr_solveprep();
@@ -29,31 +33,18 @@ xx = pickpoints(0,L,NN);
 yy = yf(xx);
 
 % Set up the error vectors to store the results
-errvec = zeros(length(Nvec),length(epvec));
-errvecd = zeros(length(Nvec),length(epvec));
-
-% Choose the order of the basis functions
-beta = 2;
+errvec = zeros(length(betavec),length(Nvec));
 
 i = 1;
-for N=Nvec
-    K_solve = zeros(N);
-    K_eval = zeros(NN,N);
-    [x,spacestr] = pickpoints(0,L,N+2,spaceopt);
-    x = x(2:end-1); % Dump 0 and L
-    y = ff(x);
-    I = eye(N);
-    
+for beta=betavec
     k = 1;
-    for ep=epvec
-        % Solve it directly first
-        for j=1:N
-            K_solve(:,j) = cmatern(x,x(j),L,ep,beta,2);
-            K_eval(:,j) = cmatern(xx,x(j),L,ep,beta);
-        end
-        b = K_solve\y;
-        yp = K_eval*b;
-        errvecd(i,k) = errcompute(yp,yy);
+    for N=Nvec
+        K_solve = zeros(N);
+        K_eval = zeros(NN,N);
+        [x,spacestr] = pickpoints(0,L,N+2,spaceopt);
+        x = x(2:end-1); % Dump 0 and L
+        y = ff(x);
+        I = eye(N);
         
         % Solve it with the QR method
         M = ceil(8.5*N);
@@ -82,16 +73,12 @@ for N=Nvec
     i = i+1;
 end
 
-loglog(epvec,errvecd(1,:),'-bx')
-hold on
-loglog(epvec,errvecd(2,:),'-g+')
-loglog(epvec,errvecd(3,:),'-r^')
-loglog(epvec,errvec(1,:),'b','LineWidth',3)
-loglog(epvec,errvec(2,:),'g','LineWidth',3)
-loglog(epvec,errvec(3,:),'r','LineWidth',3)
-hold off
-xlabel('\epsilon')
-ylabel('average error')
-ptsstr=strcat(', x\in[',num2str(aa),',',num2str(bb),'],');
-title(strcat(fstr,ptsstr,spacestr))
-legend('N=10 (Direct)','N=20 (Direct)','N=40 (Direct)','N=10 (QR)','N=20 (QR)','N=40 (QR)', 'Location', 'SouthEast');
+loglog(Nvec,errvec,'linewidth',2);
+xlabel('collocation points')
+ylabel('absolute error')
+
+legendvals = [];
+for beta=betavec
+    legendvals = [legendvals;sprintf('beta=%d',beta)];
+end
+legend(cellstr(legendvals),'location','southwest')

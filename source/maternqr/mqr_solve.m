@@ -49,7 +49,6 @@ opts.UT = true;
 % Form the Marr for this system, just 1:Mmax
 n = 1:M;
 S = mqr_phi(n,x,L);
-% S = sinfunc(n,L,x);
 
 % Compute the QR decomposition of the short, fat matrix
 [Q,R] = qr(S);
