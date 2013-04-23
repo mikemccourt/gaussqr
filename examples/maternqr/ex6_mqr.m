@@ -19,6 +19,7 @@ GAUSSQR_PARAMETERS.NORM_TYPE = inf;
 
 % The range of N values to consider
 Nvec = [8,16,32,64,128,256];
+Nvec = 1;
 % The orders (smoothness) of the kernel to consider
 betavec = 1:4;
 % The kernel shape parameter
@@ -30,8 +31,8 @@ embed_cushion = .1;
 % The number of evenly spaced points at which to sample error
 NN = 397;
 % Choice of interpolation function and associated parameters
-fopt = 11;
-fpar = [6,.0567];
+fopt = 14;
+fpar = [8,.0567];
 
 % This determines how many extra basis functions should be added to the
 % RBF-QR evaluation to get the necessary accuracy: M = Mfactor*N
@@ -93,6 +94,17 @@ switch fopt
     case 11
         fstr = 'y(x) = x-2x^3+x^4';
         yf = @(x) x - 2*x.^3 + x.^4;
+        embed = 0;
+    case 12
+        fstr = 'example with first deriv'
+        aa = (1/9-8/105)*L^(5/2);
+        yf = @(x) 8/105*x.^(7/2) - 1/9*sqrt(L)*x.^3 + aa*x;
+        embed = 0;
+    case 13
+        yf = @(x) x.^5.*(x-L).^5;
+        embed = 0;
+    case 14
+        yf = @(x) -sin(3*pi*x);
         embed = 0;
     otherwise
         error('This function does not exist')
