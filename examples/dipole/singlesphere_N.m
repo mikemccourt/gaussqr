@@ -279,7 +279,14 @@ for Npnts = Nvec
   
     % Compute the total errors
     errvec(k) = errcompute(phi_comp,phi_true);
-    condvec(k) = 1/recip_cond;
+    % Store the condition of the system
+    % For a low-rank system, instead store the rank
+    % This may happen for some MFS problems
+    if floor(recip_cond)==recip_cond
+        condvec(k) = recip_cond;
+    else
+        condvec(k) = 1/recip_cond;
+    end
     Nvec_true(k) = N_tot;
     
     if iter_out
