@@ -20,11 +20,14 @@
 %                'mfs' : Method of fundamental solutions
 %                        MFS_frac and ctr_sphere must also be chosen
 %     rbf_choice - RBF for collocation <default = 'imq'>
-%     point_dist - How the points are spread in the ball
+%     int_point_dist - How the (collocation) points are spread in the ball
 %                  'halton' : Halton cube, restricted to ball <default>
 %                  'even' : Gridden points, restricted to ball
 %                  'random' : Uniform random
 %                  'cheb' : Chebyshev spaced along radii of the ball
+%     bdy_point_dist - How the (collocation) points are spread on the surface
+%                  'spiral' : evenly (golden spiral) <default> 
+%                  'halton' : quasi-randomly (Halton)
 %     ep - RBF shape parameter <default = 10>
 %     mfs_frac - How many centers for MFS, in [0.0,1.0]*N <default = 0.4>
 %     mfs_sphere - Fraction beyond R (eg, 1.3R) for centers <default = 1.3>
@@ -72,7 +75,8 @@ srcpnts = [0, 0, 0.6*R];
 
 sol_type = 'mfs';
 radbasfun = 'imq';
-point_dist = 'halton';
+int_point_dist = 'halton';
+bdy_point_dist = 'spiral';
 ep = 1;
 mfs_frac = 0.4;
 mfs_sphere = 1.3;
@@ -146,7 +150,7 @@ else
 end
 
 % Determine collocation points
-[POINTS, NORMALS] = BallGeometry(R,Npnts,sol_type,point_dist,srcpnts,dip_cushion);
+[POINTS, NORMALS] = BallGeometry(R,Npnts,sol_type,int_point_dist,bdy_point_dist,srcpnts,dip_cushion);
 intdata = POINTS.int1;
 bdydata = POINTS.bdy11;
 N_int = size(intdata,1);

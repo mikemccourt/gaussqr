@@ -26,6 +26,14 @@
 %                'mfs' : Method of fundamental solutions
 %                        MFS_frac and ctr_sphere must also be chosen
 %     rbf_choice - RBF for collocation <default = 'imq'>
+%     int_point_dist - How the (collocation) points are spread in the ball
+%                  'halton' : Halton cube, restricted to ball <default>
+%                  'even' : Gridden points, restricted to ball
+%                  'random' : Uniform random
+%                  'cheb' : Chebyshev spaced along radii of the ball
+%     bdy_point_dist - How the (collocation) points are spread on the surface
+%                  'spiral' : evenly (golden spiral) <default> 
+%                  'halton' : quasi-randomly (Halton)
 %     ep - RBF shape parameter <default = 10>
 %     mfs_frac - How many centers for MFS, in (0.0->1.0)*N <default = 1.0>
 %     mfs_sphere - Fraction beyond/within R for centers 
@@ -85,9 +93,10 @@ srcpnts = [0, 0, 0.6*R(1)];
 
 sol_type = 'mfs';
 radbasfun = 'imq';
+int_point_dist = 'halton';
+bdy_point_dist = 'spiral';
 ep = 1;
 mfs_frac = 1.0;
-% mfs_sphere = 1.3;
 mfs_sphere = [1.3 0.8 1.3];
 BC_choice = 1;
 eval_diff = 1;
@@ -173,7 +182,7 @@ for Npnts = Nvec
     end
     
     % Choose all points in the geometry
-    [POINTS, NORMALS] = BallGeometry(R,Npnts,sol_type,[],srcpnts,dip_cushion);
+    [POINTS, NORMALS] = BallGeometry(R,Npnts,sol_type,int_point_dist,bdy_point_dist,srcpnts,dip_cushion);
     
     % Cut up the domain into the appropriate sections
     % Section A is the inner ball, B is the outer ball
@@ -210,19 +219,11 @@ for Npnts = Nvec
     % In the MFS setting, these are chosen in a sphere around the ball
     % The MFS center choices may not be the best, but it will work for now
     if strcmp(sol_type,'mfs')
-%        N_ctrs = floor(mfs_frac*(N_A_cpl_out+N_B_cpl_in+N_B_bdy));
-%        all_ctrs = SphereSurfGoldPoints(N_ctrs, mfs_sphere*R(end));
-%        A_ctrs_ind = randperm(N_ctrs,floor(mfs_frac*N_A_cpl_out));
-%        B_ctrs_ind = setdiff(1:N_ctrs,A_ctrs_ind);
-%        A_ctrs = all_ctrs(A_ctrs_ind,:);
-%        B_ctrs = all_ctrs(B_ctrs_ind,:);
-        
         A_ctrs_out = SphereSurfGoldPoints(floor(mfs_frac*N_A_cpl_out), mfs_sphere(1)*R(1) );
         A_ctrs = A_ctrs_out;
         B_ctrs_in = SphereSurfGoldPoints(floor(mfs_frac*N_B_cpl_in), mfs_sphere(2)*R(1) );
         B_ctrs_out = SphereSurfGoldPoints(floor(mfs_frac*N_B_bdy), mfs_sphere(3)*R(2) );
         B_ctrs = [B_ctrs_in; B_ctrs_out];
-        
     else % For kansa, the centers and collocation points coincide
         A_ctrs = [A_int;A_cpl_out];
         if BC_choice~=4

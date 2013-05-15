@@ -1,9 +1,10 @@
 function [ POINTS, NORMALS ] = BallGeometry( R, ...
-                                             Npnts, ...
-                                             solvertype, ...
-                                             ptstype , ...
-                                             avoidpts, ...
-                                             avoidcushion)
+                                              Npnts, ...
+                                              solvertype, ...
+                                              intptstype , ...
+                                              bdyptstype, ...
+                                              avoidpts, ...
+                                              avoidcushion)
 % function [POINTS,NORMALS] = BallGeometry(R,Npnts,solvertype,ptstype,avoidpts,avoidcushion)
 % BALLGEOMETRY creates a distribution of points in a multilayer (N layers)
 % ball.
@@ -12,7 +13,7 @@ function [ POINTS, NORMALS ] = BallGeometry( R, ...
 % Output data are points coordinates and unit vectors normal to boundary 
 % spherical surfaces.
 % Interior points are posed in a uniform grid. Boundary points are
-% distributed in a regular manner by means of gold section spirals.
+% distributed by means of gold section spirals or Halton distributions.
 %
 % Inputs:
 % R             =   sphere radii vector given as follows:
@@ -35,11 +36,20 @@ function [ POINTS, NORMALS ] = BallGeometry( R, ...
 %                   If 'mfs' is selected, only boundary data will be 
 %                   provided as output.
 %
-% ptstype       =   'even'   Points uniformly distributed in the cube
+% intptstype    =   Interior points distribution:
+%                   'even'   Points uniformly distributed in the cube
 %                   'halton' Points should have a Halton distribution
 %                   'random' Points are uniform randomly chosen
 %                   'cheb'   Points are Chebyshev spaced along radii
 %                   ** the default choice is 'halton', which can be
+%                   selected by passing []
+%
+% bdyptstype    =   Boundary points type
+%                   'spiral' Points regularly distributed by means of a
+%                            gold section spiral
+%                   'halton' Points distributed by mapping Halton points
+%                            from the unit square to the spherical surface
+%                   ** the default choice is 'spiral', which can be
 %                   selected by passing []
 %
 % avoidpts      =   Vector of points that there should be no points in the
@@ -79,8 +89,8 @@ function [ POINTS, NORMALS ] = BallGeometry( R, ...
 %
 % Required functions: 
 %   SphereSurfGoldPoints.m
-%
-% To do list: Consider a Chebyshev points distribution
+%   SphereSurfHaltonPoints.m
+
 
 N = length(R); % Number of layers
 lNpnts = length(Npnts);
@@ -99,25 +109,45 @@ end
 R = R(:)'; % Make sure it's a row vector
 
 Rend = R(end);
-ptstype_DEFAULT = 'halton';
+intptstype_DEFAULT = 'halton';
+bdyptstype_DEFAULT = 'spiral';
 avoidcushion_DEFAULT = Rend/5;
 chebNumRegion = 12*lNpnts; % Maybe this should be passed or adaptive ...
 
 % Run checks to make sure that the point distribution is okay
 if nargin==3
-    ptstype = ptstype_DEFAULT;
-elseif isempty(ptstype)
-    ptstype = ptstype_DEFAULT;
+    intptstype = intptstype_DEFAULT;
+    bdyptstype = bdyptstype_DEFAULT;
 else
-    if ischar(ptstype)
-        if ~any(strcmp(ptstype,{'even','halton','random','cheb'}))
-            warning('ptstype=%s unacceptable, defaulting to %s',ptstype,ptstype_DEFAULT)
-            ptstype = ptstype_DEFAULT;
-        end
+    
+    if isempty(intptstype)
+        intptstype = intptstype_DEFAULT;
     else
-        warning('ptstype=%g unacceptable, defaulting to %s',ptstype,ptstype_DEFAULT)
-        ptstype = ptstype_DEFAULT;
+        if ischar(intptstype)
+            if ~any(strcmp(intptstype,{'even','halton','random','cheb'}))
+                warning('intptstype=%s unacceptable, defaulting to %s',intptstype,intptstype_DEFAULT)
+                intptstype = intptstype_DEFAULT;
+            end
+        else
+            warning('intptstype=%g unacceptable, defaulting to %s',intptstype,intptstype_DEFAULT)
+            intptstype = intptstype_DEFAULT;
+        end
     end
+    
+    if isempty(bdyptstype)
+        bdyptstype = bdyptstype_DEFAULT;
+    else
+        if ischar(bdyptstype)
+            if ~any(strcmp(bdyptstype,{'spiral','halton'}))
+                warning('bdyptstype=%s unacceptable, defaulting to %s',bdyptstype,bdyptstype_DEFAULT)
+                bdyptstype = bdyptstype_DEFAULT;
+            end
+        else
+            warning('bdyptstype=%g unacceptable, defaulting to %s',bdyptstype,bdyptstype_DEFAULT)
+            bdyptstype = bdyptstype_DEFAULT;
+        end
+    end
+    
 end
 
 % Run checks to make sure the avoidance values are acceptable
@@ -157,15 +187,15 @@ switch lower(solvertype)
         R = [0 R];
         
         d = 2*Rend / ( 6/pi * Npnts(1) )^(1/3);
-        if strcmp(ptstype,'even')
+        if strcmp(intptstype,'even')
             x = -Rend:d:Rend;
             [x, y, z] = meshgrid(x);
             ptsvec = [x(:),y(:),z(:)];
-        elseif strcmp(ptstype,'halton')
+        elseif strcmp(intptstype,'halton')
             ptsvec = Rend*(2*haltonseq(ceil(6/pi*Npnts(1)),3)-1);
-        elseif strcmp(ptstype,'random')
+        elseif strcmp(intptstype,'random')
             ptsvec = Rend*(2*rand(ceil(6/pi*Npnts(1)),3)-1);
-        elseif strcmp(ptstype,'cheb')
+        elseif strcmp(intptstype,'cheb')
             Nc = chebNumRegion;
             Nradii = Npnts(1)/Nc;
             radii = SphereSurfGoldPoints(Nradii, Rend);
@@ -178,7 +208,7 @@ switch lower(solvertype)
 %                 
 %             end
         else
-            error('Unknown point distribution style')
+            error('Unknown interior point distribution style')
         end
         
         % Remove the points in the avoidance areas
@@ -208,22 +238,41 @@ switch lower(solvertype)
             % Boundary points
             if lNpnts == 1
                 ll = ll + length(POINTS.(name_int));
-                Npnts_bdy = ll * .5; % TO BE IMPROVED ?!?!?!
+                Npnts_bdy = floor(ll * .5); % TO BE IMPROVED ?!?!?!
             else
                 Npnts_bdy = Npnts(l+1);
             end
-            POINTS.(name_bdy) = SphereSurfGoldPoints(Npnts_bdy, R(l+1));
-            if l == N
-                % The splitting of the set of point in two subsets is not
-                % required for the outermost layer
-                NORMALS.(name_normals) = POINTS.(name_bdy) / R(l+1);
+            
+            if strcmp(bdyptstype,'spiral')
+                POINTS.(name_bdy) = SphereSurfGoldPoints(Npnts_bdy, R(l+1));
+                if l == N
+                    % The splitting of the set of point in two subsets is not
+                    % required for the outermost layer
+                    NORMALS.(name_normals) = POINTS.(name_bdy) / R(l+1);
+                else
+                    % Split bountary points into two sets
+                    POINTS.(name_bdy1) = POINTS.(name_bdy)(1:2:end,:);
+                    POINTS.(name_bdy) = POINTS.(name_bdy)(2:2:end,:);
+                    NORMALS.(name_normals) = POINTS.(name_bdy) / R(l+1);
+                    NORMALS.(name_normals1) = POINTS.(name_bdy1) / R(l+1);
+                end
+            elseif strcmp(bdyptstype,'halton')
+                POINTS.(name_bdy) = SphereSurfHaltonPoints(Npnts_bdy,R(l+1));
+                if l == N
+                    % The splitting of the set of point in two subsets is not
+                    % required for the outermost layer
+                    NORMALS.(name_normals) = POINTS.(name_bdy) / R(l+1);
+                else
+                    % Split bountary points into two sets
+                    POINTS.(name_bdy1) = POINTS.(name_bdy)(1:floor(Npnts_bdy/2),:);
+                    POINTS.(name_bdy) = POINTS.(name_bdy)(floor(Npnts_bdy/2)+1:Npnts(l),:);
+                    NORMALS.(name_normals) = POINTS.(name_bdy) / R(l+1);
+                    NORMALS.(name_normals1) = POINTS.(name_bdy1) / R(l+1);
+                end
             else
-                % Split bountary points into two sets
-                POINTS.(name_bdy1) = POINTS.(name_bdy)(1:2:end,:);
-                POINTS.(name_bdy) = POINTS.(name_bdy)(2:2:end,:);
-                NORMALS.(name_normals) = POINTS.(name_bdy) / R(l+1);
-                NORMALS.(name_normals1) = POINTS.(name_bdy1) / R(l+1);
+                error('Unknown boundary point distribution style')
             end
+            
         end
     case 'mfs'
         if lNpnts==1
@@ -243,17 +292,34 @@ switch lower(solvertype)
             % Interior points are not relevant
             POINTS.(name_int) = [];
             % Boundary points only
-            POINTS.(name_bdy) = SphereSurfGoldPoints(Npnts(l), R(l));
-            if l == N
-                % The splitting of the set of point in two subsets is not
-                % required for the outermost layer
-                NORMALS.(name_normals) = POINTS.(name_bdy) / R(l);
+            if strcmp(bdyptstype,'spiral')
+                POINTS.(name_bdy) = SphereSurfGoldPoints(Npnts(l), R(l));
+                if l == N
+                    % The splitting of the set of point in two subsets is not
+                    % required for the outermost layer
+                    NORMALS.(name_normals) = POINTS.(name_bdy) / R(l);
+                else
+                    % Split bountary points into two sets
+                    POINTS.(name_bdy1) = POINTS.(name_bdy)(1:2:end,:);
+                    POINTS.(name_bdy) = POINTS.(name_bdy)(2:2:end,:);
+                    NORMALS.(name_normals) = POINTS.(name_bdy) / R(l);
+                    NORMALS.(name_normals1) = POINTS.(name_bdy1) / R(l);
+                end
+            elseif strcmp(bdyptstype,'halton')
+                POINTS.(name_bdy) = SphereSurfHaltonPoints(Npnts(l),R(l));
+                if l == N
+                    % The splitting of the set of point in two subsets is not
+                    % required for the outermost layer
+                    NORMALS.(name_normals) = POINTS.(name_bdy) / R(l);
+                else
+                    % Split bountary points into two sets
+                    POINTS.(name_bdy1) = POINTS.(name_bdy)(1:floor(Npnts(l)/2),:);
+                    POINTS.(name_bdy) = POINTS.(name_bdy)(floor(Npnts(l)/2)+1:Npnts(l),:);
+                    NORMALS.(name_normals) = POINTS.(name_bdy) / R(l);
+                    NORMALS.(name_normals1) = POINTS.(name_bdy1) / R(l);
+                end
             else
-                % Split bountary points into two sets
-                POINTS.(name_bdy1) = POINTS.(name_bdy)(1:2:end,:);
-                POINTS.(name_bdy) = POINTS.(name_bdy)(2:2:end,:);
-                NORMALS.(name_normals) = POINTS.(name_bdy) / R(l);
-                NORMALS.(name_normals1) = POINTS.(name_bdy1) / R(l);
+                error('Unknown boundary point distribution style')
             end
         end
     otherwise

@@ -14,6 +14,14 @@
 %  of different RBFs and different epsilon values.
 %
 %  The solution parameters to be considered are
+%     int_point_dist - How the (collocation) points are spread in the ball
+%                  'halton' : Halton cube, restricted to ball <default>
+%                  'even' : Gridden points, restricted to ball
+%                  'random' : Uniform random
+%                  'cheb' : Chebyshev spaced along radii of the ball
+%     bdy_point_dist - How the (collocation) points are spread on the surface
+%                  'spiral' : evenly (golden spiral) <default> 
+%                  'halton' : quasi-randomly (Halton)
 %     ep - Gaussian shape parameter <default = 1e-5>
 %     alpha - GaussQR scale parameter <default = 1>
 %     lowrank - Use the low rank GaussQR method <default = 1>
@@ -54,6 +62,8 @@ sig = 0.02;
 dipmom = 2.7*[1, 0, 0];
 srcpnts = [0, 0, 0.6*R];
 
+int_point_dist = 'halton';
+bdy_point_dist = 'spiral';
 ep = 1e-5;
 alpha = 1;
 lowrank = 1;
@@ -121,7 +131,7 @@ for N_requested = Nvec
     end
     
     % Determine collocation points
-    [POINTS, NORMALS] = BallGeometry(R,N_requested,'kansa',[],srcpnts,dip_cushion);
+    [POINTS, NORMALS] = BallGeometry(R,N_requested,'kansa',int_point_dist,bdy_point_dist,srcpnts,dip_cushion);
     intdata = POINTS.int1;
     bdydata = POINTS.bdy11;
     N_int = size(intdata,1);

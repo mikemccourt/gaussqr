@@ -86,7 +86,7 @@ function B = Induction( obspnts,  srcpnts, dipmom, ...
 %
 % Calls on: 
 %   pickRBF.m
-%   (haltonseq.m) as an alternative to the MATLAB built-in haltonset
+%   SphereSurfHaltonPoints.m
 %   DistanceMatrix.m
 %   BF.m
 %
@@ -113,14 +113,7 @@ end
 surf = 4*pi*radius^2; 
 
 % Source points to be selected on the surface
-hs = haltonset(2); % 2D Halton set of points (in the unit square)
-A = hs(1:N,:);
-% A = haltonseq(1:N,3); % This is an alternative to the MATLAB haltonset
-theta = 2*pi*A(:,1);
-phi = acos(2*A(:,2)-1);
-r_src = [ radius.*sin(phi).*cos(theta), ...
-          radius.*sin(phi).*sin(theta), ...
-          radius.*cos(phi)];
+r_src = SphereSurfHaltonPoints(1:N,radius);
 normals = r_src./radius; % Normal unit vectors
 
 % Evaluate potentials at source points

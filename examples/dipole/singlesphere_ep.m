@@ -16,6 +16,14 @@
 %     rbfset - set of RBFs for collocation to be tested
 %               <default = { 'Gaussian' 'IMQ' 'MQ' ...
 %                            'Wendland_C4' 'Wendland_C6' }>
+%     int_point_dist - How the (collocation) points are spread in the ball
+%                  'halton' : Halton cube, restricted to ball <default>
+%                  'even' : Gridden points, restricted to ball
+%                  'random' : Uniform random
+%                  'cheb' : Chebyshev spaced along radii of the ball
+%     bdy_point_dist - How the (collocation) points are spread on the surface
+%                  'spiral' : evenly (golden spiral) <default> 
+%                  'halton' : quasi-randomly (Halton)
 %     BC_choice - How to choose the boundary conditions <default = 1>
 %                 1 : Neumann
 %                 2 : Dirichlet
@@ -53,6 +61,8 @@ dipmom = 2.7*[1, 0, 0];
 srcpnts = [0, 0, 0.6*R];
  
 rbfset = { 'Gaussian' 'IMQ' 'MQ' 'Wendland_C4' 'Wendland_C6' };
+int_point_dist = 'halton';
+bdy_point_dist = 'spiral';
 epvec = logspace(-1,1,50);
 BC_choice = 1;
 eval_diff = 1;
@@ -108,7 +118,7 @@ else
 end
 
 % Determine collocation points
-[POINTS, NORMALS] = BallGeometry(R,Npnts,'kansa',[],srcpnts,dip_cushion);
+[POINTS, NORMALS] = BallGeometry(R,Npnts,'kansa',int_point_dist,bdy_point_dist,srcpnts,dip_cushion);
 intdata = POINTS.int1;
 bdydata = POINTS.bdy11;
 N_int = size(intdata,1);
