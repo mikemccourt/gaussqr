@@ -5,41 +5,32 @@
 function rbfsetup
 thisDir = pwd;
 thisOS = system_dependent('getos');
-
-if(strfind(thisOS,'Windows')>0) % We are in Windows
-    sourceDir = strcat(thisDir,'\source');
-      gaussqrDir = strcat(sourceDir,'\gaussqr');
-        gqrauxiliaryDir = strcat(gaussqrDir,'\auxiliary');
-      utilitiesDir = strcat(sourceDir,'\utilities');
-      maternqrDir = strcat(sourceDir,'\maternqr');
-        mqrauxiliaryDir = strcat(maternqrDir,'\auxiliary');
-    
-    examplesDir = strcat(thisDir,'\examples');
-      gqrexamplesDir = strcat(examplesDir,'\gaussqr');
-      mqrexamplesDir = strcat(examplesDir,'\maternqr');
-        testfunctionsDir = strcat(mqrexamplesDir,'\testfunctions');
-      dipoleDir = strcat(examplesDir,'\dipole');
-        dipolesourceDir = strcat(dipoleDir,'\source');
-    otherDir = strcat(thisDir,'\fromothers');
-    bookDir = strcat(thisDir,'\book');
-else % We are in Unix
-    sourceDir = strcat(thisDir,'/source');
-      gaussqrDir = strcat(sourceDir,'/gaussqr');
-        gqrauxiliaryDir = strcat(gaussqrDir,'/auxiliary');
-      utilitiesDir = strcat(sourceDir,'/utilities');
-      maternqrDir = strcat(sourceDir,'/maternqr');
-        mqrauxiliaryDir = strcat(maternqrDir,'/auxiliary');
-      
-    examplesDir = strcat(thisDir,'/examples');
-      gqrexamplesDir = strcat(examplesDir,'/gaussqr');
-      mqrexamplesDir = strcat(examplesDir,'/maternqr');
-        testfunctionsDir = strcat(mqrexamplesDir,'/testfunctions');
-      dipoleDir = strcat(examplesDir,'/dipole');
-        dipolesourceDir = strcat(dipoleDir,'/source');
-    otherDir = strcat(thisDir,'/fromothers');
-    bookDir = strcat(thisDir,'/book');
+if(strfind(thisOS,'Windows')>0)
+    dirslash = '\';
+else
+    dirslash = '/';
 end
-addpath(sourceDir,gaussqrDir,gqrauxiliaryDir,mqrauxiliaryDir,utilitiesDir,otherDir,maternqrDir,gqrexamplesDir,mqrexamplesDir,dipoleDir,testfunctionsDir,dipolesourceDir,bookDir,1);
+
+% Define the necessary directories
+sourceDir = strcat(thisDir,dirslash,'source');
+  gaussqrDir = strcat(sourceDir,dirslash,'gaussqr');
+    gqrauxiliaryDir = strcat(gaussqrDir,dirslash,'auxiliary');
+  utilitiesDir = strcat(sourceDir,dirslash,'utilities');
+  maternqrDir = strcat(sourceDir,dirslash,'maternqr');
+    mqrauxiliaryDir = strcat(maternqrDir,dirslash,'auxiliary');
+
+examplesDir = strcat(thisDir,dirslash,'examples');
+  gqrexamplesDir = strcat(examplesDir,dirslash,'gaussqr');
+  mqrexamplesDir = strcat(examplesDir,dirslash,'maternqr');
+    testfunctionsDir = strcat(mqrexamplesDir,dirslash,'testfunctions');
+  dipoleDir = strcat(examplesDir,dirslash,'dipole');
+    dipolesourceDir = strcat(dipoleDir,dirslash,'source');
+  approxeigsDir = strcat(examplesDir,dirslash,'approxeigs');
+otherDir = strcat(thisDir,dirslash,'fromothers');
+bookDir = strcat(thisDir,dirslash,'book');
+
+% Add the directories to the path
+addpath(sourceDir,gaussqrDir,gqrauxiliaryDir,mqrauxiliaryDir,utilitiesDir,otherDir,maternqrDir,gqrexamplesDir,mqrexamplesDir,dipoleDir,approxeigsDir,testfunctionsDir,dipolesourceDir,bookDir,1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Setup global constants and parameters
