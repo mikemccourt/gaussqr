@@ -3,7 +3,7 @@
 % The program should take in N, the number of points in the domain
 % It will return the eigenvalues and eigenfunction coefficients
 %   associated with the collocation approximation
-% Many of the things I ahve done may not make sense at first blush
+% Many of the things I have done may not make sense at first blush
 % Ask me if you have questions
 
 x = linspace(0,1,10)';
