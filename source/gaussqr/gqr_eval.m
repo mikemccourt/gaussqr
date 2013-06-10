@@ -27,7 +27,7 @@ end
 
 alreadystored = isfield(GQR,'stored_phi');
 
-if alreadystored & ~storephi
+if alreadystored && ~storephi
     GQR.warnid = 'GAUSSQR:storageoff';
     GQR.warnmsg = 'Stored x found in GQR, but no storage requested';
     if alertuser
@@ -40,9 +40,9 @@ end
 recompute = 0;
 if storephi
     if alreadystored % Check if an x was already stored
-        if any(size(x)~=size(GQR.stored_x)) | any(size(deriv)~=size(GQR.stored_deriv))
+        if any(size(x)~=size(GQR.stored_x)) || any(size(deriv)~=size(GQR.stored_deriv))
             recompute = 1;
-        elseif sum(any(x~=GQR.stored_x)) | any(deriv~=GQR.stored_deriv)
+        elseif sum(any(x~=GQR.stored_x)) || any(deriv~=GQR.stored_deriv)
             recompute = 1;
         end
     else % If not, store for the first time
