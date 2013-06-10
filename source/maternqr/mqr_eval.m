@@ -12,13 +12,14 @@ ep   = MQR.ep;
 L    = MQR.L;
 beta = MQR.beta;
 N    = MQR.N;
-M    = MQR.Mmax;
+Marr = MQR.Marr;
 Rbar = MQR.Rbar;
 coef = MQR.coef;
 
 if nargin==2
     deriv = 0;
 end
+M = size(Marr,2);
 
 phiEval1 = mqr_phi(1:N,x,L,deriv);
 phiEval2 = mqr_phi(N+1:M,x,L,deriv);

@@ -38,7 +38,7 @@ lamfunc = @(n,L,ep,beta) ((pi*n/L).^2+ep^2).^(-beta);
 
 if nargin==0
     L = lamfunc;
-elseif nargin~=5
+elseif nargin~=4
     error('nargin=%d is unacceptable',nargin)
 else
     if nargout==1
@@ -83,9 +83,9 @@ else
     % mqr_solve.  The minimum length is 1.01*N, although eventually I'll allow
     % for smaller M values
     if Mextramax<0
-        Mmax = ceil((1-(min(Mextramax,-101)/100))*N);
+        M = ceil((1-(min(Mextramax,-101)/100))*N);
     else
-        Mmax = ceil(max(Mextramax,1.01*N));
+        M = ceil(max(Mextramax,1.01*N));
     end
     
     MQR.ep = ep;
@@ -106,7 +106,7 @@ else
     opts.UT = true;
     
     % Form the Marr for this system, just 1:Mmax
-    Marr = 1:Mmax;
+    Marr = 1:M;
     phiMat = mqr_phi(Marr,x,L);
     
     % Compute the QR decomposition of the short, fat matrix

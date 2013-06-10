@@ -47,23 +47,13 @@ for beta=betavec
         I = eye(N);
         
         % Solve it with the QR method
-        M = ceil(8.5*N);
-        n = 1:M;
-        S = mqr_phi(n,x,L);
-        [Q,R] = qr(S);
-        R1 = R(:,1:N);
-        R2 = R(:,N+1:end);
-        opts.UT = true;
-        Rhat = linsolve(R1,R2,opts);
-        lambda = lamfunc(n,L,ep,beta);
-        D = diag(lambda);
-        D1 = diag(lambda(1:N));
-        D2 = diag(lambda(N+1:end));
-        Rbar = D2*Rhat'/D1;
+        MQR = mqr_solveprep(x,L,ep,beta);
+        Rbar = MQR.Rbar;
+        Marr = MQR.Marr;
         
-        S2d = mqr_phi(n,x,L,2);
+        S2d = mqr_phi(Marr,x,L,2);
         M_solve = S2d*[I;Rbar];
-        M_eval = mqr_phi(n,xx,L);
+        M_eval = mqr_phi(Marr,xx,L);
         b = M_solve\y;
         yp = M_eval*([I;Rbar]*b);
         errvec(i,k) = errcompute(yp,yy);
