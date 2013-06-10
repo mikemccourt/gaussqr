@@ -1,5 +1,5 @@
-function [L,ep,beta,Mmax,Rbar] = mqr_solveprep(x,L,ep,beta)
-% function [L,ep,beta,Mmax,Rbar] = mqr_solveprep(x,L,ep,beta)
+function [L,ep,beta,M,Rbar] = mqr_solveprep(x,L,ep,beta)
+% function [L,ep,beta,M,Rbar] = mqr_solveprep(x,L,ep,beta)
 %
 % This function takes all the stuff needed to do a MaternQR problem and
 % preps it before the problem starts.  The reason for this is so that I can
@@ -22,7 +22,7 @@ function [L,ep,beta,Mmax,Rbar] = mqr_solveprep(x,L,ep,beta)
 % Outputs: L - boundary of the domain
 %          ep - value of shape parameter
 %          beta - smoothness parameter
-%          Mmax - length of the necessary eigenfunction expansion
+%          M - length of the necessary eigenfunction expansion
 %          Rbar - the stable basis correction coefficients
 
 global GAUSSQR_PARAMETERS
@@ -41,6 +41,7 @@ if nargin==0
 elseif nargin~=4
     error('nargin=%d is unacceptable',nargin)
 else
+    returnMQR = 0;
     if nargout==1
         returnMQR = 1;
     end
