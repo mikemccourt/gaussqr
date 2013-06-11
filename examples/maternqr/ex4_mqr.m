@@ -11,7 +11,7 @@ GAUSSQR_PARAMETERS.ERROR_STYLE = 2;
 GAUSSQR_PARAMETERS.NORM_TYPE = inf;
 
 epvec =  logspace(-2,2,20);
-Nvec = [10,20,80];
+Nvec = [10,20,40];
 NN = 100;
 
 spaceopt = 'even';
@@ -56,23 +56,13 @@ for N=Nvec
         errvecd(i,k) = errcompute(yp,yy);
         
         % Solve it with the QR method
-        M = ceil(8.5*N);
-        n = 1:M;
-        S = mqr_phi(n,x,L);
-        [Q,R] = qr(S);
-        R1 = R(:,1:N);
-        R2 = R(:,N+1:end);
-        opts.UT = true;
-        Rhat = linsolve(R1,R2,opts);
-        lambda = lamfunc(n,L,ep,beta);
-        D = diag(lambda);
-        D1 = diag(lambda(1:N));
-        D2 = diag(lambda(N+1:end));
-        Rbar = D2*Rhat'/D1;
+        MQR = mqr_solveprep(x,L,ep,beta);
+        Rbar = MQR.Rbar;
+        Marr = MQR.Marr;
         
-        S2d = mqr_phi(n,x,L,2);
+        S2d = mqr_phi(Marr,x,L,2);
         M_solve = S2d*[I;Rbar];
-        M_eval = mqr_phi(n,xx,L);
+        M_eval = mqr_phi(Marr,xx,L);
         b = M_solve\y;
         yp = M_eval*([I;Rbar]*b);
         errvec(i,k) = errcompute(yp,yy);
@@ -92,6 +82,6 @@ loglog(epvec,errvec(3,:),'r','LineWidth',3)
 hold off
 xlabel('\epsilon')
 ylabel('average error')
-ptsstr=strcat(', x\in[',num2str(aa),',',num2str(bb),'],');
+ptsstr=strcat(', x\in[0,',num2str(L),'],');
 title(strcat(fstr,ptsstr,spacestr))
 legend('N=10 (Direct)','N=20 (Direct)','N=40 (Direct)','N=10 (QR)','N=20 (QR)','N=40 (QR)', 'Location', 'SouthEast');

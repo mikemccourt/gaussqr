@@ -19,7 +19,6 @@ GAUSSQR_PARAMETERS.NORM_TYPE = inf;
 
 % The range of N values to consider
 Nvec = [8,16,32,64,128,256];
-Nvec = 1;
 % The orders (smoothness) of the kernel to consider
 betavec = 1:4;
 % The kernel shape parameter
@@ -31,7 +30,7 @@ embed_cushion = .1;
 % The number of evenly spaced points at which to sample error
 NN = 397;
 % Choice of interpolation function and associated parameters
-fopt = 14;
+fopt = 8;
 fpar = [8,.0567];
 
 % This determines how many extra basis functions should be added to the
