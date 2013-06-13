@@ -27,7 +27,7 @@ function [errr,errc] = errorevals(D,C,M)
                 f = @(x)(x.^k)*CV;
                 maxf = max(f(0 : 0.002 : 1));
                 ff = @(x) abs((x.^k) * CV / maxf * sqrt(2));
-                errc(i) = abs( 2*sqrt(2)*pi - quad(ff,0,1));
+                errc(i) = abs( 2*sqrt(2)/pi - quad(ff,0,1));
             end
         case 2 %normone(realfunction - apporximatefunction)
             for i =1: j
