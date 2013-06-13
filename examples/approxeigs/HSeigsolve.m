@@ -142,7 +142,7 @@ switch basis
     case 1
         PHI.reorient = @(V) V*diag(sign(V(2,:)));
     case 2
-        PHI.reorient = @(V) V*diag(sign((1-PHI.centers)'*V));
+        PHI.reorient = @(V) V*diag(sign((1-PHI.centers)*V));
 end
     
 % Reorient the eigenfunctions
