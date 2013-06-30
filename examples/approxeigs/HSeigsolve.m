@@ -110,6 +110,20 @@ switch basis
         Z = repmat(z,N,1);
         j = [];
         J = [];
+    case 3
+        PHI.basisName = 'Chebyshev Polynomials';
+        PHI.cp = @(n,x) cos(n.*acos(x)).*(n>=0); % Chebyshev polynomials
+        
+        Int_Kh = @(x,z,j) cheb_basis_integral(x,j-1);
+        H_mat = @(x,z,j) PHI.cp(j-1,x);
+        
+        ptspace = 'cheb';
+        x = pickpoints(0,L,N+2,ptspace);x = x(2:end-1);
+        X = repmat(x,1,N);
+        z = [];
+        Z = [];
+        j = 1:N;
+        J = repmat(j,N,1);
     otherwise
         error('Unacceptable basis=%e',basis)
 end
@@ -143,6 +157,8 @@ switch basis
         PHI.reorient = @(V) V*diag(sign(V(2,:)));
     case 2
         PHI.reorient = @(V) V*diag(sign((1-PHI.centers)*V));
+    case 3
+        PHI.reorient = @(V) V*diag(sign(((-1).^(1:size(V,1)).*(0:size(V,1)-1))*V)); % Fix for negative indices maybe
 end
     
 % Reorient the eigenfunctions
@@ -177,3 +193,5 @@ end
 if returnPHI
     V = PHI;    
 end
+
+end % End of the main HSEigSolve function
