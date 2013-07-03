@@ -16,7 +16,7 @@ function errc = erroref(Phi,M)
    switch M
        case 1 %abs(normone(realfunction)-normone(apporximatefunction))
            for i =1: j
-               errc(i) = abs( 2*sqrt(2)/pi - quad(@(x) Phi.eigfuncEval(x',i)',0,1));
+               errc(i) = abs( 2*sqrt(2)/pi - quad(@(x) abs(Phi.eigfuncEval(x',i)'),0,1));
            end
        case 2 %normone(realfunction - apporximatefunction)
            for i =1: j
@@ -28,7 +28,7 @@ function errc = erroref(Phi,M)
              end
         case 4 %collection points
              for i =1: j
-                errc(i) =sum(abs(sqrt(2)*sin(pi*i*(0:0.002:1)')-Phi.eigfuncEval((0:.002:1)',i)))/500*pi/(2*sqrt(2)); 
+                errc(i) =sum(abs(sqrt(2)*sin(pi*i*(0:0.002:1)')-Phi.eigfuncEval((0:.002:1)',i)))/500*pi/(2*sqrt(2));% sum of abs(realfunction(500 simple point)-apprximatefunction(500 simple points))/500/infinity normal(realfunction)
              end
         otherwise error('Unacceptable method=%e',M);
     end
