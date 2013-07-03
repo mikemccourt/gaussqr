@@ -21,9 +21,12 @@ function PHI = HSeigsolveqd(N,B,M)
 quadgkEXISTS = 0;
 if exist('quadgk')
     quadgkEXISTS = 1;
+    RelTol = 1e-8;
+    AbsTol = 1e-12;
+else
+    integralTOL = 1e-4;
 end
 
-integralTOL = 1e-4;
 
 L=1;
 
@@ -103,7 +106,7 @@ switch M
         for l = 1:N
             for i = 1:N
                 if quadgkEXISTS
-                    K(l,i) = quadgk(@(p) H_mat(p,z,i).*K_F(x(l),p,i),0,1,integralTOL);
+                    K(l,i) = quadgk(@(p) H_mat(p,z,i).*K_F(x(l),p,i),0,1,'AbsTol',AbsTol,'RelTol',RelTol);
                 else
                     K(l,i) = quadl(@(p) H_mat(p,z,i).*K_F(x(l),p,i),0,1,integralTOL);
                 end
