@@ -18,6 +18,11 @@ function PHI = HSeigsolveqd(N,B,M)
 %      M=1 - qdopts.npts is the number of points to use
 %            qdopts.ptspace is the distribution of quadrature points
 
+quadgkEXISTS = 0;
+if exist('quadgk')
+    quadgkEXISTS = 1;
+end
+
 L=1;
 
 PHI.N = N; %create object PHI
@@ -34,8 +39,8 @@ switch B
         j = 1:N;
         z =[];
         Z =[];
-        %x =0:1/(N+1):1;
-        %x = x(2:end-1)';
+        X = repmat(x,1,N);
+        J = repmat(j,N,1);
        
        
     otherwise
@@ -74,17 +79,23 @@ switch M
         PHI.quad = 'quadgk';
         for l = 1:N
             for i = 1:N
-                K(l,i) = quadgk(@(p) H_mat(p,z,i).*K_F(x(l),p,i),0,1);
+                if quadgkEXISTS
+                    K(l,i) = quadgk(@(p) H_mat(p,z,i).*K_F(x(l),p,i),0,1);
+                else
+                    K(l,i) = quad(@(p) H_mat(p,z,i).*K_F(x(l),p,i),0,1);
+                end
             end
         end
-        [eival,eivec] = eig(K);
+        H = H_mat(X,Z,J);
+        [eivec,eival] = eig(K,H);
+        PHI.K = K;
+        PHI.H = H;
     otherwise
         error('Unacceptable quadrature method=%e',M);
 end
- [~,ix] = sort(diag(eival),'descend');
+ [esort,ix] = sort(diag(eival),'descend');
  eivec = eivec(:,ix);
  eival = eival(ix,ix);
- eivec = H\eivec;
  PHI.eigvals = diag(eival);
  PHI.coefs = eivec;
 % SiK = size(K);
