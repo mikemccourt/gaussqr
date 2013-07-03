@@ -25,7 +25,7 @@ PHI.N = N; %create object PHI
 switch B
     case 1
         PHI.basisName = 'Standard Polynomial';
-        ptspace = 'even';
+        ptspace = 'cheb';
         K_F= @(x,z,j) min(x,z)-x.*z;
                      
         H_mat = @(x,z,j) x.^(j-1);
@@ -47,18 +47,18 @@ switch M
     case 1
         PHI.quad = 'left hand rule';
         Nqd = N;
-       % if(isfield(qdopts,'npts'))
-        %    Nqd = qdopts.npts;
-         %   if(isfield(qdopts,'ptspace'))
-          %      qdspace = qdopts.ptspace;
-          %  else
+        if(isfield(qdopts,'npts'))
+            Nqd = qdopts.npts;
+            if(isfield(qdopts,'ptspace'))
+                qdspace = qdopts.ptspace;
+            else
                 qdspace = 'even';
-           % end
+            end
             v = pickpoints(0,L,Nqd+2,qdspace);
             v = v(2:end-1);
-      %  else
-      %      v = x;
-      %  end
+        else
+            v = x;
+        end
        
         X = repmat(x,1,Nqd);
         J = repmat(j,Nqd,1);
@@ -84,7 +84,7 @@ end
  [~,ix] = sort(diag(eival),'descend');
  eivec = eivec(:,ix);
  eival = eival(ix,ix);
- %eivec = H\eivec;
+ eivec = H\eivec;
  PHI.eigvals = diag(eival);
  PHI.coefs = eivec;
 % SiK = size(K);
