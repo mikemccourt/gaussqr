@@ -46,6 +46,14 @@ switch B
        
     case 2
         PHI.basisName = 'PP Spline Kernel';
+        H_mat = @(x,z,j) min(x,z)-x.*z;
+        ptspace = 'even';
+        x = pickpoints(0,L,N+2,ptspace);x = x(2:end-1);
+        X = repmat(x,1,N);
+        z = x';
+        Z = repmat(z,N,1);
+        j = [];
+        J = [];
     case 3
         PHI.basisName = 'Chebyshev Polynomials';
         ptspace = 'cheb';
