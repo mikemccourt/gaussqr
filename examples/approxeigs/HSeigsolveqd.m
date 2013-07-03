@@ -23,15 +23,17 @@ if exist('quadgk')
     quadgkEXISTS = 1;
 end
 
+integralTOL = 1e-4;
+
 L=1;
 
 PHI.N = N; %create object PHI
+K_F= @(x,z,j) min(x,z)-x.*z;
 %pick basis
 switch B
     case 1
         PHI.basisName = 'Standard Polynomial';
         ptspace = 'cheb';
-        K_F= @(x,z,j) min(x,z)-x.*z;
                      
         H_mat = @(x,z,j) x.^(j-1);
         x = pickpoints(0,L,N+2,ptspace);
@@ -42,7 +44,20 @@ switch B
         X = repmat(x,1,N);
         J = repmat(j,N,1);
        
-       
+    case 2
+        PHI.basisName = 'PP Spline Kernel';
+    case 3
+        PHI.basisName = 'Chebyshev Polynomials';
+        ptspace = 'cheb';
+                
+        H_mat = @(x,z,j) cos((j-1).*acos(2*x-1));
+        x = pickpoints(0,L,N+2,ptspace);
+        x = x(2:end-1);
+        j = 1:N;
+        z =[];
+        Z =[];
+        X = repmat(x,1,N);
+        J = repmat(j,N,1);
     otherwise
         error('Unacceptable basis=%e',B)
 end
@@ -80,9 +95,9 @@ switch M
         for l = 1:N
             for i = 1:N
                 if quadgkEXISTS
-                    K(l,i) = quadgk(@(p) H_mat(p,z,i).*K_F(x(l),p,i),0,1);
+                    K(l,i) = quadgk(@(p) H_mat(p,z,i).*K_F(x(l),p,i),0,1,integralTOL);
                 else
-                    K(l,i) = quad(@(p) H_mat(p,z,i).*K_F(x(l),p,i),0,1);
+                    K(l,i) = quadl(@(p) H_mat(p,z,i).*K_F(x(l),p,i),0,1,integralTOL);
                 end
             end
         end
