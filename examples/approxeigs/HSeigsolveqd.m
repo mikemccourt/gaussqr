@@ -1,4 +1,4 @@
-function PHI = HSeigsolveqd(N,B,M)
+function PHI = HSeigsolveqd(N,B,M,qdopts)
 %This function approximates Hilbert-Schmidt eigenvalues. 
 %The difference between this method and HSeigsolve is this function using
 %quadrature to help us.
@@ -17,14 +17,29 @@ function PHI = HSeigsolveqd(N,B,M)
 %   qdopts will have different structure for each choice of M
 %      M=1 - qdopts.npts is the number of points to use
 %            qdopts.ptspace is the distribution of quadrature points
-
+%            qdopts.RelTol is the real tolerance for quadgk
+%            qdopts.AbsTol is the absolute tolerance for quadgk
+%            qdopts.integralTOL is the tolerance for quadl if we don't have
+%            quad gk
+if nargin <4
+    qdopts.npts = N;
+end
 quadgkEXISTS = 0;
 if exist('quadgk')
     quadgkEXISTS = 1;
     RelTol = 1e-8;
     AbsTol = 1e-12;
+    if isfield(qdopts,'RelTol')
+        RelTol = qdopts.RelTol;
+    end
+    if isfield(qdopts,'AbsTol')
+        AbsTol = qdopts.AbsTol;
+    end
 else
     integralTOL = 1e-4;
+    if isfield(qdopts,'integralTol')
+        integralTOL = qdopts.integralTOL;
+    end
 end
 
 
@@ -99,6 +114,8 @@ switch M
         W = diag(v);
         K = K_F(X,VT,J);
         H = H_mat(V,Z,J);
+        PHI.K = K;
+        PHI.H = H;
         [eival,eivec] = eig(K*W);
        
     case 2
