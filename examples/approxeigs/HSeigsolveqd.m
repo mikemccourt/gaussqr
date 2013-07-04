@@ -105,11 +105,19 @@ switch M
         PHI.quad = 'quadgk';
         for l = 1:N
             for i = 1:N
-                if quadgkEXISTS
-                    K(l,i) = quadgk(@(p) H_mat(p,z,i).*K_F(x(l),p,i),0,1,'AbsTol',AbsTol,'RelTol',RelTol);
-                else
-                    K(l,i) = quadl(@(p) H_mat(p,z,i).*K_F(x(l),p,i),0,1,integralTOL);
-                end
+               if isempty(z) 
+                    if quadgkEXISTS
+                        K(l,i) = quadgk(@(p) H_mat(p,z,i).*K_F(x(l),p,i),0,1,'AbsTol',AbsTol,'RelTol',RelTol);
+                    else
+                        K(l,i) = quadl(@(p) H_mat(p,z,i).*K_F(x(l),p,i),0,1,integralTOL);
+                    end
+               else
+                   if quadgkEXISTS
+                        K(l,i) = quadgk(@(p) H_mat(p,z(i),i).*K_F(x(l),p,i),0,1,'AbsTol',AbsTol,'RelTol',RelTol);
+                   else
+                        K(l,i) = quadl(@(p) H_mat(p,z(i),i).*K_F(x(l),p,i),0,1,integralTOL);
+                   end
+               end
             end
         end
         H = H_mat(X,Z,J);
