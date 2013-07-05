@@ -2,22 +2,25 @@
 % This should compute the likelihood function for a set of given data
 % We are interested in looking at the relationship between this likelihood
 % value and the error
+global GAUSSQR_PARAMETERS
+GAUSSQR_PARAMETERS.STORED_PHI_FOR_EVALUATION = 1;
 
-epvec = logspace(-2,1,20);
+epvec = logspace(-2,1,31);
 
-N = 10;
+N = 15;
 NN = 200;
 x = pickpoints(-1,1,N,'cheb');
 yf = @(x) x+1./(1+x.^2);
 fstring = 'y(x) = x + 1/(1+x^2)';
-%yf = @(x) x.^3-3*x.^2+2*x+1;
-%fstring = 'y(x) = x^3-3x^2+2x+1';
+yf = @(x) x.^3-3*x.^2+2*x+1;
+fstring = 'y(x) = x^3-3x^2+2x+1';
 
 y = yf(x);
-xx = pickpoints(-1,1,NN,'cheb');
+xx = pickpoints(-1,1,NN);
 yy = yf(xx);
 alpha = 1;
 lamratio = 1e-12;
+pinvtol = 1e-11;
 
 errvec = [];
 detvec = [];
@@ -32,6 +35,8 @@ rbf = @(e,r) exp(-(e*r).^2);
 DM = DistanceMatrix(x,x);
 EM = DistanceMatrix(xx,x);
 
+% Note that yPhi and yPsi are computed with a truncated SVD of Phi1 and Psi
+% respectively.  The tolerance for this is pinvtol and can be set above.
 k = 1;
 for ep=epvec
     GQR = gqr_solve(x,y,ep,alpha);
@@ -40,13 +45,15 @@ for ep=epvec
     
     Phi1 = GQR.stored_phi1;
     [U,S,V] = svd(Phi1);
-    yPhi = V*((1./diag(S)).*(U'*y));
-    logdetPhi = sum(log(diag(S)));
+    dS = diag(S);
+    yPhi = V*((1./dS.*(dS/max(dS)>pinvtol)).*(U'*y));
+    logdetPhi = sum(log(dS));
     
     Psi = Phi1 + GQR.stored_phi2*GQR.Rbar;
     [U,S,V] = svd(Psi);
-    yPsi = V*((1./diag(S)).*(U'*y));
-    logdetPsi = sum(log(diag(S)));
+    dS = diag(S);
+    yPsi = V*((1./dS.*(dS/max(dS)>pinvtol)).*(U'*y));
+    logdetPsi = sum(log(dS));
 
     beta = (1+(2*ep/alpha)^2)^.25;
     delta2 = alpha^2/2*(beta^2-1);
@@ -66,6 +73,7 @@ for ep=epvec
 
     A = rbf(ep,DM);
     kbasis = rbf(ep,EM);
+    warning off
     yp = kbasis*(A\y);
     derrvec(k) = errcompute(yp,yy);
     
@@ -74,6 +82,7 @@ for ep=epvec
     dmvec(k) = log(abs(y'*(A\y)));
     ddetvec(k) = 1/N*log(det(A));
     dlvec(k) =  dmvec(k) + ddetvec(k);
+    warning on
 
     k = k + 1;
 end
