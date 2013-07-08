@@ -10,19 +10,32 @@ function PHI = HSeigsolveqd(N,B,M,qdopts)
 %          M - different quadrature method to compute the error
 %          qdopts - quadrature related options
 %Outputs : PHI - eigenfunction object 
-%
-%
-%
+%         
 % Should call qdopts = qdoptCHECK(M,qdopts)
-%   qdopts will have different structure for each choice of M
-%      M=1 - qdopts.npts is the number of points to use
-%            qdopts.ptspace is the distribution of quadrature points
-%            qdopts.RelTol is the real tolerance for quadgk
-%            qdopts.AbsTol is the absolute tolerance for quadgk
-%            qdopts.integralTOL is the tolerance for quadl if we don't have
-%            quad gk
+%
+%qdopts will have different structure for each choice of M
+%            qdopts.npts        : The number of points to use for quadrature
+%                                 methods(not for quadgk or quadl)
+%            qdopts.ptspace     : The distribution of quadrature points
+%            qdopts.RelTol      : The real tolerance for quadgk
+%            qdopts.AbsTol      : the absolute tolerance for quadgk
+%            qdopts.integralTOL : the tolerance for quadl if we don't have
+%            quadgk
+%
+%PHI Object details:
+%
+%    PHI.N         : Number of basis functions
+%    PHI.basisName : Which basis is used for the approximation
+%    
+%    PHI.eigvals   : The computed HSqd eigenvalues
+%    PHI.quad      : The quadrature method that were used to compute
+%                    eigenvalue
+%    PHI.coefs     : Coefficients for evaluating the eigenfunctions
+%                    PHI.coefs(:,k) are for the kth eigenfunction
+%    
+
 if nargin <4
-    qdopts.npts = N;
+    qdopts.npts = N; % create the qdopts object if inputs don't have one.
 end
 quadgkEXISTS = 0;
 if exist('quadgk')
@@ -116,7 +129,7 @@ switch M
         H = H_mat(V,Z,J);
         PHI.K = K;
         PHI.H = H;
-        [eival,eivec] = eig(K*W);
+        [eivec,eival] = eig(K*W);
        
     case 2
         PHI.quad = 'quadgk';
@@ -149,20 +162,13 @@ end
  eival = eival(ix,ix);
  PHI.eigvals = diag(eival);
  PHI.coefs = eivec;
-% SiK = size(K);
-% SiW = size(W);
-% if SiK(1) == SiW(2)
-    
-% else
-%     L = chol(H,'lower');
-%     [eival,eivec] = eig(L\K*W*L);
-%     [~,ix] = sort(diag(eival),'descend');
-%     eivec = eivec(:,ix);
-%     eival = eival(ix,ix);
-%     %eivec = L'\eivec;
-%     PHI.eigvals = diag(eival);
-%     PHI.coefs = eivec;
-% end
+  
+
+
+
+
+
+
 
 
 
