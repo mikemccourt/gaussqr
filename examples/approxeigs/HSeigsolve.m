@@ -112,11 +112,10 @@ switch basis
         J = [];
     case 3
         PHI.basisName = 'Chebyshev Polynomials';
-        PHI.cp = @(n,x) cos(n.*acos(x)).*(n>=0); % Chebyshev polynomials
+        PHI.cp = @(n,x) cos(n.*acos(2*x-1)); % Chebyshev polynomials
         
         Int_Kh = @(x,z,j) cheb_basis_integral(x,j-1);
         H_mat = @(x,z,j) PHI.cp(j-1,x);
-        
         ptspace = 'cheb';
         x = pickpoints(0,L,N+2,ptspace);x = x(2:end-1);
         X = repmat(x,1,N);
@@ -137,6 +136,8 @@ PHI.basisEval = H_mat;
 A = Int_Kh(X,Z,J);
 H = H_mat(X,Z,J);
 
+PHI.A = A;
+PHI.H = H;
 % Solve for the eigenfunction coefficients
 [V,D] = eig(A,H);
 
