@@ -11,8 +11,8 @@ NN = 200;
 x = pickpoints(-1,1,N,'cheb');
 yf = @(x) x+1./(1+x.^2);
 fstring = 'y(x) = x + 1/(1+x^2)';
-% yf = @(x) x.^3-3*x.^2+2*x+1;
-% fstring = 'y(x) = x^3-3x^2+2x+1';
+%  yf = @(x) x.^3-3*x.^2+2*x+1;
+%  fstring = 'y(x) = x^3-3x^2+2x+1';
 
 y = yf(x);
 xx = pickpoints(-1,1,NN);
@@ -87,17 +87,30 @@ for ep=epvec
     k = k + 1;
 end
 
-loglog(epvec, dmvec, 'g', 'linewidth', 3), hold on
+%Graph 1
+loglog(epvec, exp(dmvec), 'g', 'linewidth', 3), hold on
 loglog(epvec, cvec, 'b', 'linewidth', 3)
 legend('direct norm','condition vector')
 xlabel('\epsilon')
-ylabel('Comparison of direct norm and condition of K')
+ylabel('Comparison of cond(K) and direct norm')
 title(fstring), hold off
 figure
+
+%Graph 2
+loglog(epvec, exp(dmvec), 'g', 'linewidth', 3), hold on
+loglog(epvec, cvec, 'b', 'linewidth', 3)
+loglog(epvec, exp(mvec1), 'r', 'linewidth', 3)
+legend('direct norm','condition vector', 'HS-SVD norm')
+xlabel('\epsilon')
+ylabel('Comparison of cond(K), direct norm, and HS-SVD norm')
+title(fstring), hold off
+figure
+
+%Graph 3
 semilogx(epvec, mvec1, 'm', 'linewidth', 3), hold on
-semilogx(epvec, mvec2, 'y', 'linewidth', 3)
+% semilogx(epvec, mvec2, 'y', 'linewidth', 3)
 semilogx(epvec, dmvec, '--b', 'linewidth', 3)
-legend('mvec1', 'mvec2', '-- direct')
+legend('mvec1', '-- direct')
 xlabel('\epsilon')
 ylabel('Comparison of Norms')
 title(fstring), hold off
