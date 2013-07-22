@@ -40,7 +40,7 @@ Int_Mat = 1/16*( 2*Tjp1.*rjp1 - 2*Tjm1.*rjm1 - 4*m1j.*rjm1.*rjp1 + Tjp2.*rjp2 - 
 % In reality, we need to do a search of the J columns, find the ones that
 % are associated with the indexes 1,2,3 and do this substitution, but we're
 % assuming that the basis functions are ordered [1,2,3,4,...]
-IT0 = @(z) z.*(1-z)/2
+IT0 = @(z) z.*(1-z)/2;
 IT1 = @(z) (z.^2)/2 -(z.^3)/3-z/6;
 IT2 = @(z) -z./6 -(z.^2)/2 + (z.^3)*4/3 -(z.^4)*2/3;
 nc = size(Int_Mat,2);
