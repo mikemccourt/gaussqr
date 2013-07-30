@@ -11,8 +11,8 @@ NN = 200;
 x = pickpoints(-1,1,N,'cheb');
 yf = @(x) x+1./(1+x.^2);
 fstring = 'y(x) = x + 1/(1+x^2)';
-%  yf = @(x) x.^3-3*x.^2+2*x+1;
-%  fstring = 'y(x) = x^3-3x^2+2x+1';
+% yf = @(x) x.^3-3*x.^2+2*x+1;
+% fstring = 'y(x) = x^3-3x^2+2x+1';
 
 y = yf(x);
 xx = pickpoints(-1,1,NN);
@@ -31,6 +31,8 @@ yPhi    = [];
 yPsi    = [];
 b       = [];
 bPhi    = [];
+detPhi1 = [];
+detPsi  = [];
 
 
 rbf = @(e,r) exp(-(e*r).^2);
@@ -80,10 +82,13 @@ for ep=epvec
     
     %Condition vector of matrix K
     cvec(k) = cond(K);
-    
     dmvec(k) = log(abs(y'*(K\y)));
-    warning on
+   
+    %Determinant of Phi1 and Psi
+    detPhi1(k) = det(Phi1);
+    detPsi(k) = det(Psi);
     
+    warning on
     k = k + 1;
 end
 
@@ -99,18 +104,28 @@ figure
 %Graph 2
 loglog(epvec, exp(dmvec), 'g', 'linewidth', 3), hold on
 loglog(epvec, cvec, 'b', 'linewidth', 3)
-loglog(epvec, exp(mvec1), 'r', 'linewidth', 3)
-legend('direct norm','condition vector', 'HS-SVD norm')
+loglog(epvec, exp(mvec1), 'm', 'linewidth', 3)
+loglog(epvec, exp(mvec2), '--y', 'linewidth', 3)
+legend('direct norm','condition vector', 'mvec1', 'mvec2')
 xlabel('\epsilon')
-ylabel('Comparison of cond(K), direct norm, and HS-SVD norm')
+ylabel('Comparison of cond(K), direct norm, mvec1, and mvec2')
 title(fstring), hold off
 figure
 
 %Graph 3
 semilogx(epvec, mvec1, 'm', 'linewidth', 3), hold on
-% semilogx(epvec, mvec2, 'y', 'linewidth', 3)
+semilogx(epvec, mvec2, '--y', 'linewidth', 3)
 semilogx(epvec, dmvec, '--b', 'linewidth', 3)
-legend('mvec1', '-- direct')
+legend('mvec1', 'mvec2', '-- direct')
 xlabel('\epsilon')
 ylabel('Comparison of Norms')
+title(fstring), hold off
+figure
+
+%Graph 4
+loglog(epvec, detPhi1, '--g', 'linewidth', 3), hold on
+loglog(epvec, detPsi, '--b', 'linewidth', 3)
+legend('--detPhi1', '--detPsi')
+xlabel('\epsilon')
+ylabel('Comparison of Determinants for \Phi_1 and \Psi')
 title(fstring), hold off
