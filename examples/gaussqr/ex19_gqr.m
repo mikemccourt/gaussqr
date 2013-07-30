@@ -11,8 +11,8 @@ NN = 200;
 x = pickpoints(-1,1,N,'cheb');
 yf = @(x) x+1./(1+x.^2);
 fstring = 'y(x) = x + 1/(1+x^2)';
-% yf = @(x) x.^3-3*x.^2+2*x+1;
-% fstring = 'y(x) = x^3-3x^2+2x+1';
+yf = @(x) x.^3-3*x.^2+2*x+1;
+fstring = 'y(x) = x^3-3x^2+2x+1';
 
 y = yf(x);
 xx = pickpoints(-1,1,NN);
@@ -33,6 +33,7 @@ b       = [];
 bPhi    = [];
 detPhi1 = [];
 detPsi  = [];
+diffvec = [];
 
 
 rbf = @(e,r) exp(-(e*r).^2);
@@ -88,6 +89,9 @@ for ep=epvec
     detPhi1(k) = det(Phi1);
     detPsi(k) = det(Psi);
     
+    %Difference between yPhi and yPsi
+    diffvec(k) = sqrt(norm(abs(yPhi-yPsi)));
+    
     warning on
     k = k + 1;
 end
@@ -128,4 +132,11 @@ loglog(epvec, detPsi, '--b', 'linewidth', 3)
 legend('--detPhi1', '--detPsi')
 xlabel('\epsilon')
 ylabel('Comparison of Determinants for \Phi_1 and \Psi')
+title(fstring), hold off
+
+%Graph 5
+semilogx(epvec, diffvec, 'r', 'linewidth', 3), hold on
+legend('diffvec')
+xlabel('\epsilon')
+ylabel('Difference between \y_Phi and \y_Psi')
 title(fstring), hold off
