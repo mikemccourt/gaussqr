@@ -1,7 +1,6 @@
 % ex18_gqr.m
-% This should compute the likelihood function for a set of given data
-% We are interested in looking at the relationship between this likelihood
-% value and the error
+% We are going to use this example to explore the HS norm computation using
+% HS-SVD compared with the direct computation. 
 global GAUSSQR_PARAMETERS
 
 epvec = logspace(-2,1,31);

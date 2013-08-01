@@ -1,7 +1,6 @@
-% ex18_gqr.m
-% This should compute the likelihood function for a set of given data
-% We are interested in looking at the relationship between this likelihood
-% value and the error
+% ex19_gqr.m
+% This example will help us compare different methods of computation for
+% the HS norm
 global GAUSSQR_PARAMETERS
 
 epvec = logspace(-2,1,31);
@@ -11,8 +10,8 @@ NN = 200;
 x = pickpoints(-1,1,N,'cheb');
 yf = @(x) x+1./(1+x.^2);
 fstring = 'y(x) = x + 1/(1+x^2)';
-yf = @(x) x.^3-3*x.^2+2*x+1;
-fstring = 'y(x) = x^3-3x^2+2x+1';
+% yf = @(x) x.^3-3*x.^2+2*x+1;
+% fstring = 'y(x) = x^3-3x^2+2x+1';
 
 y = yf(x);
 xx = pickpoints(-1,1,NN);
@@ -129,14 +128,15 @@ figure
 %Graph 4
 loglog(epvec, detPhi1, '--g', 'linewidth', 3), hold on
 loglog(epvec, detPsi, '--b', 'linewidth', 3)
-legend('--detPhi1', '--detPsi')
+legend('--det\Phi_1', '--det\Psi')
 xlabel('\epsilon')
 ylabel('Comparison of Determinants for \Phi_1 and \Psi')
 title(fstring), hold off
+figure
 
 %Graph 5
 semilogx(epvec, diffvec, 'r', 'linewidth', 3), hold on
 legend('diffvec')
 xlabel('\epsilon')
-ylabel('Difference between \y_Phi and \y_Psi')
+ylabel('Difference between y_\Phi and y_\Psi')
 title(fstring), hold off
