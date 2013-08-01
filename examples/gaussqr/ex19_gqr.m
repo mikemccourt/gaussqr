@@ -23,6 +23,7 @@ pinvtol = 1e-11;
 errvec = [];
 mvec1  = [];
 mvec2  = [];
+mvec3  = [];
 cvec   = [];
 derrvec = [];
 dmvec   = [];
@@ -56,13 +57,14 @@ for ep=epvec
     beta = (1+(2*ep/alpha)^2)^.25;
     delta2 = alpha^2/2*(beta^2-1);
     ead = ep^2 + alpha^2 + delta2;
-    lamvec = sqrt(alpha^2/ead)*(ep^2/ead).^(0:N-1)'; 
+    lamvec = sqrt(alpha^2/ead)*(ep^2/ead).^(0:N-1)';
+    lamvec2 = sqrt(alpha^2/ead)*(ep^2/ead).^(N:size(GQR.Marr,2)-1)';
     laminv = 1./lamvec;
     lamsave = laminv.*(laminv/laminv(end)>lamratio);    
     Lambda1 = lamvec(1:N);
-    Lambda2 = lamvec(N+1:end);
+    Lambda2 = lamvec2;
     b = Psi\y;
-    bPhi = Phi1\Psi*b;
+    bPhi = Phi1\Psi*b; 
     
     %Mahalanobis Distance Calculation - Method One
     mahaldist1 = yPhi'*(lamsave.*yPsi);
@@ -70,9 +72,16 @@ for ep=epvec
     %Mahalanobis Distance Calculation - Method Two
     mahaldist2 = b'*(lamsave.*bPhi);
     
+    %Mahalanobis Distance Calculation - Method Three (method two without
+    %the correction term)z
+    bvector = ((Lambda2.^(.5))'*(Phi2')/(Phi1')*(lamsave.*b))'*((Lambda2.^(.5))'*(Phi2')/(Phi1')*(lamsave.*b));
+    mahaldist3 = b'*(lamsave.*b)+ bvector;
+    fprintf('%d\t%g\t%g\n',k,mahaldist3,bvector)
+    
     %Mahalanobis Distance Vectors
     mvec1(k) = log(abs(mahaldist1));
     mvec2(k) = log(abs(mahaldist2));
+    mvec3(k) = log(abs(mahaldist3));
     
     K = rbf(ep, DM);
     kbasis = rbf(ep,EM);
@@ -90,6 +99,14 @@ for ep=epvec
     
     %Difference between yPhi and yPsi
     diffvec(k) = sqrt(norm(abs(yPhi-yPsi)));
+    
+    %Comparison of Matrices
+    absTol = 0.01;   % You choose this value to be what you want!
+    relTol = 0.05;   % This one too!
+    absError = Phi1(:)-Psi(:);
+    relError = absError./Phi1(:);
+    relError(~isfinite(relError)) = 0;   % Sets Inf and NaN to 0
+    same = all( (abs(absError) < absTol) & (abs(relError) < relTol) );
     
     warning on
     k = k + 1;
@@ -109,17 +126,19 @@ loglog(epvec, exp(dmvec), 'g', 'linewidth', 3), hold on
 loglog(epvec, cvec, 'b', 'linewidth', 3)
 loglog(epvec, exp(mvec1), 'm', 'linewidth', 3)
 loglog(epvec, exp(mvec2), '--y', 'linewidth', 3)
-legend('direct norm','condition vector', 'mvec1', 'mvec2')
+loglog(epvec, exp(mvec3), '--c', 'linewidth', 3)
+legend('direct norm','condition vector', 'mvec1', 'mvec2', 'mvec3')
 xlabel('\epsilon')
-ylabel('Comparison of cond(K), direct norm, mvec1, and mvec2')
+ylabel('Comparison of cond(K), direct norm, mvec1, mvec2, and mvec3')
 title(fstring), hold off
 figure
 
 %Graph 3
 semilogx(epvec, mvec1, 'm', 'linewidth', 3), hold on
 semilogx(epvec, mvec2, '--y', 'linewidth', 3)
+semilogx(epvec, mvec3, '--c', 'linewidth', 3)
 semilogx(epvec, dmvec, '--b', 'linewidth', 3)
-legend('mvec1', 'mvec2', '-- direct')
+legend('mvec1', 'mvec2', 'mvec3', '-- direct')
 xlabel('\epsilon')
 ylabel('Comparison of Norms')
 title(fstring), hold off
@@ -135,7 +154,7 @@ title(fstring), hold off
 figure
 
 %Graph 5
-semilogx(epvec, diffvec, 'r', 'linewidth', 3), hold on
+loglog(epvec, diffvec, 'r', 'linewidth', 3), hold on
 legend('diffvec')
 xlabel('\epsilon')
 ylabel('Difference between y_\Phi and y_\Psi')
