@@ -5,7 +5,7 @@ global GAUSSQR_PARAMETERS
 
 epvec = logspace(-2,1,31);
 
-N = 2;
+N = 10;
 NN = 200;
 x = pickpoints(-1,1,N,'cheb');
 yf = @(x) x+1./(1+x.^2);
@@ -66,8 +66,8 @@ for ep=epvec
     Lambda2 = lamvec2;
     b = Psi\y;
     bPhi = Phi1\Psi*b;
-    B = (Phi2')/(Phi1')/diag(Lambda1);
-    A = inv(diag(Lambda1)) + B'*(diag(Lambda2))*B;
+    B = (Phi2')/(Phi1')*diag(lamsave);
+    A = diag(lamsave) + B'*(diag(Lambda2))*B;
     
     
     %Mahalanobis Distance Calculation - Method One
