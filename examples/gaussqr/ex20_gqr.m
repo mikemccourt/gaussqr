@@ -1,7 +1,9 @@
 % ex20_gqr.m
 % This example will help us compare different methods of computation for
 % the HS norm; also we will use a high precision method for the direct
-% computation of the norm
+% computation of the norm. Currently, this example cannot function as the
+% computation dmvec(k) - log(abs(y'*K1\y))) cannot be computed without some
+% higher precision packaging (to calculate the inverse of this matrix K).
 global GAUSSQR_PARAMETERS
 
 epvec = logspace(-2,1,31);
