@@ -5,7 +5,7 @@ global GAUSSQR_PARAMETERS
 
 epvec = logspace(-2,1,31);
 
-N = 10;
+N = 60;
 NN = 200;
 x = pickpoints(-1,1,N,'cheb');
 yf = @(x) x+1./(1+x.^2);
@@ -54,8 +54,8 @@ for ep=epvec
     Phi1 = Phi(:,1:N);
     Phi2 = Phi(:,N+1:end);
     Psi = Phi1 + Phi2*GQR.Rbar;
-    yPhi = Phi1\y;
     yPsi = Psi\y;
+    yPhi = Phi1\y;
     beta = (1+(2*ep/alpha)^2)^.25;
     delta2 = alpha^2/2*(beta^2-1);
     ead = ep^2 + alpha^2 + delta2;
@@ -67,8 +67,8 @@ for ep=epvec
     Lambda2 = lamvec2;
     b = Psi\y;
     bPhi = Phi1\Psi*b;
-    B = (Phi2')/(Phi1')*diag(lamsave);
-    A = diag(lamsave) + B'*(diag(Lambda2))*B;
+%     B = (Phi2')/(Phi1')*diag(lamsave);
+%     A = diag(lamsave) + B'*(diag(Lambda2))*B;
     
     
     %Mahalanobis Distance Calculation - Method One
@@ -87,7 +87,7 @@ for ep=epvec
 
     %Mahalanobis Distance Calculation - Method Four (no cancellation; using
     %matrix A which is symmetric and pos. def.
-    mahaldist4 = b'*A*b;
+    mahaldist4 = b'*(diag(lamsave) + ((Phi2')/(Phi1')*diag(lamsave))'*(diag(Lambda2))*(Phi2')/(Phi1')*diag(lamsave))*b;
     
     %Mahalanobis Distance Vectors
     mvec1(k) = log(abs(mahaldist1));
@@ -133,25 +133,25 @@ end
 % title(fstring), hold off
 % figure
 % 
-%Graph 2 - Comparison of Norms with the condition vector
-loglog(epvec, exp(dmvec), '--b', 'linewidth', 3), hold on
-loglog(epvec, cvec, 'g', 'linewidth', 3)
-loglog(epvec, exp(mvec1), 'm', 'linewidth', 3)
+% %Graph 2 - Comparison of Norms with the condition vector
+% loglog(epvec, 10.^(dmvec), '--b', 'linewidth', 3), hold on
+% loglog(epvec, cvec, 'g', 'linewidth', 3)
+% loglog(epvec, 10.^(mvec1), 'm', 'linewidth', 3)
+% loglog(epvec, 10.^(mvec2), '--y', 'linewidth', 3)
+% loglog(epvec, 10.^(mvec3), '-.c', 'linewidth', 3)
+% loglog(epvec, 10.^(mvec4), ':r', 'linewidth', 3)
+% legend('direct norm','condition vector', 'mvec1', 'mvec2', 'mvec3', 'mvec4')
+% xlabel('\epsilon')
+% ylabel('Comparison of cond(K), direct norm, mvec1 through mvec4')
+% title(fstring), hold off
+% figure
+
+%Graph 3 - Comparison of Norms without the condition vector
+loglog(epvec, exp(mvec1), 'm', 'linewidth', 3), hold on
 loglog(epvec, exp(mvec2), '--y', 'linewidth', 3)
 loglog(epvec, exp(mvec3), '-.c', 'linewidth', 3)
 loglog(epvec, exp(mvec4), ':r', 'linewidth', 3)
-legend('direct norm','condition vector', 'mvec1', 'mvec2', 'mvec3', 'mvec4')
-xlabel('\epsilon')
-ylabel('Comparison of cond(K), direct norm, mvec1 through mvec4')
-title(fstring), hold off
-figure
-
-%Graph 3 - Comparison of Norms without the condition vector
-semilogx(epvec, mvec1, 'm', 'linewidth', 3), hold on
-semilogx(epvec, mvec2, '--y', 'linewidth', 3)
-semilogx(epvec, mvec3, '-.c', 'linewidth', 3)
-semilogx(epvec, mvec4, ':r', 'linewidth', 3)
-semilogx(epvec, dmvec, '--b', 'linewidth', 3)
+loglog(epvec, exp(dmvec), '--b', 'linewidth', 3)
 legend('mvec1', 'mvec2', 'mvec3', 'mvec4', '-- direct')
 xlabel('\epsilon')
 ylabel('Comparison of Norms')
