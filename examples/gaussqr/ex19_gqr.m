@@ -12,6 +12,7 @@ yf = @(x) x+1./(1+x.^2);
 fstring = 'y(x) = x + 1/(1+x^2)';
 % yf = @(x) x.^3-3*x.^2+2*x+1;
 % fstring = 'y(x) = x^3-3x^2+2x+1';
+fstring = sprintf('%s, N = %d',fstring,N);
 
 y = yf(x);
 xx = pickpoints(-1,1,NN);
