@@ -5,7 +5,7 @@ global GAUSSQR_PARAMETERS
 
 epvec = logspace(-2,1,31);
 
-N = 60;
+N = 800;
 NN = 200;
 x = pickpoints(-1,1,N,'cheb');
 yf = @(x) x+1./(1+x.^2);
@@ -152,7 +152,7 @@ loglog(epvec, exp(mvec2), '--y', 'linewidth', 3)
 loglog(epvec, exp(mvec3), '-.c', 'linewidth', 3)
 loglog(epvec, exp(mvec4), ':r', 'linewidth', 3)
 loglog(epvec, exp(dmvec), '--b', 'linewidth', 3)
-legend('mvec1', 'mvec2', 'mvec3', 'mvec4', '-- direct')
+legend('mvec1', 'mvec2', 'mvec3', 'mvec4', 'dmvec')
 xlabel('\epsilon')
 ylabel('Comparison of Norms')
 title(fstring), hold off
@@ -173,3 +173,5 @@ title(fstring), hold off
 % xlabel('\epsilon')
 % ylabel('Difference between y_\Phi and y_\Psi')
 % title(fstring), hold off
+
+beep
