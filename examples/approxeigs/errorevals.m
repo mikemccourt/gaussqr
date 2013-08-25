@@ -5,10 +5,14 @@
 %
 %Output : errr - a vector of eigenvalues' relative error
 function errr = errorevals(Phi)
-    % compute eigenvalues' relative error 
-    realr = @(n) 1./((n.^2)*pi^2);
+    % compute eigenvalues' relative error
+    if (isfield(Phi,'epsilon'))
+        eps = Phi.epsilon;
+    else
+        eps = 0;
+    end
+    realr = @(n) 1./((n.^2)*pi^2+eps^2);
     D = Phi.eigvals;
-    C = Phi.coefs;
     s = size(D);
     n = [1: s(1)]';
     Rer = realr(n);

@@ -5,10 +5,13 @@ function PHI = HSeigsolveqd(N,kernel,B,M,epsilon,qdopts)
 %
 %function PHI = HSeigsolve(N,B,M,qdopts)
 %
-%Inputs :  N - number of points in the domain
-%          B - choice of approximating basis
-%          M - different quadrature method to compute the error
+%Inputs :  N      - number of points in the domain
+%          kernel - the kernel you want to use
+%          B      - choice of approximating basis
+%          M      - different quadrature method to compute the error
+%          epsilon- value of epsilon
 %          qdopts - quadrature related options
+%          
 %Outputs : PHI - eigenfunction object 
 %         
 % Should call qdopts = qdoptCHECK(M,qdopts)

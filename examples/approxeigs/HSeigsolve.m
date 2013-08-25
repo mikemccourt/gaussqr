@@ -4,9 +4,10 @@ function [V,D,A,H] = HSeigsolve(N,kernel,basis,epsilon,rescale,n_eig_plot)
 %
 % function PHI = HSeigsolve(N,basis,rescale,n_eig_plot)
 % Inputs : N - number of points in the domain
-%          kernel - The kernel you want to use
-%          basis - choice of approximating basis
-%          rescale - <default=1> scale eigenfunctions to sqrt(2)
+%          kernel     - The kernel you want to use
+%          basis      - choice of approximating basis
+%          epsilon    - value of epsilon 
+%          rescale    - <default=1> scale eigenfunctions to sqrt(2)
 %          n_eig_plot - <optional> which eigenvalue(s) you want to plot
 %                       Pass more than one as e.g., [1,4,6]
 % Outputs : PHI - eigenfunction object (described below)
@@ -62,12 +63,18 @@ function [V,D,A,H] = HSeigsolve(N,kernel,basis,epsilon,rescale,n_eig_plot)
 L = 1;
 
 % Account for inputs the user chooses
- if nargin < 4  
-    epsilon = 1;
+ if nargin<6 
+    n_eig_plot = 0; 
     if nargin<5
         rescale = 1;
-        if nargin<6
-            n_eig_plot = 0;
+        if nargin<4
+            if kernel == 1
+                epsilon = 0;
+            elseif kernel ==2
+                epsilon = 1;
+            else
+                epsilon = 0;
+            end
         end
     end
  end
@@ -83,7 +90,7 @@ end
 
 % Create the PHI object, which we will use in this function
 PHI.N = N;
-
+PHI.epsilon = epsilon;
 % The Rescale function in here is used to make sure that the eigenfunctions
 % are pointing in the proper setting.
 switch kernel
