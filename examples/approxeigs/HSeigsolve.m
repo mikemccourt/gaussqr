@@ -1,9 +1,10 @@
-function [V,D,A,H] = HSeigsolve(N,basis,rescale,n_eig_plot)
+function [V,D,A,H] = HSeigsolve(N,kernel,basis,epsilon,rescale,n_eig_plot)
 % This function approximates Hilbert-Schmidt eigenvalues
 % of the Compact Matern kenrel with ep=0 and beta=1
 %
 % function PHI = HSeigsolve(N,basis,rescale,n_eig_plot)
 % Inputs : N - number of points in the domain
+%          kernel - The kernel you want to use
 %          basis - choice of approximating basis
 %          rescale - <default=1> scale eigenfunctions to sqrt(2)
 %          n_eig_plot - <optional> which eigenvalue(s) you want to plot
@@ -19,6 +20,9 @@ function [V,D,A,H] = HSeigsolve(N,basis,rescale,n_eig_plot)
 % The input basis can take the following values
 %    1 - Standard polynomial basis, Chebyshev points
 %    2 - CMatern basis (ep=0,beta=1), Uniform points
+%    3 - Chebyshev basis , Chebyshev points
+%
+%
 %
 % In this function, we restrict L=1, although we could change that
 %
@@ -58,12 +62,15 @@ function [V,D,A,H] = HSeigsolve(N,basis,rescale,n_eig_plot)
 L = 1;
 
 % Account for inputs the user chooses
-if nargin<3
-    rescale = 1;
-    if nargin<4
-        n_eig_plot = 0;
+ if nargin < 4  
+    epsilon = 1;
+    if nargin<5
+        rescale = 1;
+        if nargin<6
+            n_eig_plot = 0;
+        end
     end
-end
+ end
 if length(rescale)==0
     rescale = 1;
 end
@@ -79,59 +86,85 @@ PHI.N = N;
 
 % The Rescale function in here is used to make sure that the eigenfunctions
 % are pointing in the proper setting.
-switch basis
+switch kernel
     case 1
-        PHI.basisName = 'Standard Polynomial';
-        
-        Int_Kh = @(x,z,j) -1./(j.^2+j).*x.*(x.^j-1);
-        H_mat = @(x,z,j) x.^(j-1);
-        
-        ptspace = 'cheb';
-        x = pickpoints(0,L,N+2,ptspace);x = x(2:end-1);
-        X = repmat(x,1,N);
-        z = [];
-        Z = [];
-        j = 1:N;
-        J = repmat(j,N,1);
-    case 2
-        PHI.basisName = 'PP Spline Kernel';
-        
-        Int_Kh = @(x,z,j) (x<=z).*(1/3*(1-x).*(1-z).*x.^3 + 1/3*x.*z.*(1-z).^3 + x.*(1-z).*z.^2.*(1/2-z/3) - x.*(1-z).*x.^2.*(1/2-x/3))    +...
-                          (x>z) .*(1/3*(1-x).*(1-z).*z.^3 + 1/3*x.*z.*(1-x).^3 + z.*(1-x).*x.^2.*(1/2-x/3) - z.*(1-x).*z.^2.*(1/2-z/3));
-        % Below is the symmetric version of the A matrix evaluation
-        Int_Kh = @(x,z,j) 1/3*(x.*z.*(1-max(x,z)).^3 + (1-x).*(1-z).*min(x,z).^3) +...
-                          min(x,z).*(1-max(x,z)).*(max(x,z).^2.*(1/2-1/3*max(x,z)) - min(x,z).^2.*(1/2-1/3*min(x,z)));
-        H_mat = @(x,z,j) min(x,z) - x.*z;
-        
-        ptspace = 'even';
-        x = pickpoints(0,L,N+2,ptspace);x = x(2:end-1);
-        X = repmat(x,1,N);
-        z = x';
-        Z = repmat(z,N,1);
-        j = [];
-        J = [];
-    case 3
-        PHI.basisName = 'Chebyshev Polynomials';
-        PHI.cp = @(n,x) cos(n.*acos(2*x-1)); % Chebyshev polynomials
-        
-        Int_Kh = @(x,z,j) cheb_basis_integral(x,j-1);
-        H_mat = @(x,z,j) PHI.cp(j-1,x);
-        ptspace = 'cheb';
-        x = pickpoints(0,L,N+2,ptspace);x = x(2:end-1);
-        X = repmat(x,1,N);
-        z = [];
-        Z = [];
-        j = 1:N;
-        J = repmat(j,N,1);
-    otherwise
-        error('Unacceptable basis=%e',basis)
-end
+        switch basis
+            case 1
+                PHI.basisName = 'Standard Polynomial';
 
+                Int_Kh = @(x,z,j) -1./(j.^2+j).*x.*(x.^j-1);
+                H_mat = @(x,z,j) x.^(j-1);
+
+                ptspace = 'cheb';
+                x = pickpoints(0,L,N+2,ptspace);x = x(2:end-1);
+                X = repmat(x,1,N);
+                z = [];
+                Z = [];
+                j = 1:N;
+                J = repmat(j,N,1);
+            case 2
+                PHI.basisName = 'PP Spline Kernel';
+
+                Int_Kh = @(x,z,j) (x<=z).*(1/3*(1-x).*(1-z).*x.^3 + 1/3*x.*z.*(1-z).^3 + x.*(1-z).*z.^2.*(1/2-z/3) - x.*(1-z).*x.^2.*(1/2-x/3))    +...
+                                  (x>z) .*(1/3*(1-x).*(1-z).*z.^3 + 1/3*x.*z.*(1-x).^3 + z.*(1-x).*x.^2.*(1/2-x/3) - z.*(1-x).*z.^2.*(1/2-z/3));
+                % Below is the symmetric version of the A matrix evaluation
+                Int_Kh = @(x,z,j) 1/3*(x.*z.*(1-max(x,z)).^3 + (1-x).*(1-z).*min(x,z).^3) +...
+                                  min(x,z).*(1-max(x,z)).*(max(x,z).^2.*(1/2-1/3*max(x,z)) - min(x,z).^2.*(1/2-1/3*min(x,z)));
+                H_mat = @(x,z,j) min(x,z) - x.*z;
+
+                ptspace = 'even';
+                x = pickpoints(0,L,N+2,ptspace);x = x(2:end-1);
+                X = repmat(x,1,N);
+                z = x';
+                Z = repmat(z,N,1);
+                j = [];
+                J = [];
+            case 3
+                PHI.basisName = 'Chebyshev Polynomials';
+                PHI.cp = @(n,x) cos(n.*acos(2*x-1)); % Chebyshev polynomials
+
+                Int_Kh = @(x,z,j) cheb_basis_integral(x,j-1);
+                H_mat = @(x,z,j) PHI.cp(j-1,x);
+                ptspace = 'cheb';
+                x = pickpoints(0,L,N+2,ptspace);x = x(2:end-1);
+                X = repmat(x,1,N);
+                z = [];
+                Z = [];
+                j = 1:N;
+                J = repmat(j,N,1);
+            otherwise
+                error('Unacceptable basis=%e',basis)
+        end
+    case 2
+        switch basis
+            case 1
+                error('sorry no polynomial basis in this case')
+            case 2 
+                PHI.basisName = 'PP Spline Kernel';
+                cons = 1./(epsilon.*sinh(epsilon));
+                Int_Kh = @(x,z,j) (x<=z).*cons.*(x.*(1-z).*sinh(epsilon.*(1-x)).*cosh(epsilon.*x)./epsilon + x.*(1-z).*sinh(epsilon.*x).*cosh(epsilon.*(1-x))./epsilon -...
+                                  sinh(epsilon.*(1-z)).*sinh(epsilon.*x)./(epsilon^2) )+...
+                                  (x>z).*cons.*(z.*(1-x).*sinh(epsilon.*(1-x)).*cosh(epsilon.*x)./epsilon + z.*(1-x).*sinh(epsilon.*x).*cosh(epsilon.*(1-x))./epsilon -...
+                                  sinh(epsilon.*z).*sinh(epsilon.*(1-x))./(epsilon^2));
+                H_mat = @(x,z,j) min(x,z) - x.*z;
+
+                ptspace = 'even';
+                x = pickpoints(0,L,N+2,ptspace);x = x(2:end-1);
+                X = repmat(x,1,N);
+                z = x';
+                Z = repmat(z,N,1);
+                j = [];
+                J = [];
+            otherwise error('Unacceptable basis=%e',basis)
+        end
+    otherwise
+        error('Unacceptable kernel =%e',kernel)
+end
 % Store the data chosen by basis
 PHI.centers   = z;
 PHI.indices   = j;
 PHI.basisEval = H_mat;
-
+PHI.epsilon = epsilon;
 % Create the matrices needed for the eigenfunction problem
 A = Int_Kh(X,Z,J);
 H = H_mat(X,Z,J);

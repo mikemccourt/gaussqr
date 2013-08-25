@@ -26,9 +26,13 @@ function errc = erroref(Phi,M)
             for i =1: j
                errc(i) = abs(Phi.eigfuncEval(0,i))/sqrt(2); %max value of function ff should be sqrt(2)
              end
-        case 4 %collection points
+       case 4 %collection points
              for i =1: j
                 errc(i) =sum(abs(sqrt(2)*sin(pi*i*(0:0.002:1)')-Phi.eigfuncEval((0:.002:1)',i)))/500*pi/(2*sqrt(2));% sum of abs(realfunction(500 simple point)-apprximatefunction(500 simple points))/500/infinity normal(realfunction)
              end
-        otherwise error('Unacceptable method=%e',M);
+       case 5 %normtwo(realfunction - apporximatefunction) 
+       
+       
+       
+       otherwise error('Unacceptable method=%e',M);
     end

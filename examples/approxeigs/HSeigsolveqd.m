@@ -1,4 +1,4 @@
-function PHI = HSeigsolveqd(N,B,M,qdopts)
+function PHI = HSeigsolveqd(N,kernel,B,M,epsilon,qdopts)
 %This function approximates Hilbert-Schmidt eigenvalues. 
 %The difference between this method and HSeigsolve is this function using
 %quadrature to help us.
@@ -34,9 +34,13 @@ function PHI = HSeigsolveqd(N,B,M,qdopts)
 %                    PHI.coefs(:,k) are for the kth eigenfunction
 %    
 
-if nargin <4
+if nargin < 6
     qdopts.npts = N; % create the qdopts object if inputs don't have one.
+    if nargin < 5
+        epsilon = 1;
+    end
 end
+
 quadgkEXISTS = 0;
 if exist('quadgk')
     quadgkEXISTS = 1;
@@ -59,13 +63,20 @@ end
 L=1;
 
 PHI.N = N; %create object PHI
-K_F= @(x,z,j) min(x,z)-x.*z;
+%pick kernel
+switch kernel
+    case 1 
+         K_F= @(x,z,j) min(x,z)-x.*z;
+    case 2
+         K_F= @(x,z,j) sinh(epsilon.*min(x,z)).*sinh(epsilon.*(1-max(x,z)))./(epsilon.*sinh(epsilon));
+end
+
 %pick basis
 switch B
     case 1
         PHI.basisName = 'Standard Polynomial';
         ptspace = 'cheb';
-                     
+
         H_mat = @(x,z,j) x.^(j-1);
         x = pickpoints(0,L,N+2,ptspace);
         x = x(2:end-1);
@@ -74,7 +85,7 @@ switch B
         Z =[];
         X = repmat(x,1,N);
         J = repmat(j,N,1);
-       
+
     case 2
         PHI.basisName = 'PP Spline Kernel';
         H_mat = @(x,z,j) min(x,z)-x.*z;
@@ -88,7 +99,7 @@ switch B
     case 3
         PHI.basisName = 'Chebyshev Polynomials';
         ptspace = 'cheb';
-                
+
         H_mat = @(x,z,j) cos((j-1).*acos(2*x-1));
         x = pickpoints(0,L,N+2,ptspace);
         x = x(2:end-1);
@@ -100,7 +111,6 @@ switch B
     otherwise
         error('Unacceptable basis=%e',B)
 end
-
 %pick quadrature method
 switch M
     case 1
