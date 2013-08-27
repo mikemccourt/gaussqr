@@ -5,13 +5,13 @@ global GAUSSQR_PARAMETERS
 
 epvec = logspace(-2,1,31);
 
-N = 800;
+N = 1000;
 NN = 200;
 x = pickpoints(-1,1,N,'cheb');
 yf = @(x) x+1./(1+x.^2);
 fstring = 'y(x) = x + 1/(1+x^2)';
-% yf = @(x) x.^3-3*x.^2+2*x+1;
-% fstring = 'y(x) = x^3-3x^2+2x+1';
+yf = @(x) x.^3-3*x.^2+2*x+1;
+fstring = 'y(x) = x^3-3x^2+2x+1';
 fstring = sprintf('%s, N = %d',fstring,N);
 
 y = yf(x);
