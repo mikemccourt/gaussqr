@@ -1,17 +1,22 @@
 % ex19_gqr.m
 % This example will help us compare different methods of computation for
-% the HS norm
+% the HS norm. Also, there is now a plot for comparing the condition
+% vectors for K, Psi, and Phi1
 global GAUSSQR_PARAMETERS
 
 epvec = logspace(-2,1,31);
 
-N = 1000;
+N = 500;
 NN = 200;
 x = pickpoints(-1,1,N,'cheb');
 yf = @(x) x+1./(1+x.^2);
 fstring = 'y(x) = x + 1/(1+x^2)';
 yf = @(x) x.^3-3*x.^2+2*x+1;
 fstring = 'y(x) = x^3-3x^2+2x+1';
+yf = @(x) 4*tan(2*x+6);
+fstring  = 'y(x) = 4tan(2x+6)';
+
+
 fstring = sprintf('%s, N = %d',fstring,N);
 
 y = yf(x);
@@ -37,6 +42,8 @@ detPsi  = [];
 diffvec = [];
 A       = [];
 B       = [];
+cvecPhi1= [];
+cvecPsi = [];
 
 rbf = @(e,r) exp(-(e*r).^2);
 DM = DistanceMatrix(x,x);
@@ -104,6 +111,10 @@ for ep=epvec
     %Condition vector of matrix K
     cvec(k) = cond(K);
     dmvec(k) = log(abs(y'*(K\y)));
+    
+    %Condition vectors for Phi1 and Psi
+    cvecPhi1(k) = cond(Phi1);
+    cvecPsi(k) = cond(Psi);
     
     %Determinant of Phi1 and Psi
     detPhi1(k) = det(Phi1);
@@ -173,5 +184,14 @@ title(fstring), hold off
 % xlabel('\epsilon')
 % ylabel('Difference between y_\Phi and y_\Psi')
 % title(fstring), hold off
+
+%Graph 6 - Comparison of Condition Numbers for Phi1, Psi, and K
+loglog(epvec, cvecPhi1, '--g', 'linewidth', 3), hold on
+loglog(epvec, cvecPsi, '--b', 'linewidth', 3)
+loglog(epvec, cvec, '--r', 'linewidth', 3)
+legend('cond(\Phi_1)','cond(\Psi)','cond(K)')
+xlabel('\epsilon')
+ylabel('Comparison of Condition Numbers for \Phi_1, \Psi, and K')
+title(fstring), hold off
 
 beep
