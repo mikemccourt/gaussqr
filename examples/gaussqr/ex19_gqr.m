@@ -6,7 +6,8 @@ global GAUSSQR_PARAMETERS
 
 epvec = logspace(-2,1,31);
 
-N = 500;
+
+N = 200;
 NN = 200;
 x = pickpoints(-1,1,N,'cheb');
 yf = @(x) x+1./(1+x.^2);
@@ -53,7 +54,7 @@ EM = DistanceMatrix(xx,x);
 % respectively.  The tolerance for this is pinvtol and can be set above.
 k = 1;
 for ep=epvec
-    GQR = gqr_solve(x,y,ep,alpha,2*N+20);
+    GQR = gqr_solve(x,y,ep,2*N+20);
     yp = gqr_eval(GQR,xx);
     errvec(k) = errcompute(yp,yy);
     
@@ -76,7 +77,6 @@ for ep=epvec
     bPhi = Phi1\Psi*b;
 %     B = (Phi2')/(Phi1')*diag(lamsave);
 %     A = diag(lamsave) + B'*(diag(Lambda2))*B;
-    
     
     %Mahalanobis Distance Calculation - Method One
     mahaldist1 = yPhi'*(lamsave.*yPsi);
@@ -106,7 +106,7 @@ for ep=epvec
     kbasis = rbf(ep,EM);
     warning off
     yp = kbasis*(K\y);    
-    derrvec(k) = errcompute(yp,yy);
+%     derrvec(k) = errcompute(yp,yy);
     
     %Condition vector of matrix K
     cvec(k) = cond(K);
@@ -185,13 +185,13 @@ title(fstring), hold off
 % ylabel('Difference between y_\Phi and y_\Psi')
 % title(fstring), hold off
 
-%Graph 6 - Comparison of Condition Numbers for Phi1, Psi, and K
-loglog(epvec, cvecPhi1, '--g', 'linewidth', 3), hold on
-loglog(epvec, cvecPsi, '--b', 'linewidth', 3)
-loglog(epvec, cvec, '--r', 'linewidth', 3)
-legend('cond(\Phi_1)','cond(\Psi)','cond(K)')
-xlabel('\epsilon')
-ylabel('Comparison of Condition Numbers for \Phi_1, \Psi, and K')
-title(fstring), hold off
+% %Graph 6 - Comparison of Condition Numbers for Phi1, Psi, and K
+% loglog(epvec, cvecPhi1, '--g', 'linewidth', 3), hold on
+% loglog(epvec, cvecPsi, '--b', 'linewidth', 3)
+% loglog(epvec, cvec, '--r', 'linewidth', 3)
+% legend('cond(\Phi_1)','cond(\Psi)','cond(K)')
+% xlabel('\epsilon')
+% ylabel('Comparison of Condition Numbers for \Phi_1, \Psi, and K')
+% title(fstring), hold off
 
 beep
