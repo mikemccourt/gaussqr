@@ -54,7 +54,7 @@ EM = DistanceMatrix(xx,x);
 % respectively.  The tolerance for this is pinvtol and can be set above.
 k = 1;
 for ep=epvec
-    GQR = gqr_solve(x,y,ep,2*N+20);
+    GQR = gqr_solve(x,y,ep,alpha,2*N+20);
     yp = gqr_eval(GQR,xx);
     errvec(k) = errcompute(yp,yy);
     
