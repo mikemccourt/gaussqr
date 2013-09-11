@@ -1,5 +1,5 @@
-% ex17e_gqr.m
-% This should compute the likelihood function for a set of given data
+% ex17g_gqr.m
+% This should compute a hybrid likelihood function for a set of given data
 % We are interested in looking at the relationship between this likelihood
 % value and the error
 global GAUSSQR_PARAMETERS
@@ -8,16 +8,15 @@ GAUSSQR_PARAMETERS.STORED_PHI_FOR_EVALUATION = 1;
 epvec = logspace(-2,1,31);
 %epvec = fliplr(epvec);
 
-N = 15;
+N = 50;
 NN = 200;
 x = pickpoints(-1,1,N,'cheb');
-%yf = @(x) x + 1./(1+x.^2);
-%fstring = 'y(x) = x + 1/(1+x^2)';
+yf = @(x) x + 1./(1+x.^2);
+fstring = 'y(x) = x + 1/(1+x^2)';
 %yf = @(x) x.^3-3*x.^2+2*x+1;% + 0.001*cos(10*x);
-%fstring = 'y(x) = x^3-3x^2+2x+1';
-yf = @(x) 0*x+1 + 0.001*cos(10*x);
-fstring = 'y(x) = 1 + cos(10x)/1000';
+%yf = @(x) 0*x+1;% + 0.001*cos(10*x);
 % Why does this artificial "noise" make things work?
+%fstring = 'y(x) = x^3-3x^2+2x+1';
 
 y = yf(x);
 xx = pickpoints(-1,1,NN);
@@ -82,39 +81,37 @@ for ep=epvec
     
     laminv = 1./Lambda1;
     lamsave = laminv.*(laminv/laminv(end)>lamratio);
-    
-    % Mahaldist first version
-    mahaldist = yPhi'*(lamsave.*yPsi);
-    mdist1(k) = mahaldist;
 
-    % Mahaldist second version
-    mdist2(k) = yPhi'*(laminv.*yPsi);
-    %mahaldist = mdist2(k);
+    A = rbf(ep,DM);
+    kbasis = rbf(ep,EM);
+    c = A\y;
+    warning off
+    yp = kbasis*c;
+    derrvec(k) = errcompute(yp,yy);
     
-    % Mahaldist third version
-    b = Psi\y;
-    %bvector = ((Lambda2.^(.5))'*(Phi2')/(Phi1')*(lamsave.*b))'*((Lambda2.^(.5))'*(Phi2')/(Phi1')*(lamsave.*b));
-    bvector = ((Lambda2.^(.5))'*(Phi2')/(Phi1')*(lamsave.*b));
-    bvec(k) = bvector'*bvector;
-    mahaldist = b'*(lamsave.*b)+ bvec(k);
-    mdist3(k) = mahaldist;
+    if ep < 1
+        % Mahaldist first version
+        %mahaldist = yPhi'*(lamsave.*yPsi);
+        
+        % Mahaldist second version
+        %mahaldist = yPhi'*(laminv.*yPsi);
+    
+        % Mahaldist third version
+        b = Psi\y;
+        bvector = ((Lambda2.^(.5))'*(Phi2')/(Phi1')*(lamsave.*b));
+        mahaldist = b'*(lamsave.*b)+ bvector'*bvector;
+    else
+        %    [U,S,V] = svd(A);
+        %    MLEvec(k) = real(log((V\y)'*((1./diag(S)).*(U\y))) + 1/N*sum(log(diag(S))));
+        mahaldist = y'*c;
+        %logdetK = log(det(A));
+        logdetK = sum(log(svd(A)));
+    end
+    warning on
     
     mvec(k) = log(abs(mahaldist));
     detvec(k) = 1/N*logdetK;
     lvec(k) = log(abs(mahaldist)) + 1/N*logdetK;
-
-    A = rbf(ep,DM);
-    kbasis = rbf(ep,EM);
-    warning off
-    yp = kbasis*(A\y);
-    derrvec(k) = errcompute(yp,yy);
-    
-%    [U,S,V] = svd(A);
-%    MLEvec(k) = real(log((V\y)'*((1./diag(S)).*(U\y))) + 1/N*sum(log(diag(S))));
-    dmvec(k) = log(abs(y'*(A\y)));
-    ddetvec(k) = 1/N*log(det(A));
-    dlvec(k) =  dmvec(k) + ddetvec(k);
-    warning on
 
     k = k + 1;
 end
@@ -123,20 +120,15 @@ figure
 loglog(epvec,errvec,'color',[0 .5 0],'linewidth',3), hold on
 loglog(epvec,exp(lvec)/exp(lvec(end)),'r','linewidth',3)
 loglog(epvec,derrvec,'color',[0 .5 0],'linestyle','--','linewidth',3), hold on
-loglog(epvec,exp(dlvec)/exp(dlvec(end)),'--r','linewidth',3)
-legend('error HS-SVD','HS-SVD MLE','error direct','MLE direct')
+legend('error HS-SVD','hybrid MLE','error direct')
 xlabel('\epsilon')
 ylabel('Error')
 title(fstring), hold off
 figure
 semilogx(epvec,lvec,'r','linewidth',3), hold on
-semilogx(epvec,dlvec,'--r','linewidth',3)
 semilogx(epvec,mvec,'b','linewidth',3)
-semilogx(epvec,dmvec,'--b','linewidth',3)
 semilogx(epvec,detvec,'k','linewidth',3)
-semilogx(epvec,ddetvec,'--k','linewidth',3)
-%semilogx(epvec,bvec,'color',[0 .5 0],'linestyle','--','linewidth',3)
-legend('- log-like HS-SVD','- log-like direct','log(H_K-norm) HS','log(H_K-norm) direct','logdet(K)/N HS','logdet(K)/N direct')
+legend('- log-like hybrid','hybrid log(H_K-norm)','logdet(K)/N hybrid')
 xlabel('\epsilon')
 ylabel('log-like function')
 title(fstring), hold off
