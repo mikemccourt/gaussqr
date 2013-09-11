@@ -54,9 +54,10 @@ EM = DistanceMatrix(xx,x);
 % respectively.  The tolerance for this is pinvtol and can be set above.
 k = 1;
 for ep=epvec
-    GQR = gqr_solve(x,y,ep,alpha,2*N+20);
-    yp = gqr_eval(GQR,xx);
-    errvec(k) = errcompute(yp,yy);
+    %GQR = gqr_solve(x,y,ep,alpha,2*N+20);
+    GQR = gqr_solveprep(0,x,ep,alpha)
+    %yp = gqr_eval(GQR,xx);
+    %errvec(k) = errcompute(yp,yy);
     
     Phi = gqr_phi(GQR,x);
     Phi1 = Phi(:,1:N);
@@ -71,7 +72,7 @@ for ep=epvec
     lamsave = laminv.*(laminv/laminv(end)>lamratio);    
     Lambda1 = diag(lamvec(1:N));
     Lambda2 = diag(lamvec2);
-    
+    pause
     %approximate y value given b
     y   = Psi*b;
     c = Phi1'\Lambda1\b;
