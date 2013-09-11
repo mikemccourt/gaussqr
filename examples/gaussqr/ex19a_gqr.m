@@ -4,26 +4,23 @@
 %plots for different values of N
 global GAUSSQR_PARAMETERS
 
-Nvec = linspace(10, 1000, 31);
+Nvec = linspace(10, 700, 31);
 
 epsilon = 0.1; %we pick this
-NN = 200;
 fstring = 'y(x) = x + 1/(1+x^2)'; %Function1
 % fstring = 'y(x) = x^3-3x^2+2x+1'; %Function2
 % fstring  = 'y(x) = 4tan(2x+6)'; %Function3
-% fstring = sprintf('%s, \epsilon = %d',fstring,epsilon);
+fstring = sprintf('%s, \epsilon = %d',fstring,epsilon);
 
 
 alpha = 1;
 lamratio = 1e-12;
 pinvtol = 1e-11;
 
-errvec = [];
 mvec1  = [];
 mvec2  = [];
 mvec3  = [];
 cvec   = [];
-derrvec = [];
 dmvec   = [];
 yPhi    = [];
 yPsi    = [];
@@ -49,14 +46,9 @@ for N=Nvec
     rbf=@(e,r) exp(-(e*r).^2);
     
     y = yf(x);
-    xx = pickpoints(-1,1,NN);
-    yy = yf(xx);
     GQR = gqr_solve(x,y,epsilon,alpha, N*2+20);
-    yp = gqr_eval(GQR,xx);
-%     errvec(k) = errcompute(yp,yy);
     
     DM = DistanceMatrix(x,x);
-    EM = DistanceMatrix(xx,x);
     
     Phi = gqr_phi(GQR,x);
     Phi1 = Phi(:,1:N);
@@ -103,10 +95,7 @@ for N=Nvec
     mvec4(k) = log(abs(mahaldist4));
     
     K = rbf(epsilon, DM);
-    kbasis = rbf(epsilon,EM);
     warning off
-    yp = kbasis*(K\y);
-    %     derrvec(k) = errcompute(yp,yy);
     
     %Condition vector of matrix K
     cvec(k) = cond(K);
