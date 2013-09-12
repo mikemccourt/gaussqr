@@ -4,13 +4,14 @@
 %plots for different values of N
 global GAUSSQR_PARAMETERS
 
-Nvec = linspace(10, 700, 31);
+%Nvec = linspace(10, 200, 19);
+Nvec = [10:1:40];
 
 epsilon = 0.1; %we pick this
 fstring = 'y(x) = x + 1/(1+x^2)'; %Function1
 % fstring = 'y(x) = x^3-3x^2+2x+1'; %Function2
 % fstring  = 'y(x) = 4tan(2x+6)'; %Function3
-fstring = sprintf('%s, \epsilon = %d',fstring,epsilon);
+fstring = sprintf('%s, epsilon = %d',fstring,epsilon);
 
 
 alpha = 1;
@@ -20,6 +21,7 @@ pinvtol = 1e-11;
 mvec1  = [];
 mvec2  = [];
 mvec3  = [];
+mvec4  = [];
 cvec   = [];
 dmvec   = [];
 yPhi    = [];
@@ -39,8 +41,8 @@ cvecPsi = [];
 k = 1;
 for N=Nvec
     x = pickpoints(-1,1,N, 'cheb'); %how x depends on epsilon and not N...?
-    yf = @(x) x+1./(1+x.^2);        %Function1
-    yf = @(x) x.^3-3*x.^2+2*x+1;    %Function2
+%    yf = @(x) x+1./(1+x.^2);        %Function1
+    yf = @(x) x.^3-3*x.^2+2*x+1 + 0.001*cos(10*x);    %Function2
 %     yf = @(x) 4*tan(2*x+6);         %Function3
     
     rbf=@(e,r) exp(-(e*r).^2);
@@ -117,16 +119,18 @@ for N=Nvec
 end
 
 %Graph 1 - Comparison of Norms without the condition vector
-plot(Nvec, exp(mvec1), 'm', 'linewidth', 3), hold on
-plot(Nvec, exp(mvec2), '--y', 'linewidth', 3)
-plot(Nvec, exp(mvec3), '-.c', 'linewidth', 3)
-plot(Nvec, exp(mvec4), ':r', 'linewidth', 3)
-plot(Nvec, exp(dmvec), '--b', 'linewidth', 3)
+semilogy(Nvec, exp(mvec1), 'm', 'linewidth', 3), hold on
+semilogy(Nvec, exp(mvec2), '--y', 'linewidth', 3)
+semilogy(Nvec, exp(mvec3), '-.c', 'linewidth', 3)
+semilogy(Nvec, exp(mvec4), ':r', 'linewidth', 3)
+semilogy(Nvec, exp(dmvec), '--b', 'linewidth', 3)
 legend('mvec1', 'mvec2', 'mvec3', 'mvec4', 'dmvec')
 xlabel('N')
 ylabel('Comparison of Norms')
 title(fstring), hold off
-%figure
+figure
+semilogy(Nvec, cvecPhi1, 'm', 'linewidth', 3), hold on
+semilogy(Nvec, cvecPsi, 'b', 'linewidth', 3), hold off
 
 beep
 
