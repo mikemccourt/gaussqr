@@ -5,25 +5,31 @@
 global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.STORED_PHI_FOR_EVALUATION = 1;
 
-epvec = logspace(-2,1,31);
+%epvec = logspace(-2,1,31);
+epvec = logspace(-10,0,31);
 %epvec = fliplr(epvec);
 
-N = 15;
+N = 4;
 NN = 200;
 x = pickpoints(-1,1,N,'cheb');
 %yf = @(x) x + 1./(1+x.^2);
 %fstring = 'y(x) = x + 1/(1+x^2)';
-%yf = @(x) x.^3-3*x.^2+2*x+1;% + 0.001*cos(10*x);
-%fstring = 'y(x) = x^3-3x^2+2x+1';
-yf = @(x) 0*x+1 + 0.001*cos(10*x);
-fstring = 'y(x) = 1 + cos(10x)/1000';
+yf = @(x) x.^3-3*x.^2+2*x+1;% + 0.001*cos(10*x);
+fstring = 'y(x) = x^3-3x^2+2x+1';
+%yf = @(x) x;% + 0.001*cos(10*x);
+%fstring = 'y(x) = x';% + cos(10x)/1000';
+%yf = @(x) 0.75*exp(-((9*(x+1)/2-2).^2)/4)+0.75*exp(-((9*(x+1)/2+1).^2/49))+0.5*exp(-((9*(x+1)/2-7).^2)/4)-0.2*exp(-((9*(x+1)/2-4).^2));
+%fstring = '"Franke"';
+%yf = @(x) tanh(9*(x-1))+1;
+%fstring = 'tanh(9(x-1))+1';
+
 % Why does this artificial "noise" make things work?
 
 y = yf(x);
 xx = pickpoints(-1,1,NN);
 yy = yf(xx);
 alpha = 1;
-lamratio = 1e-12;
+%lamratio = 1e-12;
 lamratio = 0;
 pinvtol = 1e-12;
 
@@ -112,7 +118,9 @@ for ep=epvec
 %    [U,S,V] = svd(A);
 %    MLEvec(k) = real(log((V\y)'*((1./diag(S)).*(U\y))) + 1/N*sum(log(diag(S))));
     dmvec(k) = log(abs(y'*(A\y)));
-    ddetvec(k) = 1/N*log(det(A));
+    S = svd(A);
+    ddetvec(k) = 1/N*sum(log(S));
+    %ddetvec(k) = 1/N*log(det(A));
     dlvec(k) =  dmvec(k) + ddetvec(k);
     warning on
 
@@ -124,19 +132,26 @@ loglog(epvec,errvec,'color',[0 .5 0],'linewidth',3), hold on
 loglog(epvec,exp(lvec)/exp(lvec(end)),'r','linewidth',3)
 loglog(epvec,derrvec,'color',[0 .5 0],'linestyle','--','linewidth',3), hold on
 loglog(epvec,exp(dlvec)/exp(dlvec(end)),'--r','linewidth',3)
-legend('error HS-SVD','HS-SVD MLE','error direct','MLE direct')
+legend('error HS-SVD','MLE HS-SVD','error direct','MLE direct')
 xlabel('\epsilon')
 ylabel('Error')
-title(fstring), hold off
+title([fstring,', N = ',num2str(N)]), hold off
 figure
-semilogx(epvec,lvec,'r','linewidth',3), hold on
-semilogx(epvec,dlvec,'--r','linewidth',3)
-semilogx(epvec,mvec,'b','linewidth',3)
-semilogx(epvec,dmvec,'--b','linewidth',3)
-semilogx(epvec,detvec,'k','linewidth',3)
-semilogx(epvec,ddetvec,'--k','linewidth',3)
-%semilogx(epvec,bvec,'color',[0 .5 0],'linestyle','--','linewidth',3)
-legend('- log-like HS-SVD','- log-like direct','log(H_K-norm) HS','log(H_K-norm) direct','logdet(K)/N HS','logdet(K)/N direct')
+loglog(epvec,exp(lvec),'r','linewidth',3), hold on
+loglog(epvec,exp(dlvec),'--r','linewidth',3)
+loglog(epvec,exp(mvec),'b','linewidth',3)
+loglog(epvec,exp(dmvec),'--b','linewidth',3)
+loglog(epvec,exp(detvec),'k','linewidth',3)
+loglog(epvec,exp(ddetvec),'--k','linewidth',3)
+legend('MLE HS-SVD','MLE direct','H_K-norm HS','H_K-norm direct','det(K) HS','det(K) direct')
 xlabel('\epsilon')
 ylabel('log-like function')
-title(fstring), hold off
+title([fstring,', N = ',num2str(N)]), hold off
+figure
+loglog(epvec,mdist3,'b','linewidth',3), hold on
+loglog(epvec,mdist3-bvec,'--r','linewidth',3)
+loglog(epvec,bvec,'color',[0 .5 0],'linewidth',3)
+legend('H_K-norm HS','lower bound (L1inv)','lower bound (L2)')
+xlabel('\epsilon')
+ylabel('log-like function')
+title([fstring,', N = ',num2str(N)]), hold off

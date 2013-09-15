@@ -6,16 +6,17 @@
 % here.
 global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.STORED_PHI_FOR_EVALUATION = 1;
+close all
 
-epvec = logspace(-2,1,31);
+epvec = logspace(-2,0,31);
 
-N = 15;
+N = 100;
 x = pickpoints(-1,1,N,'cheb');
-b = ones(size(x));
+%b = ones(N,1);
+b = zeros(N,1); b([1 5 10]) = 1;
 alpha = 1;
 %lamratio = 1e-12;
 lamratio = 0;
-pinvtol = 1e-12;
 
 detvec = [];
 mvec   = [];
@@ -30,6 +31,9 @@ DM = DistanceMatrix(x,x);
 
 k = 1;
 for ep=epvec
+%    if ep > 1
+%        alpha = 2/ep;
+%    end
     GQR = gqr_solveprep(0,x,ep);
     Phi1 = GQR.stored_phi1;
     Phi2 = GQR.stored_phi2;
@@ -64,7 +68,9 @@ for ep=epvec
     A = rbf(ep,DM);
     warning off
     dmvec(k) = log(abs(y'*(A\y)));
-    ddetvec(k) = 1/N*log(det(A));
+    S = svd(A);
+    ddetvec(k) = 1/N*sum(log(S));
+    %ddetvec(k) = 1/N*log(det(A));
     dlvec(k) =  dmvec(k) + ddetvec(k);
     warning on
 
@@ -72,13 +78,13 @@ for ep=epvec
 end
 
 figure
-semilogx(epvec,lvec,'r','linewidth',3), hold on
-semilogx(epvec,dlvec,'--r','linewidth',3)
-semilogx(epvec,mvec,'b','linewidth',3)
-semilogx(epvec,dmvec,'--b','linewidth',3)
-semilogx(epvec,detvec,'k','linewidth',3)
-semilogx(epvec,ddetvec,'--k','linewidth',3)
-legend('- log-like HS-SVD','- log-like direct','log(H_K-norm) HS','log(H_K-norm) direct','logdet(K)/N HS','logdet(K)/N direct')
+loglog(epvec,exp(lvec),'r','linewidth',3), hold on
+loglog(epvec,exp(dlvec),'--r','linewidth',3)
+loglog(epvec,exp(mvec),'b','linewidth',3)
+loglog(epvec,exp(dmvec),'--b','linewidth',3)
+loglog(epvec,exp(detvec),'k','linewidth',3)
+loglog(epvec,exp(ddetvec),'--k','linewidth',3)
+legend('MLE HS-SVD','MLE direct','H_K-norm HS','H_K-norm direct','det(K) HS','det(K) direct')
 xlabel('\epsilon')
 ylabel('log-like function')
-hold off
+title(['N = ',num2str(N)]), hold off
