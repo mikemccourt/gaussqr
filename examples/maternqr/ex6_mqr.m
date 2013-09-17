@@ -19,7 +19,6 @@ GAUSSQR_PARAMETERS.NORM_TYPE = inf;
 
 % The range of N values to consider
 Nvec = [8,16,32,64,128,256];
-Nvec = 1;
 % The orders (smoothness) of the kernel to consider
 betavec = 1:4;
 % The kernel shape parameter
@@ -31,8 +30,8 @@ embed_cushion = .1;
 % The number of evenly spaced points at which to sample error
 NN = 397;
 % Choice of interpolation function and associated parameters
-fopt = 14;
-fpar = [8,.0567];
+fopt = 8; fopt = 15;
+fpar = [8,.0567]; fpar = 0;
 
 % This determines how many extra basis functions should be added to the
 % RBF-QR evaluation to get the necessary accuracy: M = Mfactor*N
@@ -106,6 +105,15 @@ switch fopt
     case 14
         yf = @(x) -sin(3*pi*x);
         embed = 0;
+    case 15 % Choosing C=384/77 makes this a Type IV L-spline
+        C = fpar(1);
+        fstr = sprintf('D5 broken, C=%g',C);
+        yf = @(x) 1/27720*((1155*C-5888)*x + (14080-2310*C)*x.^3 + 1155*C*x.^4-8192*x.^(15/4));
+        embed = 0;
+    case 16
+        fstr = 'Does not satisfy beta=2 conditions';
+        yf = @(x) 1/21*(x-1/2).*(-64*abs(x-1/2).^(3/4)+2^(1/4)*(28*(x-1/2).^2+25));
+        embed = 0;
     otherwise
         error('This function does not exist')
 end
@@ -169,6 +177,7 @@ loglog(Nvec,errvec,'linewidth',2);
 % semilogy(Nvec,errvec,'linewidth',2)
 xlabel('input points N');
 ylabel('absolute error');
+title(fstr)
 %title(strcat(sprintf('x \\in [0,%g] ',L),sprintf('     \\epsilon = %g',ep)));
 
 % Build and create the legend

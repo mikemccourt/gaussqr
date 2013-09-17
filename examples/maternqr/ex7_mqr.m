@@ -3,6 +3,7 @@
 rbfsetup
 global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.ERROR_STYLE = 2;
+GAUSSQR_PARAMETERS.NORM_TYPE = inf;
 
 close all
 
@@ -44,12 +45,17 @@ t3 = setdiff(1:N,[t1,t2]);
 
 DM = DistanceMatrix(x,x);
 
-epvec = unique([logspace(-1,0,5),logspace(0,1,5),logspace(1,2,40)]);
-betavec = [1:8];
+%epvec = unique([logspace(-1,0,5),logspace(0,1,10),logspace(1,2,40)]);
+epvec = logspace(0,2,40);
+betavec = [1:4];
 halfvec = [];
 thirdvec = [];
 loocvvec = [];
+mlevec = [];
 errvec = [];
+mvec = [];
+detvec = [];
+
 l = 1;
 for beta=betavec
     k = 1;
@@ -123,9 +129,32 @@ for beta=betavec
         EF = (invA*y)./diag(invA);
         loocvvec(k,l) = norm(EF,1);
         
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % And one at MLE
+        Lambda2 = diag(((pi*(N+1:size(MQR.Marr,2))/L).^2+ep^2).^(-beta));
+        Phi2 = Phi(:,N+1:size(MQR.Marr,2));
+        logdetPsi = sum(log(svd(Psi)));
+        logdetPhi = sum(log(svd(Phi1)));
+        laminv = diag(invLambda1);
+        b = Psi\y;
+        bvector = ((Lambda2.^(.5))'*(Phi2')/(Phi1')*(laminv.*b));
+        mahaldist = b'*(laminv.*b)+ bvector'*bvector;
+        logdetK = logdetPsi + logdetPhi + sum(log(diag(Lambda1)));
+        mlevec(k,l) = log(abs(mahaldist)) + 1/N*logdetK;
+        mvec(k) = log(abs(mahaldist));
+        detvec(k) = 1/N*logdetK;
+        
         fprintf('k=%d \t ep=%g \n',k,ep)
         k = k + 1;
     end
+    semilogx(epvec,mlevec(:,l),'r','linewidth',3), title(['MLE, \beta = ',num2str(beta)]), hold on
+    semilogx(epvec,mvec,'b','linewidth',3)
+    semilogx(epvec,detvec,'k','linewidth',3)
+    semilogx(epvec,log(errvec(:,l)),'g','linewidth',3)
+    legend('- log-likelihood','log(H_K-norm)','logdet(K)/N','log(error)')
+    xlabel('\epsilon')
+    ylabel('log-like function'), hold off
+    figure
     l = l + 1;
 end
 
@@ -168,3 +197,12 @@ zlabel('error')
 view([-115,50])
 [i,j]=find(loocvvec==min(min(loocvvec)));
 fprintf('LOOCV: optimal epsilon=%f, optimal beta=%d\n',epvec(i),betavec(j))
+figure, surf(X,Y,exp(mlevec)'), title('MLE')
+set(gca,'XScale','log')
+set(gca,'ZScale','log')
+xlabel('\epsilon')
+ylabel('\beta')
+zlabel('error')
+view([-115,50])
+[i,j]=find(mlevec==min(min(mlevec)));
+fprintf('MLE: optimal epsilon=%f, optimal beta=%d\n',epvec(i),betavec(j))

@@ -1,7 +1,13 @@
 function v = splinetx_natural(x,y,u)
-%SPLINETX_NATURAL  Modification of textbook spline function.
-%  v = splinetx_natural(x,y,u) finds the piecewise cubic natural interpolatory
-%  spline S(x), with S(x(j)) = y(j), and returns v(k) = S(u(k)).
+% function v = splinetx_natural(x,y,u)
+% This is a modification of the standard textbook spline function.
+% It finds the piecewise cubic natural interpolatory spline
+%     S(x), with S(x(j)) = y(j), and returns v(k) = S(u(k)).
+%
+% Inputs: x - data locations, which must be sorted in ascending order
+%         y - data values at the data locations
+%         u - locations at which to evaluate the spline
+% Outputs: v - spline values at the locations u
 %
 %  See SPLINE, PCHIPTX.
 
@@ -9,7 +15,7 @@ function v = splinetx_natural(x,y,u)
 
    h = diff(x);
    delta = diff(y)./h;
-   d = splineslopes(h,delta);
+   d = splineslopes_PRIVATE(h,delta);
 
 %  Piecewise polynomial coefficients
 
@@ -32,7 +38,7 @@ function v = splinetx_natural(x,y,u)
 
 % -------------------------------------------------------
 
-function d = splineslopes(h,delta)
+function d = splineslopes_PRIVATE(h,delta)
 %  SPLINESLOPES  Slopes for cubic spline interpolation.
 %  splineslopes(h,delta) computes d(k) = S'(x(k)).
 %  Uses natural end conditions.

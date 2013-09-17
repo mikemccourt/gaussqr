@@ -61,12 +61,6 @@ up = gqr_eval(GQR,x);
 errinit = errcompute(up,uold);
 fprintf('error of initial condition interpolant : %g\n\n',errinit)
 
-% Store the diffusivity coefficients for use in the residual 
-GQR.DIFF_kk = DIFF_kk;
-GQR.DIFF_z = DIFF_z;
-GQR.DIFF_C = DIFF_C;
-GQR.DIFF_k0 = DIFF_k0;
-
 % Need to perform the time stepping
 for t=dt:dt:T
     % This is computed to know how good we could do
@@ -74,6 +68,9 @@ for t=dt:dt:T
     GQRtrue = gqr_rsolve(x,utrue,ep,alpha);
     up = gqr_eval(GQRtrue,x);
     errtrue = errcompute(up,utrue);
+
+    % Store the diffusivity coefficients for use in the residual
+    GQR.DIFF_kk = DIFF_kk;GQR.DIFF_z = DIFF_z;GQR.DIFF_C = DIFF_C;GQR.DIFF_k0 = DIFF_k0;
     intres = ex15_gqr_resBC(GQRtrue.coef,GQR,x,uold,dt,BC,t);
     fprintf('At t=%g, error of interp : %g\t residual : %g\n',t,errtrue,norm(intres))
     
@@ -84,6 +81,9 @@ for t=dt:dt:T
     phixx = gqr_phi(GQR,x,2);
     A = phi/dt - phixx;
     A([1,end],:) = phi([1,end],:)/dt;
+
+    % Store the diffusivity coefficients for use in the residual
+    GQR.DIFF_kk = DIFF_kk;GQR.DIFF_z = DIFF_z;GQR.DIFF_C = DIFF_C;GQR.DIFF_k0 = DIFF_k0;
     
     % Compute the source term (need to encapsulate this)
 %     S_u_xx = exp(-t)*(-2);
