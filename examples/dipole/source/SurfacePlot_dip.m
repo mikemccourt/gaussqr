@@ -28,13 +28,13 @@ else
     % Plot functions values on the surface
     h = patch('Vertices',pnts,'Faces',faces,'FaceVertexCData',feval,...
               'FaceColor','interp','EdgeColor','none');
-    colorbar('FontSize',12);
+    colorbar('SouthOutside','FontSize',16);
 end
 
 axis('equal'); axis('square'); view(-30,30);
-xlabel('x','FontWeight','bold','FontSize',14);
-ylabel('y','FontWeight','bold','FontSize',14);
-zlabel('z','FontWeight','bold','FontSize',14);
+xlabel('x','FontWeight','bold','FontSize',16);
+ylabel('y','FontWeight','bold','FontSize',16);
+zlabel('z','FontWeight','bold','FontSize',16);
 grid on;
 
 if nargout==0 % Don't return anything if not requested

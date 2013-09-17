@@ -2,10 +2,8 @@ function [ POINTS, NORMALS ] = BallGeometry( R, ...
                                               Npnts, ...
                                               solvertype, ...
                                               intptstype , ...
-                                              bdyptstype, ...
-                                              avoidpts, ...
-                                              avoidcushion)
-% function [POINTS,NORMALS] = BallGeometry(R,Npnts,solvertype,ptstype,avoidpts,avoidcushion)
+                                              bdyptstype)
+% function [POINTS,NORMALS] = BallGeometry(R,Npnts,solvertype,ptstype)
 % BALLGEOMETRY creates a distribution of points in a multilayer (N layers)
 % ball.
 % Input data are: spheres radii, desired number of interior points, desired
@@ -91,10 +89,8 @@ function [ POINTS, NORMALS ] = BallGeometry( R, ...
 %   SphereSurfGoldPoints.m
 %   SphereSurfHaltonPoints.m
 
-
 N = length(R); % Number of layers
 lNpnts = length(Npnts);
-
 
 % Check input data
 if not(isvector(R)) || not(isvector(Npnts)) || not(ischar(solvertype))
@@ -111,7 +107,6 @@ R = R(:)'; % Make sure it's a row vector
 Rend = R(end);
 intptstype_DEFAULT = 'halton';
 bdyptstype_DEFAULT = 'spiral';
-avoidcushion_DEFAULT = Rend/5;
 chebNumRegion = 12*lNpnts; % Maybe this should be passed or adaptive ...
 
 % Run checks to make sure that the point distribution is okay
@@ -150,74 +145,57 @@ else
     
 end
 
-% Run checks to make sure the avoidance values are acceptable
-avoid_on = 0;
-if nargin<5
-    avoidpts = [];
-else
-    if ~isempty(avoidpts)
-        avoid_dim = size(avoidpts,2);
-        if avoid_dim~=3
-            error('Cushion points must be 3D, size(avoidpts,2)=%d',avoid_dim)
-        end
-        if sum(any(real(avoidpts)~=avoidpts))~=0
-            error('Some cushion points are complex ... come on')
-        elseif sum(any(sqrt(sum(avoidpts.^2,2))>Rend))~=0
-            warning('Some of the cushion points are outside the ball')
-        end
-        avoid_on = 1;
-        
-        if not(exist('avoidcushion','var'))
-            avoidcushion = avoidcushion_DEFAULT;
-        else
-            if abs(avoidcushion)~=avoidcushion || avoidcushion==0
-                warning('Cushion = %g unacceptable, reverting to %g',avoidcushion,avoidcushion_DEFAULT)
-                avoidcushion = avoidcusion_DEFAULT;
-            elseif avoidcushion>=Rend
-                warning('Cushion = %g too large, reverting to %g',avoidcushion,avoidcushion_DEFAULT)
-                avoidcushion = avoidcusion_DEFAULT;
-            end
-        end
-    end
-end
-
 % Actually determine the point distribution in and on the ball
 switch lower(solvertype)
     case 'kansa'
+        R1 = R;
         R = [0 R];
         
-        d = 2*Rend / ( 6/pi * Npnts(1) )^(1/3);
+        if lNpnts == 1
+            % Distribute the points on surfaces so that the surface point
+            % density is equal in all surfaces and the number of interior 
+            % points is twice the number of points on the outermost sphere 
+            a = Npnts/(sum(R1.^2,2)+2*R1(end)^2);
+            for i=1:N
+                Npnts_bdy(i) = round(a*R1(i)^2);
+            end
+            Npnts_int = 2*Npnts_bdy(end);
+        elseif lNpnts == N
+            % Distribute as many points on each surface as the vector Npnts
+            % indicates. The number of interior points will be twice the
+            % number of the points on the outermost sphere
+            Npnts_bdy = Npnts;
+            Npnts_int = 2*Npnts_bdy(end);
+        elseif lNpnts == N+1
+            % Distribute as many points on the interior as the first 
+            % elements in the vector Npnts indicates and as many points 
+            % on each surface as the other elements in Npnts indicates.
+            Npnts_bdy = Npnts(2:end);
+            Npnts_int = Npnts(1);
+        end
+        
         if strcmp(intptstype,'even')
+            d = 2*Rend / ( 6/pi * Npnts_int )^(1/3);
             x = -Rend:d:Rend;
             [x, y, z] = meshgrid(x);
             ptsvec = [x(:),y(:),z(:)];
         elseif strcmp(intptstype,'halton')
-            ptsvec = Rend*(2*haltonseq(ceil(6/pi*Npnts(1)),3)-1);
+            ptsvec = Rend*(2*haltonseq(ceil(6/pi*Npnts_int),3)-1);
         elseif strcmp(intptstype,'random')
-            ptsvec = Rend*(2*rand(ceil(6/pi*Npnts(1)),3)-1);
+            ptsvec = Rend*(2*rand(ceil(6/pi*Npnts_int),3)-1);
         elseif strcmp(intptstype,'cheb')
             Nc = chebNumRegion;
-            Nradii = Npnts(1)/Nc;
+            Nradii = Npnts_int/Nc;
             radii = SphereSurfGoldPoints(Nradii, Rend);
             temp = pickpoints(-R(2),R(2),Nc,'cheb');
             cfact = temp(ceil(Nc/2)+1:end-1);
             radMat = kron(radii,ones(length(cfact),1));
             cMat = repmat(cfact,length(radii),3);
             ptsvec = radMat.*cMat;
-%             for k=1:lNpnts-1
-%                 
-%             end
         else
             error('Unknown interior point distribution style')
         end
-        
-        % Remove the points in the avoidance areas
-        if avoid_on
-            avoid_DM = DistanceMatrix(ptsvec,avoidpts);
-            keep_ind = logical(sum(avoid_DM>avoidcushion,2));
-            ptsvec = ptsvec(keep_ind,:);
-        end
-        
+             
         ll = 0;
             
         int_DM = DistanceMatrix(ptsvec,[0,0,0]);
@@ -236,15 +214,8 @@ switch lower(solvertype)
             POINTS.(name_int) = ptsvec(ind,:);
             
             % Boundary points
-            if lNpnts == 1
-                ll = ll + length(POINTS.(name_int));
-                Npnts_bdy = floor(ll * .5); % TO BE IMPROVED ?!?!?!
-            else
-                Npnts_bdy = Npnts(l+1);
-            end
-            
             if strcmp(bdyptstype,'spiral')
-                POINTS.(name_bdy) = SphereSurfGoldPoints(Npnts_bdy, R(l+1));
+                POINTS.(name_bdy) = SphereSurfGoldPoints(Npnts_bdy(l), R(l+1));
                 if l == N
                     % The splitting of the set of point in two subsets is not
                     % required for the outermost layer
@@ -257,23 +228,24 @@ switch lower(solvertype)
                     NORMALS.(name_normals1) = POINTS.(name_bdy1) / R(l+1);
                 end
             elseif strcmp(bdyptstype,'halton')
-                POINTS.(name_bdy) = SphereSurfHaltonPoints(Npnts_bdy,R(l+1));
+                POINTS.(name_bdy) = SphereSurfHaltonPoints(Npnts_bdy(l),R(l+1));
                 if l == N
                     % The splitting of the set of point in two subsets is not
                     % required for the outermost layer
                     NORMALS.(name_normals) = POINTS.(name_bdy) / R(l+1);
                 else
                     % Split bountary points into two sets
-                    POINTS.(name_bdy1) = POINTS.(name_bdy)(1:floor(Npnts_bdy/2),:);
-                    POINTS.(name_bdy) = POINTS.(name_bdy)(floor(Npnts_bdy/2)+1:Npnts(l),:);
+                    POINTS.(name_bdy1) = POINTS.(name_bdy)(1:floor(Npnts_bdy(l)/2),:);
+                    POINTS.(name_bdy) = POINTS.(name_bdy)(floor(Npnts_bdy(l)/2)+1:Npnts(l),:);
                     NORMALS.(name_normals) = POINTS.(name_bdy) / R(l+1);
                     NORMALS.(name_normals1) = POINTS.(name_bdy1) / R(l+1);
                 end
             else
                 error('Unknown boundary point distribution style')
             end
-            
         end
+        
+        
     case 'mfs'
         if lNpnts==1
             Npnts = Npnts*ones(N,1);

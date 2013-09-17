@@ -41,17 +41,22 @@
 %              BC_choice = 4 <default = [0,0,R]>
 %     eval_diff - Consider the solution as the difference between all
 %                 values and a reference point <default = 1>
+%     SVD - Use SVD/TSVD to solve the linear system <default = 0>
+%           0 : Don't use SVD
+%           1 : Use SVD
+%           2 : Use TSVD (the truncation in hardcoded so far)
+%     k_eff - Compute the effective condition number <default = 0>
 %
 %  The value we are interested in studying is the effect of increasing N,
 %  so you must specify a vector of N values that you want to study
 %     Nvec - Row vector of N values <default = 100:50:500>
 %     BC_frac - The fraction of the total points to be used to enforce
 %               boundary conditions <default = .3>
-%     dip_cushion - How much space should be given around the dipole where
-%               no RBF centers are allowed <default = .005>
 %     N_eval - # points to evaluate error <default = 1001>
 %
 %  Some outputs are available if you would like them
+%     k_eff - Evaluate the effective condition number of the linear
+%             system <default = 1>
 %     iter_out - Print output during the solves <default = 0>
 %     plot_sol - 3D surface plot of boundary solution <default = 0>
 %     sol_err_style - How do you want the 3D solution error displayed
@@ -82,15 +87,16 @@ radbasfun = 'imq';
 int_point_dist = 'halton';
 bdy_point_dist = 'spiral';
 ep = 1;
-mfs_frac = 1.0;
+mfs_frac = 0.9;
 mfs_sphere = 1.3;
 BC_choice = 1;
 refpnt = [0, 0, R];
 eval_diff = 1;
+SVD = 0;
+k_eff = 1;
 
-Nvec = 100:100:2000;
+Nvec = 100:100:1000;
 BC_frac = .3; % Not yet implemented
-dip_cushion = .05;
 N_eval = 1001;
 
 iter_out = 1;
@@ -164,7 +170,7 @@ for Npnts = Nvec
     end
     
     % Determine collocation points
-    [POINTS, NORMALS] = BallGeometry(R,Npnts,sol_type,int_point_dist,bdy_point_dist,srcpnts,dip_cushion);
+    [POINTS, NORMALS] = BallGeometry(R,Npnts,sol_type,int_point_dist,bdy_point_dist);
     intdata = POINTS.int1;
     bdydata = POINTS.bdy11;
     N_int = size(intdata,1);
@@ -265,9 +271,32 @@ for Npnts = Nvec
     rhs = [rhs_int;rhs_bdy_neu;rhs_bdy_dir];
     % Compose collocation matrix in same order as rhs
     CM = [LCM;BCM_neu;BCM_dir];
-    % Coefficients for evaluation
-    [coefs,recip_cond] = linsolve(CM,rhs);
     
+    if k_eff || SVD
+        [U,S,V] = svd(CM);
+        sing_val = diag(S);
+        beta = U'*rhs;
+        if k_eff
+            condvec(k) = norm(rhs)/min(sing_val)/...
+                norm(beta(1:length(sing_val))./sing_val);
+        else
+            condvec(k) = max(sing_val)/min(sing_val);
+        end
+        if SVD == 1
+            inv_sing_val = 1./sing_val;
+            coefs = V*(inv_sing_val.*beta(1:length(sing_val)));
+        elseif SVD == 2
+            inv_sing_val_TSVD = 1./sing_val;
+            indices = find(sing_val < 10*eps);
+            % inv_sing_val_TSVD(floor(0.2*length(inv_sing_val)):end) = 0;
+            inv_sing_val_TSVD(indices) = 0;
+            coefs = V*(inv_sing_val_TSVD.*beta(1:length(sing_val)));
+        end
+    end
+    if ~SVD
+        % Coefficients for evaluation
+        [coefs,recip_cond] = linsolve(CM,rhs);
+    end
     % Potential at evalpnts in the source free case
     phi0 = EM * coefs;
     % Potential at evalpnts (superposition of effects)
@@ -283,13 +312,15 @@ for Npnts = Nvec
   
     % Compute the total errors
     errvec(k) = errcompute(phi_comp,phi_true);
-    % Store the condition of the system
-    % For a low-rank system, instead store the rank
-    % This may happen for some MFS problems
-    if floor(recip_cond)==recip_cond
-        condvec(k) = recip_cond;
-    else
-        condvec(k) = 1/recip_cond;
+    if ~k_eff
+        % Store the condition of the system
+        % For a low-rank system, instead store the rank
+        % This may happen for some MFS problems
+        if floor(recip_cond)==recip_cond
+            condvec(k) = recip_cond;
+        else
+            condvec(k) = 1/recip_cond;
+        end
     end
     Nvec_true(k) = N_tot;
     
@@ -325,17 +356,33 @@ if plot_err
     end
     epstr = sprintf(', \\epsilon=%g',ep);
     
+    if k_eff
+        condstring = 'Effective condition number';
+    else
+        if floor(recip_cond)==recip_cond
+            condstring = 'Matrix rank';
+        else
+            condstring = 'Condition number';
+        end
+    end
+    
+    if strcmp(sol_type,'kansa')
+        titlestring = strcat('KM,',bcstr,epstr);
+    else
+        titlestring = strcat('MFS,',bcstr,epstr);
+    end
+    
     [AX,H1,H2] = plotyy(Nvec_true,errvec,Nvec_true,condvec,@loglog);
     xlabel('Total collocation points')
     set(AX(1),'Xlim',[Nvec_true(1),Nvec_true(end)])
     set(get(AX(1),'Ylabel'),'String',errstr)
     set(AX(1),'Ycolor',errcolor)
     set(AX(2),'Xlim',[Nvec_true(1),Nvec_true(end)])
-    set(get(AX(2),'Ylabel'),'String','Matrix Condition','Color',condcolor)
+    set(get(AX(2),'Ylabel'),'String',condstring,'Color',condcolor)
     set(AX(2),'Ycolor',condcolor)
     set(H1,'LineWidth',3,'Color',errcolor)
     set(H2,'LineWidth',3,'Color',condcolor)
-    title(strcat(bcstr,epstr))
+    title(titlestring)
 end
 
 if plot_sol

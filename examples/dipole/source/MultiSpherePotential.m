@@ -60,7 +60,8 @@ for i = 1:M
         for n = 1:maxdegree
             m = [1 0; 0 1];
             if S > 1
-                for k = (S-1):-1:1
+%               for k = (S-1):-1:1
+                for k = 1:(S-1)
                     rs = sigma(k)/sigma(k+1);
                     m11 = n+(n+1)*rs;
                     m12 = (n+1)*(rs-1)*(r(S)/r(k))^(2*n+1);

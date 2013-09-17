@@ -61,8 +61,6 @@
 %     Nvec - Row vector of N values <default = 100:50:500>
 %     BC_frac - The fraction of the total points to be used to enforce
 %               boundary conditions <default = .3>
-%     dip_cushion - How much space should be given around the dipole where
-%               no RBF centers are allowed <default = .005>
 %     N_eval - # points to evaluate error <default = 1001>
 %
 %  Some outputs are available if you would like them
@@ -96,7 +94,7 @@ radbasfun = 'imq';
 int_point_dist = 'halton';
 bdy_point_dist = 'spiral';
 ep = 1;
-mfs_frac = 1.0;
+mfs_frac = 0.7;
 mfs_sphere = [1.3 0.8 1.3];
 BC_choice = 1;
 eval_diff = 1;
@@ -108,7 +106,6 @@ sol_acc = 100;
 
 Nvec = 100:100:1500;
 BC_frac = .3; % Not yet implemented
-dip_cushion = .01;
 N_eval = 1001;
 
 iter_out = 1;
@@ -182,7 +179,7 @@ for Npnts = Nvec
     end
     
     % Choose all points in the geometry
-    [POINTS, NORMALS] = BallGeometry(R,Npnts,sol_type,int_point_dist,bdy_point_dist,srcpnts,dip_cushion);
+    [POINTS, NORMALS] = BallGeometry(R,Npnts,sol_type,int_point_dist,bdy_point_dist);
     
     % Cut up the domain into the appropriate sections
     % Section A is the inner ball, B is the outer ball
