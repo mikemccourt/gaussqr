@@ -5,17 +5,17 @@
 global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.STORED_PHI_FOR_EVALUATION = 1;
 
-%epvec = logspace(-2,1,31);
-epvec = logspace(-10,0,31);
+epvec = logspace(-2,1,31);
+%epvec = logspace(-10,0,31);
 %epvec = fliplr(epvec);
 
-N = 4;
+N = 15;
 NN = 200;
 x = pickpoints(-1,1,N,'cheb');
 %yf = @(x) x + 1./(1+x.^2);
 %fstring = 'y(x) = x + 1/(1+x^2)';
-yf = @(x) x.^3-3*x.^2+2*x+1;% + 0.001*cos(10*x);
-fstring = 'y(x) = x^3-3x^2+2x+1';
+yf = @(x) x.^3-3*x.^2+2*x+1 + 1e-10*cos(10*x);
+fstring = 'y(x) = x^3-3x^2+2x+1 + 10^{-10}cos(10x)';
 %yf = @(x) x;% + 0.001*cos(10*x);
 %fstring = 'y(x) = x';% + cos(10x)/1000';
 %yf = @(x) 0.75*exp(-((9*(x+1)/2-2).^2)/4)+0.75*exp(-((9*(x+1)/2+1).^2/49))+0.5*exp(-((9*(x+1)/2-7).^2)/4)-0.2*exp(-((9*(x+1)/2-4).^2));
@@ -148,9 +148,9 @@ xlabel('\epsilon')
 ylabel('log-like function')
 title([fstring,', N = ',num2str(N)]), hold off
 figure
-loglog(epvec,mdist3,'b','linewidth',3), hold on
-loglog(epvec,mdist3-bvec,'--r','linewidth',3)
-loglog(epvec,bvec,'color',[0 .5 0],'linewidth',3)
+loglog(epvec,mdist3,'color',[0 .5 0],'linewidth',3), hold on
+loglog(epvec,mdist3-bvec,'--c','linewidth',3)
+loglog(epvec,bvec,'b','linewidth',3)
 legend('H_K-norm HS','lower bound (L1inv)','lower bound (L2)')
 xlabel('\epsilon')
 ylabel('log-like function')

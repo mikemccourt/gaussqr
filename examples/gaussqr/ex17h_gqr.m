@@ -7,21 +7,25 @@ global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.STORED_PHI_FOR_EVALUATION = 1;
 
 %epvec = logspace(-2,1,31);
-epvec = logspace(-6,1,31);
-%epvec = fliplr(epvec);
+%epvec = logspace(-6,1,31);
+epvec = unique([logspace(-6,-4,6),logspace(-4,-1,10),logspace(-1,1,17)]);
 
-Nvec = [5:5:50];
+Nvec = [10:10:200];
 NN = 200;
 yf = @(x) x + 1./(1+x.^2);
 fstring = 'y(x) = x + 1/(1+x^2)';
 %yf = @(x) x.^3-3*x.^2+2*x+1 + 0.001*cos(10*x);
-%fstring = 'y(x) = x^3-3x^2+2x+1';
-%yf = @(x) x;% + 0.001*cos(10*x);
-%fstring = 'y(x) = x';% + cos(10x)/1000';
+%fstring = 'y(x) = x^3-3x^2+2x+1 + cos(10x)/1000';
+%yf = @(x) 0*x + 1 + 0.001*cos(10*x);
+%fstring = 'y(x) = 1 + cos(10x)/1000';
 %yf = @(x) 0.75*exp(-((9*(x+1)/2-2).^2)/4)+0.75*exp(-((9*(x+1)/2+1).^2/49))+0.5*exp(-((9*(x+1)/2-7).^2)/4)-0.2*exp(-((9*(x+1)/2-4).^2));
 %fstring = '"Franke"';
+%yf = @(x) 0.75*exp(-((9*(x+1)/2-2).^2)/40)+0.75*exp(-((9*(x+1)/2+1).^2/490))+0.5*exp(-((9*(x+1)/2-7).^2)/40)-0.2*exp(-((9*(x+1)/2-4).^2)/10);
+%fstring = '"Flat Franke"';
 %yf = @(x) tanh(9*(x-1))+1;
 %fstring = 'tanh(9(x-1))+1';
+%yf = @(x) sinc(pi*x);
+%fstring = 'sinc(\pi x)';
 
 % Why does this artificial "noise" make things work?
 
@@ -82,26 +86,26 @@ for N=Nvec
         lamsave = laminv.*(laminv/laminv(end)>lamratio);
     
         % Mahaldist third version
+        warning off
         b = Psi\y;
         bvector = ((Lambda2.^(.5))'*(Phi2')/(Phi1')*(lamsave.*b));
-        bvec(k,l) = bvector'*bvector;
-        mahaldist = b'*(lamsave.*b) + bvec(k,l);
-        mdist3(k,l) = mahaldist;
-    
-        mvec(k,l) = log(abs(mahaldist));
-        detvec(k,l) = 1/N*logdetK;
+        warning on
+        bvec = bvector'*bvector;
+        mahaldist = b'*(lamsave.*b) + bvec;
+        
+        % Log-likelihood
         lvec(k,l) = log(abs(mahaldist)) + 1/N*logdetK;
     
-        A = rbf(ep,DM);
-        kbasis = rbf(ep,EM);
-        warning off
-        yp = kbasis*(A\y);
-        derrvec(k,l) = errcompute(yp,yy);
-        dmvec(k,l) = log(abs(y'*(A\y)));
-        S = svd(A);
-        ddetvec(k,l) = 1/N*sum(log(S));
-        dlvec(k,l) =  dmvec(k,l) + ddetvec(k,l);
-        warning on
+%         A = rbf(ep,DM);
+%         kbasis = rbf(ep,EM);
+%         warning off
+%         yp = kbasis*(A\y);
+%         derrvec(k,l) = errcompute(yp,yy);
+%         dmvec(k,l) = log(abs(y'*(A\y)));
+%         S = svd(A);
+%         ddetvec(k,l) = 1/N*sum(log(S));
+%         dlvec(k,l) =  dmvec(k,l) + ddetvec(k,l);
+%         warning on
     
         k = k + 1;
     end
@@ -109,21 +113,34 @@ for N=Nvec
 end
 
 [X,Y] = meshgrid(epvec,Nvec);
-surf(X,Y,errvec'), title('True solution')
+surf(X,Y,log10(errvec')), title(['True solution: ',fstring])
 set(gca,'XScale','log')
-set(gca,'ZScale','log')
 xlabel('\epsilon')
 ylabel('N')
-zlabel('error')
+zlabel('log_{10}(error)')
+view(-175,50)
+hold on
+for j=1:length(Nvec)
+    i = find(errvec(:,j)==min(errvec(:,j)));
+    scatter3(X(1,i),Y(j,1),log10(errvec(i,j)),30,'fill','MarkerFaceColor','g')
+end
 [i,j]=find(errvec==min(min(errvec)));
-fprintf('True solution: optimal epsilon=%f, optimal N=%d\n',epvec(i),Nvec(j))
+fprintf('True solution: optimal epsilon=%f, optimal N=%d.\t Error: %g\n',epvec(i),Nvec(j),errvec(i,j))
+scatter3(X(1,i),Y(j,1),log10(errvec(i,j)),30,'fill','MarkerFaceColor','r'), hold off
 
 figure
 [X,Y] = meshgrid(epvec,Nvec);
-surf(X,Y,lvec'), title('MLE')
+surf(X,Y,log10(exp(lvec'))), title(['MLE: ',fstring])
 set(gca,'XScale','log')
 xlabel('\epsilon')
 ylabel('N')
-zlabel('MLE')
+zlabel('log_{10}(MLE)')
+view(-175,50)
+hold on
+for j=1:length(Nvec)
+    i = find(lvec(:,j)==min(lvec(:,j)));
+    scatter3(X(1,i),Y(j,1),log10(exp(lvec(i,j))),30,'fill','MarkerFaceColor','g')
+end
 [i,j]=find(lvec==min(min(lvec)));
-fprintf('MLE: optimal epsilon=%f, optimal N=%d\n',epvec(i),Nvec(j))
+fprintf('MLE: optimal epsilon=%f, optimal N=%d.\t Error: %g\n',epvec(i),Nvec(j),errvec(i,j))
+scatter3(X(1,i),Y(j,1),log10(exp(lvec(i,j))),30,'fill','MarkerFaceColor','r'), hold off
