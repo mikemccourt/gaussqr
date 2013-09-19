@@ -36,28 +36,30 @@ end
 Total_time = toc
 
 tic
-status = 'Performing RBF-QRr'
+status = 'Performing RBF-QR'
 j = 1;
 for N=Nvec
     x = 2*haltonseq(N,5)-1;
     y = yf(x);
     k = 1;
+    alpha = alphavals(k);
     for ep=epvecr
-        GQR = gqr_solve(x,y,ep,alphavals(k));
+        GQR = gqr_solve(x,y,ep,alpha);
         yp = gqr_eval(GQR,xx);
         errvecr(j,k) = errcompute(yp,yy,NN-N);
-        fprintf(' %g ',GQR.alpha)
+        fprintf(' %g ',alpha)
         % Now, MLE computation
         Phi1 = GQR.stored_phi1;
         Phi2 = GQR.stored_phi2;
+        Marr = GQR.Marr;
         S = svd(Phi1); logdetPhi = sum(log(S));
         Psi = Phi1 + Phi2*GQR.Rbar;
         S = svd(Psi); logdetPsi = sum(log(S));
-        beta = (1+(2*ep/GQR.alpha)^2)^.25;
-        delta2 = GQR.alpha^2/2*(beta^2-1);
-        ead = ep^2 + GQR.alpha^2 + delta2;
-        Lambda1 = sqrt(GQR.alpha^2/ead)*(ep^2/ead).^(0:N-1)';
-        Lambda2 = sqrt(GQR.alpha^2/ead)*(ep^2/ead).^(N:size(GQR.Marr,2)-1)';
+        beta = (1+(2*ep/alpha)^2)^.25;
+        delta2 = alpha^2/2*(beta^2-1);
+        ead = ep^2 + alpha^2 + delta2;
+        Lambda1 = sqrt(alpha^2/ead)*(ep^2/ead).^sum(Marr(:,1:N),1)';
+        Lambda2 = sqrt(alpha^2/ead)*(ep^2/ead).^sum(Marr(:,N+1:end),1)';
         logdetK = logdetPsi + logdetPhi + sum(log(Lambda1));
         laminv = 1./Lambda1;
         % Mahaldist
