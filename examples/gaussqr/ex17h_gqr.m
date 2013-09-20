@@ -122,11 +122,11 @@ view(-175,50)
 hold on
 for j=1:length(Nvec)
     i = find(errvec(:,j)==min(errvec(:,j)));
-    scatter3(X(1,i),Y(j,1),log10(errvec(i,j)),30,'fill','MarkerFaceColor','g')
+    scatter3(X(1,i),Y(j,1),log10(errvec(i,j)),50,'fill','MarkerFaceColor','g')
 end
 [i,j]=find(errvec==min(min(errvec)));
 fprintf('True solution: optimal epsilon=%f, optimal N=%d.\t Error: %g\n',epvec(i),Nvec(j),errvec(i,j))
-scatter3(X(1,i),Y(j,1),log10(errvec(i,j)),30,'fill','MarkerFaceColor','r'), hold off
+scatter3(X(1,i),Y(j,1),log10(errvec(i,j)),50,'fill','MarkerFaceColor','r'), hold off
 
 figure
 [X,Y] = meshgrid(epvec,Nvec);
@@ -135,12 +135,29 @@ set(gca,'XScale','log')
 xlabel('\epsilon')
 ylabel('N')
 zlabel('log_{10}(MLE)')
-view(-175,50)
+view(2)
 hold on
 for j=1:length(Nvec)
     i = find(lvec(:,j)==min(lvec(:,j)));
-    scatter3(X(1,i),Y(j,1),log10(exp(lvec(i,j))),30,'fill','MarkerFaceColor','g')
+    plot(X(1,i),Y(j,1),'o','Markersize',8,'MarkerFaceColor','g')
 end
 [i,j]=find(lvec==min(min(lvec)));
 fprintf('MLE: optimal epsilon=%f, optimal N=%d.\t Error: %g\n',epvec(i),Nvec(j),errvec(i,j))
-scatter3(X(1,i),Y(j,1),log10(exp(lvec(i,j))),30,'fill','MarkerFaceColor','r'), hold off
+plot(X(1,i),Y(j,1),'o','Markersize',8,'MarkerFaceColor','r'), hold off
+
+figure
+[X,Y] = meshgrid(epvec,Nvec);
+surf(X,Y,log10(errvec')), title(['True solution: ',fstring])
+set(gca,'XScale','log')
+xlabel('\epsilon')
+ylabel('N')
+zlabel('log_{10}(error)')
+view(2)
+hold on
+for j=1:length(Nvec)
+    i = find(errvec(:,j)==min(errvec(:,j)));
+    plot(X(1,i),Y(j,1),'o','Markersize',8,'MarkerFaceColor','g')
+end
+[i,j]=find(errvec==min(min(errvec)));
+fprintf('True solution: optimal epsilon=%f, optimal N=%d.\t Error: %g\n',epvec(i),Nvec(j),errvec(i,j))
+plot(X(1,i),Y(j,1),'o','Markersize',8,'MarkerFaceColor','r'), hold off

@@ -1,6 +1,7 @@
 % ex17j_gqr
-% This example compares RBF-QR to RBF-Direct in 5D
-% The goal of this example is to 
+% This example plots "optimal"-epsilon curves based on errors relative to
+% the exact solution and via MLE. We use direct computation and HS-SVD in
+% 5D.
 rbfsetup
 global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.ORTH_INDEX_REQUESTED = 1;
@@ -31,6 +32,11 @@ errvecr = zeros(size(Nvec,2),length(epvecr));
 errvecd = zeros(size(Nvec,2),length(epvecd));
 lvecr = zeros(size(Nvec,2),length(epvecr));
 lvecd = zeros(size(Nvec,2),length(epvecd));
+logdetK = zeros(size(Nvec,2),length(epvecr));
+logdetKd = zeros(size(Nvec,2),length(epvecd));
+mahaldist = zeros(size(Nvec,2),length(epvecr));
+mahaldistd = zeros(size(Nvec,2),length(epvecd));
+bvec = zeros(size(Nvec,2),length(epvecr));
 
 if active_timer tic, end
 status = 'Finding alpha values'
@@ -66,17 +72,17 @@ for N=Nvec
         ead = ep^2 + alpha^2 + delta2;
         Lambda1 = sqrt(alpha^2/ead)*(ep^2/ead).^sum(Marr(:,1:N),1)';
         Lambda2 = sqrt(alpha^2/ead)*(ep^2/ead).^sum(Marr(:,N+1:end),1)';
-        logdetK = logdetPsi + logdetPhi + sum(log(Lambda1));
+        logdetK(j,k) = (logdetPsi + logdetPhi + sum(log(Lambda1)))/N;
         laminv = 1./Lambda1;
         % Mahaldist
         warning off
         b = Psi\y;
         bvector = ((Lambda2.^(.5))'*(Phi2')/(Phi1')*(laminv.*b));
         warning on
-        bvec = bvector'*bvector;
-        mahaldist = b'*(laminv.*b) + bvec;
+        bvec(j,k) = bvector'*bvector;
+        mahaldist(j,k) = b'*(laminv.*b) + bvec(j,k);
         % Log-likelihood
-        lvecr(j,k) = log(abs(mahaldist)) + 1/N*logdetK;
+        lvecr(j,k) = log(abs(mahaldist(j,k))) + logdetK(j,k);
 %         fprintf(' %d ',k)
         k = k+1;
     end
@@ -98,7 +104,9 @@ for N=Nvec
         warning off % I know it's bad
         beta = IM\y;
         S = svd(IM); % for MLE computation in next line
-        lvecd(j,k) =  log(abs(y'*beta)) + 1/N*sum(log(S));
+        logdetKd(j,k) = 1/N*sum(log(S));
+        mahaldistd(j,k) = y'*beta;
+        lvecd(j,k) = log(abs(mahaldistd(j,k))) + logdetKd(j,k);
         warning on
         DM_EVAL = DistanceMatrix(xx,x);
         EM = rbf(ep,DM_EVAL);
@@ -113,21 +121,26 @@ end
 if active_timer Total_time = toc, end
 
 legvals = {};
+%for k=1:size(Nvec,2)
+%    legvals{k} = sprintf('N=%d (error)',Nvec(k));
+%end
+%for k=1:size(Nvec,2)
+%    legvals{k} = sprintf('N=%d (MLE)',Nvec(k));
+%end
 for k=1:size(Nvec,2)
-    legvals{k} = sprintf('N=%d (error)',Nvec(k));
-end
-for k=1:size(Nvec,2)
-    legvals{k} = sprintf('N=%d (MLE)',Nvec(k));
+    legvals{k} = sprintf('N=%d',Nvec(k));
 end
 
+figure
 loglog(epvecd,errvecd,'LineWidth',3)
 hold on
 loglog(epvecd,exp(lvecd),'-.','LineWidth',2)
 hold off
 xlabel('\epsilon')
-ylabel('average error')
-title('sin(mean(x)), Halton points, Direct')
+ylabel('error')
+title('MLE vs Error (direct)')
 legend(legvals,'Location','SouthEast')
+
 
 figure
 loglog(epvecr,errvecr,'LineWidth',3)
@@ -135,6 +148,51 @@ hold on
 loglog(epvecd,exp(lvecr),'-.','LineWidth',2)
 hold off
 xlabel('\epsilon')
-ylabel('average error')
-title('sin(mean(x)), Halton points, GaussQR')
+ylabel('error')
+title('MLE vs Error (HS-SVD)')
 legend(legvals,'Location','SouthEast')
+
+figure
+loglog(epvecr,errvecr,'LineWidth',3)
+hold on
+loglog(epvecd,errvecd,'-.','LineWidth',3)
+hold off
+xlabel('\epsilon')
+ylabel('error')
+title('Error (direct vs HS-SVD)')
+legend(legvals,'Location','SouthEast')
+
+figure
+loglog(epvecd,exp(lvecr),'LineWidth',3)
+hold on
+loglog(epvecd,exp(lvecd),'-.','LineWidth',3)
+hold off
+xlabel('\epsilon')
+ylabel('error')
+title('MLE (direct vs HS-SVD)')
+legend(legvals,'Location','SouthEast')
+
+figure
+loglog(epvecr,exp(logdetK),'linewidth',3), hold on
+loglog(epvecd,exp(logdetKd),'-.','linewidth',3)
+legend(legvals,'Location','SouthEast')
+xlabel('\epsilon')
+ylabel('logdet(K)/N')
+title('5D: y(x)=sin(mean(x)), direct vs HS-SVD'), hold off
+
+figure
+loglog(epvecr,mahaldist,'linewidth',3), hold on
+loglog(epvecd,abs(mahaldistd),'-.','linewidth',3)
+legend(legvals,'Location','NorthEast')
+xlabel('\epsilon')
+ylabel('Native space norm')
+title('5D: y(x)=sin(mean(x)), direct vs HS-SVD'), hold off
+
+figure
+loglog(epvecr,mahaldist(2,:),'color',[0 .5 0],'linewidth',3), hold on
+loglog(epvecr,mahaldist(2,:)-bvec(2,:),'--c','linewidth',3)
+loglog(epvecr,bvec(2,:),'b','linewidth',3)
+legend('H_K-norm HS','lower bound (L1inv)','lower bound (L2)')
+xlabel('\epsilon')
+ylabel('log-like function')
+title(['5D: y(x)=sin(mean(x)), N = ',num2str(Nvec(2))]), hold off
