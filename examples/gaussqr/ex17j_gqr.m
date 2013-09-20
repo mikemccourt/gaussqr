@@ -1,17 +1,23 @@
-% ex2
-% This example compares RBF-Direct to RBF-QRr
+% ex17j_gqr
+% This example compares RBF-QR to RBF-Direct in 5D
+% The goal of this example is to 
 rbfsetup
 global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .5;
-GAUSSQR_PARAMETERS.ORTH_INDEX_REQUESTED = 1;
+GAUSSQR_PARAMETERS.MAX_EXTRA_EFUNC = 200; % Set to, e.g., -50 for 1.5N
+GAUSSQR_PARAMETERS.ERROR_STYLE = 4;
+GAUSSQR_PARAMETERS.NORM_TYPE = 2;
 
 epvecd = logspace(-2,1,20);
 epvecr = logspace(-2,1,20);
 Nvec = [400,800,1600,3200];
-%epvecd = logspace(-2,1,10);
-%epvecr = logspace(-2,1,10);
-%Nvec = [400,500,600];
+% epvecd = logspace(-2,1,10);
+% epvecr = logspace(-2,1,10);
+% Nvec = [400,500,600];
 NN = 4000;
+
+% If you want to keep track of how long these computations take
+active_timer = 1;
 
 spaceopt = 'halton';
 rbf = @(ep,x) exp(-(ep*x).^2);
@@ -26,16 +32,16 @@ errvecd = zeros(size(Nvec,2),length(epvecd));
 lvecr = zeros(size(Nvec,2),length(epvecr));
 lvecd = zeros(size(Nvec,2),length(epvecd));
 
-tic
+if active_timer tic, end
 status = 'Finding alpha values'
 k = 1;
 for ep=epvecr
     alphavals(k) = gqr_alphasearch(ep,[-1,-1,-1,-1,-1],[1,1,1,1,1]);
     k = k+1;
 end
-Total_time = toc
+if active_timer Total_time = toc, end
 
-tic
+if active_timer tic, end
 status = 'Performing RBF-QR'
 j = 1;
 for N=Nvec
@@ -77,9 +83,9 @@ for N=Nvec
     fprintf(' %d \n',N)
     j = j+1;
 end
-Total_time = toc
+if active_timer Total_time = toc, end
 
-tic
+if active_timer tic, end
 status = 'Performing RBF-Direct'
 j = 1;
 for N=Nvec
@@ -104,7 +110,15 @@ for N=Nvec
     fprintf(' %d \n',N)
     j = j+1;
 end
-Total_time = toc
+if active_timer Total_time = toc, end
+
+legvals = {};
+for k=1:size(Nvec,2)
+    legvals{k} = sprintf('N=%d (error)',Nvec(k));
+end
+for k=1:size(Nvec,2)
+    legvals{k} = sprintf('N=%d (MLE)',Nvec(k));
+end
 
 loglog(epvecd,errvecd,'LineWidth',3)
 hold on
@@ -113,8 +127,7 @@ hold off
 xlabel('\epsilon')
 ylabel('average error')
 title('sin(mean(x)), Halton points, Direct')
-legend('N=400 (error)','N=900 (error)','N=1600 (error)','N=2500 (error)',...
-       'N=400 (MLE)',    'N=900 (MLE)',    'N=1600 (MLE)',    'N=2500 (MLE)','Location','SouthEast')
+legend(legvals,'Location','SouthEast')
 
 figure
 loglog(epvecr,errvecr,'LineWidth',3)
@@ -124,5 +137,4 @@ hold off
 xlabel('\epsilon')
 ylabel('average error')
 title('sin(mean(x)), Halton points, GaussQR')
-legend('N=400 (error)','N=900 (error)','N=1600 (error)','N=2500 (error)',...
-       'N=400 (MLE)',    'N=900 (MLE)',    'N=1600 (MLE)',    'N=2500 (MLE)','Location','SouthEast')
+legend(legvals,'Location','SouthEast')
