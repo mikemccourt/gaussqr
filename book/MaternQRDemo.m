@@ -3,7 +3,7 @@
 ep = 1; beta = 7;
 G14 = @(x) .25^(-28)*max(x-.25,0).^14.*max(.75-x,0).^14;
 N = 21;
-x = pickpoints(0,1,N); x = x(2:N-1); y = G14(x);
+x = pickpoints(0,1,N); x = x(2:N-1); y = G14(x); N = N-2;
 phifunc = @(n,x) sqrt(2)*sin(pi*x*n);
 M = N + floor(1/pi*sqrt(eps^(-1/beta)*(pi^2+ep^2)-ep^2));
 % Create a vector of the desired eigenvalues

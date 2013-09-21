@@ -168,7 +168,7 @@ hold on
 loglog(epvecd,exp(lvecd),'-.','LineWidth',3)
 hold off
 xlabel('\epsilon')
-ylabel('error')
+ylabel('MLE')
 title('MLE (direct vs HS-SVD)')
 legend(legvals,'Location','SouthEast')
 
