@@ -40,9 +40,14 @@ function PHI = HSeigsolveqd(N,kernel,B,M,epsilon,qdopts)
 if nargin < 6
     qdopts.npts = N; % create the qdopts object if inputs don't have one.
     if nargin < 5
-        epsilon = 1;
+        if kernel == 2
+            epsilon = 1;
+        else
+            epsilon = 0;
+        end
     end
 end
+
 
 quadgkEXISTS = 0;
 if exist('quadgk')
@@ -66,6 +71,7 @@ end
 L=1;
 
 PHI.N = N; %create object PHI
+PHI.epsilon = epsilon;
 %pick kernel
 switch kernel
     case 1 
@@ -79,7 +85,6 @@ switch B
     case 1
         PHI.basisName = 'Standard Polynomial';
         ptspace = 'cheb';
-
         H_mat = @(x,z,j) x.^(j-1);
         x = pickpoints(0,L,N+2,ptspace);
         x = x(2:end-1);
@@ -102,7 +107,6 @@ switch B
     case 3
         PHI.basisName = 'Chebyshev Polynomials';
         ptspace = 'cheb';
-
         H_mat = @(x,z,j) cos((j-1).*acos(2*x-1));
         x = pickpoints(0,L,N+2,ptspace);
         x = x(2:end-1);
@@ -167,9 +171,30 @@ switch M
         [eivec,eival] = eig(K,H);
         PHI.K = K;
         PHI.H = H;
+    case 3 
+        PHI.quad = 'clencurt';
+        for l = 1:N
+            for i = 1:N
+               if isempty(z) 
+                           p = chebfun('p');
+                        chbf = chebfun(@(p) H_mat(p,z,i).*K_F(x(l),p,i),[0,1],'splitting','on');
+                        K(l,i) = sum(chbf);
+                 
+         
+               else
+                           p = chebfun('p');
+                        chbf = chebfun(@(p) H_mat(p,z(i),i).*K_F(x(l),p,i),[0,1],'splitting','on');
+                        K(l,i) = sum(chbf);
+               end
+            end
+        end
+        H = H_mat(X,Z,J);
+        [eivec,eival] = eig(K,H);
+        PHI.K = K;
+        PHI.H = H;
     otherwise
         error('Unacceptable quadrature method=%e',M);
-end
+    end
  [esort,ix] = sort(diag(eival),'descend');
  eivec = eivec(:,ix);
  eival = eival(ix,ix);

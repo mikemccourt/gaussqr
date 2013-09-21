@@ -6,7 +6,7 @@ function [V,D,A,H] = HSeigsolve(N,kernel,basis,epsilon,rescale,n_eig_plot)
 % Inputs : N - number of points in the domain
 %          kernel     - The kernel you want to use
 %          basis      - choice of approximating basis
-%          epsilon    - value of epsilon 
+%          epsilon    - value of epsilon  default is 1
 %          rescale    - <default=1> scale eigenfunctions to sqrt(2)
 %          n_eig_plot - <optional> which eigenvalue(s) you want to plot
 %                       Pass more than one as e.g., [1,4,6]
