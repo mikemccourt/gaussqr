@@ -18,8 +18,8 @@
 
 rbfsetup
 global GAUSSQR_PARAMETERS
-GAUSSQR_PARAMETERS.ERROR_STYLE = 2; % Use absolute error
-GAUSSQR_PARAMETERS.NORM_TYPE = inf;
+GAUSSQR_PARAMETERS.ERROR_STYLE = 4; % Use absolute error
+GAUSSQR_PARAMETERS.NORM_TYPE = 2;
 
 N = 25;
 fopt = 3;
@@ -55,7 +55,7 @@ D2 = D^2;
 err_Trefethen_1d = errcompute(D*u,ud);
 err_Trefethen_2d = errcompute(D2*u,ud2);
 
-epvec = logspace(-2,1,40);
+epvec = logspace(-2,1,60);
 r = DistanceMatrix(x,x);
 dx = DifferenceMatrix(x,x);
 errvec1d = [];
@@ -72,7 +72,7 @@ for ep=epvec
 end
 
 alpha = 3;
-GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .7;
+GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .25;
 
 errvecQ1d = [];
 errvecQ2d = [];
@@ -85,7 +85,7 @@ for ep=epvec
     errvecQ2d(k) = errcompute(gqr_eval(GQR,x,2),ud2);
     
     GQR = gqr_rsolve(x,u,ep,alpha);
-    errvecR1d(k) = errcompute(gqr_eval(GQR,x,1),ud);
+   errvecR1d(k) = errcompute(gqr_eval(GQR,x,1),ud);
     errvecR2d(k) = errcompute(gqr_eval(GQR,x,2),ud2);
   
     k = k + 1;
