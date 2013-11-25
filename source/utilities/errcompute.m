@@ -18,6 +18,19 @@ normtype = GAUSSQR_PARAMETERS.NORM_TYPE;
 errstyle = GAUSSQR_PARAMETERS.ERROR_STYLE;
 alertuser = GAUSSQR_PARAMETERS.WARNINGS_ON;
 
+switch nargin
+    case 1
+        y = zeros(size(x));
+    case 2
+        n = size(x,1);
+    case 3
+        if n<1 || n>length(x)
+            warning('Must have 1<n<length(x)')
+        end
+    otherwise
+        error('Too many inputs')
+end
+
 if any(size(x)~=size(y))
     error('Input vectors have different sizes')
 elseif size(x,2)~=1 || size(y,2)~=1
@@ -26,10 +39,6 @@ elseif size(x,2)~=1 || size(y,2)~=1
     end
     x = x(:);
     y = y(:);
-end
-
-if not(exist('n'))
-    n = size(x,1);
 end
 
 if ~(normtype==1 || normtype==2 || normtype==inf)
