@@ -24,20 +24,16 @@ kvvec = [];
 errvec = [];
 k = 1;
 for ep=epvec
-    GQR = gqr_solveprep(0,x,ep,alpha);
+    GQR = gqr_solve(x,y,ep,alpha);
+    yp = gqr_eval(GQR,xx);
+    errvec(k) = errcompute(yp,yy);
+    
     Rbar = GQR.Rbar;
-    Phi = gqr_phi(GQR,x);
-    Phi1 = Phi(:,1:N);
-    Psi = Phi*[I;Rbar];
-    invPsi = pinv(Psi);
+    Psi = gqr_phi(GQR,x)*[I;Rbar];
     
     kx = rbf(ep,DistanceMatrix(x,xx));
     psix = gqr_phi(GQR,xx)*[I;Rbar];
-    kvvec(k) = sqrt(errcompute(rbf(ep,0)-sum(psix'.*(invPsi*kx))));
-    
-    GQR.coef = invPsi*y;
-    yp = gqr_eval(GQR,xx);
-    errvec(k) = errcompute(yp,yy);
+    kvvec(k) = sqrt(errcompute(rbf(ep,0)-sum((psix/Psi)'.*kx)));
     
     k = k + 1;
     fprintf('%g\t%g\t%g\n',k,ep,cond(Psi))
