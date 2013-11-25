@@ -68,7 +68,7 @@ else
 end
 
 
-L=1;
+
 
 PHI.N = N; %create object PHI
 PHI.epsilon = epsilon;
@@ -76,8 +76,16 @@ PHI.epsilon = epsilon;
 switch kernel
     case 1 
          K_F= @(x,z,j) min(x,z)-x.*z;
+         L = 0;
+         U = 1;
     case 2
          K_F= @(x,z,j) sinh(epsilon.*min(x,z)).*sinh(epsilon.*(1-max(x,z)))./(epsilon.*sinh(epsilon));
+         L = 0;
+         U = 1;
+    case 3
+         K_F = @(x,z,j) exp(-abs(x-z));
+         L = -1;
+         U = 1;
 end
 
 %pick basis
@@ -86,7 +94,7 @@ switch B
         PHI.basisName = 'Standard Polynomial';
         ptspace = 'cheb';
         H_mat = @(x,z,j) x.^(j-1);
-        x = pickpoints(0,L,N+2,ptspace);
+        x = pickpoints(L,U,N+2,ptspace);
         x = x(2:end-1);
         j = 1:N;
         z =[];
@@ -98,7 +106,7 @@ switch B
         PHI.basisName = 'PP Spline Kernel';
         H_mat = @(x,z,j) min(x,z)-x.*z;
         ptspace = 'even';
-        x = pickpoints(0,L,N+2,ptspace);x = x(2:end-1);
+        x = pickpoints(L,U,N+2,ptspace);x = x(2:end-1);
         X = repmat(x,1,N);
         z = x';
         Z = repmat(z,N,1);
@@ -107,8 +115,12 @@ switch B
     case 3
         PHI.basisName = 'Chebyshev Polynomials';
         ptspace = 'cheb';
-        H_mat = @(x,z,j) cos((j-1).*acos(2*x-1));
-        x = pickpoints(0,L,N+2,ptspace);
+        if kernel ~=3
+            H_mat = @(x,z,j) cos((j-1).*acos(2*x-1));
+        else
+            H_mat = @(x,z,j) cos((j-1).*acos(x));
+        end
+        x = pickpoints(L,U,N+2,ptspace);
         x = x(2:end-1);
         j = 1:N;
         z =[];
@@ -119,7 +131,7 @@ switch B
         error('Unacceptable basis=%e',B)
 end
 %pick quadrature method
-switch M
+  switch M
     case 1
         PHI.quad = 'left hand rule';
         Nqd = N;
@@ -154,15 +166,15 @@ switch M
             for i = 1:N
                if isempty(z) 
                     if quadgkEXISTS
-                        K(l,i) = quadgk(@(p) H_mat(p,z,i).*K_F(x(l),p,i),0,1,'AbsTol',AbsTol,'RelTol',RelTol);
+                        K(l,i) = quadgk(@(p) H_mat(p,z,i).*K_F(x(l),p,i),L,U,'AbsTol',AbsTol,'RelTol',RelTol);
                     else
-                        K(l,i) = quadl(@(p) H_mat(p,z,i).*K_F(x(l),p,i),0,1,integralTOL);
+                        K(l,i) = quadl(@(p) H_mat(p,z,i).*K_F(x(l),p,i),L,U,integralTOL);
                     end
                else
                    if quadgkEXISTS
-                        K(l,i) = quadgk(@(p) H_mat(p,z(i),i).*K_F(x(l),p,i),0,1,'AbsTol',AbsTol,'RelTol',RelTol);
+                        K(l,i) = quadgk(@(p) H_mat(p,z(i),i).*K_F(x(l),p,i),L,U,'AbsTol',AbsTol,'RelTol',RelTol);
                    else
-                        K(l,i) = quadl(@(p) H_mat(p,z(i),i).*K_F(x(l),p,i),0,1,integralTOL);
+                        K(l,i) = quadl(@(p) H_mat(p,z(i),i).*K_F(x(l),p,i),L,U,integralTOL);
                    end
                end
             end
@@ -172,20 +184,27 @@ switch M
         PHI.K = K;
         PHI.H = H;
     case 3 
-        PHI.quad = 'clencurt';
+        PHI.quad = 'chebufun';
         for l = 1:N
             for i = 1:N
                if isempty(z) 
                            p = chebfun('p');
-                        chbf = chebfun(@(p) H_mat(p,z,i).*K_F(x(l),p,i),[0,1],'splitting','on');
-                        K(l,i) = sum(chbf);
-                 
-         
+                           chbf = chebfun(@(p) H_mat(p,z,i).*K_F(x(l),p,i),[L U],'splitting','on');
+                         % chbf = chebfun(@(p) H_mat(p,z,i).*(p-x(l).*p),@(p) H_mat(p,z,i).*(x(l)-x(l).*p),[0 x(l) 1],'splitting','on'); 
+                         K(l,i) = sum(chbf);
+               
+       
                else
                            p = chebfun('p');
-                        chbf = chebfun(@(p) H_mat(p,z(i),i).*K_F(x(l),p,i),[0,1],'splitting','on');
-                        K(l,i) = sum(chbf);
-               end
+                           chbf = chebfun(@(p) H_mat(p,z(i),i).*K_F(x(l),p,i),[U,P],'splitting','on');
+                        %  chbf = chebfun(@(p) H_mat(p,z(i),i).*(p-x(l).*p),@(p) H_mat(p,z(i),i).*(x(l)-x(l).*p),[0 x(l) 1],'splitting','on'); 
+%                         if (z(i) > x(l))
+%                            chbf = chebfun(@(p) (p-x(l).*p).*(p-p.*z(i)),@(p) (x(l)-x(l).*p).*(p-p.*z(i)),@(p) (x(l)-x(l).*p).*(z(i)-p.*z(i)), [0 x(l) z(i) 1]);
+%                         else
+%                            chbf = chebfun(@(p) (p-x(l).*p).*(p-p.*z(i)),@(p) (p-x(l).*p).*(z(i)-p.*z(i)),@(p) (x(l)-x(l).*p).*(z(i)-p.*z(i)), [0 z(i) x(l) 1]);
+%                         end
+                         K(l,i) = sum(chbf);
+                end
             end
         end
         H = H_mat(X,Z,J);
