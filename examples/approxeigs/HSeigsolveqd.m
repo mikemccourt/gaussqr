@@ -1,4 +1,4 @@
-function PHI = HSeigsolveqd(N,kernel,B,M,epsilon,qdopts)
+function PHI = HSeigsolveqd(N,kernel,B,M,epsilon,qdopts,split)
 %This function approximates Hilbert-Schmidt eigenvalues. 
 %The difference between this method and HSeigsolve is this function using
 %quadrature to help us.
@@ -11,6 +11,7 @@ function PHI = HSeigsolveqd(N,kernel,B,M,epsilon,qdopts)
 %          M      - different quadrature method to compute the error
 %          epsilon- value of epsilon
 %          qdopts - quadrature related options
+%          split  - whether split for chebfun(by hand)
 %          
 %Outputs : PHI - eigenfunction object 
 %         
@@ -36,14 +37,16 @@ function PHI = HSeigsolveqd(N,kernel,B,M,epsilon,qdopts)
 %    PHI.coefs     : Coefficients for evaluating the eigenfunctions
 %                    PHI.coefs(:,k) are for the kth eigenfunction
 %    
-
-if nargin < 6
-    qdopts.npts = N; % create the qdopts object if inputs don't have one.
-    if nargin < 5
-        if kernel == 2
-            epsilon = 1;
-        else
-            epsilon = 0;
+if nargin <7
+    split = 1;
+    if nargin < 6
+        qdopts.npts = N; % create the qdopts object if inputs don't have one.
+        if nargin < 5
+            if kernel == 2
+                epsilon = 1;
+            else
+                epsilon = 0;
+            end
         end
     end
 end
@@ -189,21 +192,28 @@ end
             for i = 1:N
                if isempty(z) 
                            p = chebfun('p');
-                           chbf = chebfun(@(p) H_mat(p,z,i).*K_F(x(l),p,i),[L U],'splitting','on');
-                         % chbf = chebfun(@(p) H_mat(p,z,i).*(p-x(l).*p),@(p) H_mat(p,z,i).*(x(l)-x(l).*p),[0 x(l) 1],'splitting','on'); 
+                         if split ==1 
+                             chbf = chebfun(@(p) H_mat(p,z,i).*K_F(x(l),p,i),@(p) H_mat(p,z,i).*K_F(x(l),p,i),[0 x(l) 1],'splitting','on');
+                            %chbf = chebfun(@(p) H_mat(p,z,i).*(p-x(l).*p),@(p) H_mat(p,z,i).*(x(l)-x(l).*p),[0 x(l) 1],'splitting','on');
+                         else
+                            chbf = chebfun(@(p) H_mat(p,z,i).*K_F(x(l),p,i),[L U],'splitting','on');
+                         end
                          K(l,i) = sum(chbf);
                
        
                else
                            p = chebfun('p');
-                           chbf = chebfun(@(p) H_mat(p,z(i),i).*K_F(x(l),p,i),[U,P],'splitting','on');
-                        %  chbf = chebfun(@(p) H_mat(p,z(i),i).*(p-x(l).*p),@(p) H_mat(p,z(i),i).*(x(l)-x(l).*p),[0 x(l) 1],'splitting','on'); 
-%                         if (z(i) > x(l))
-%                            chbf = chebfun(@(p) (p-x(l).*p).*(p-p.*z(i)),@(p) (x(l)-x(l).*p).*(p-p.*z(i)),@(p) (x(l)-x(l).*p).*(z(i)-p.*z(i)), [0 x(l) z(i) 1]);
-%                         else
-%                            chbf = chebfun(@(p) (p-x(l).*p).*(p-p.*z(i)),@(p) (p-x(l).*p).*(z(i)-p.*z(i)),@(p) (x(l)-x(l).*p).*(z(i)-p.*z(i)), [0 z(i) x(l) 1]);
-%                         end
-                         K(l,i) = sum(chbf);
+                     
+                        if B == 2 
+                            if (z(i) > x(l))
+                                chbf = chebfun(@(p) (p-x(l).*p).*(p-p.*z(i)),@(p) (x(l)-x(l).*p).*(p-p.*z(i)),@(p) (x(l)-x(l).*p).*(z(i)-p.*z(i)), [0 x(l) z(i) 1]);
+                            else
+                                chbf = chebfun(@(p) (p-x(l).*p).*(p-p.*z(i)),@(p) (p-x(l).*p).*(z(i)-p.*z(i)),@(p) (x(l)-x(l).*p).*(z(i)-p.*z(i)), [0 z(i) x(l) 1]);
+                            end
+                        else
+                            error('somthing error')
+                        end
+                        K(l,i) = sum(chbf);
                 end
             end
         end
