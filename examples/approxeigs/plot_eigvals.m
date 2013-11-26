@@ -1,4 +1,4 @@
-basis = 2;
+basis = 3;
 N = 50;
 kernel = 3;
 M = 3;

@@ -192,9 +192,10 @@ end
             for i = 1:N
                if isempty(z) 
                            p = chebfun('p');
-                         if split ==1 
-                             chbf = chebfun(@(p) H_mat(p,z,i).*K_F(x(l),p,i),@(p) H_mat(p,z,i).*K_F(x(l),p,i),[0 x(l) 1],'splitting','on');
-                            %chbf = chebfun(@(p) H_mat(p,z,i).*(p-x(l).*p),@(p) H_mat(p,z,i).*(x(l)-x(l).*p),[0 x(l) 1],'splitting','on');
+                         if split ==1  
+                               chbf = chebfun(@(p) H_mat(p,z,i).*K_F(x(l),p,i),@(p) H_mat(p,z,i).*K_F(x(l),p,i),[L  x(l) U],'splitting','on');
+                             % chbf = chebfun(@(p) H_mat(p,z,i).*(p-x(l).*p),@(p) H_mat(p,z,i).*(x(l)-x(l).*p),[L x(l) U],'splitting','on');
+                        
                          else
                             chbf = chebfun(@(p) H_mat(p,z,i).*K_F(x(l),p,i),[L U],'splitting','on');
                          end
@@ -206,9 +207,9 @@ end
                      
                         if B == 2 
                             if (z(i) > x(l))
-                                chbf = chebfun(@(p) (p-x(l).*p).*(p-p.*z(i)),@(p) (x(l)-x(l).*p).*(p-p.*z(i)),@(p) (x(l)-x(l).*p).*(z(i)-p.*z(i)), [0 x(l) z(i) 1]);
+                                chbf = chebfun(@(p) (p-x(l).*p).*(p-p.*z(i)),@(p) (x(l)-x(l).*p).*(p-p.*z(i)),@(p) (x(l)-x(l).*p).*(z(i)-p.*z(i)), [L x(l) z(i) U]);
                             else
-                                chbf = chebfun(@(p) (p-x(l).*p).*(p-p.*z(i)),@(p) (p-x(l).*p).*(z(i)-p.*z(i)),@(p) (x(l)-x(l).*p).*(z(i)-p.*z(i)), [0 z(i) x(l) 1]);
+                                chbf = chebfun(@(p) (p-x(l).*p).*(p-p.*z(i)),@(p) (p-x(l).*p).*(z(i)-p.*z(i)),@(p) (x(l)-x(l).*p).*(z(i)-p.*z(i)), [L z(i) x(l) U]);
                             end
                         else
                             error('somthing error')
