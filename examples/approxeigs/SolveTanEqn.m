@@ -57,3 +57,11 @@ end
 plot(v,1./(a*v),'bo','LineWidth',2)
 hold off
 
+figure
+lambda = zeros(1,2*nmax+1);
+for n=1:nmax
+    lambda(2*n-1) = 2*a/(1+a*a*v(n)*v(n));
+    lambda(2*n) = 2*a/(1+a*a*w(n)*w(n));
+end
+lambda(2*nmax+1) = 2*a/(1+a*a*v(nmax+1)*v(nmax+1));
+semilogy(1:(2*nmax+1),lambda)
