@@ -2,7 +2,7 @@
 %transcendental equations from Dongbin Xiu, Chapter 4 (eqns. 4.9 and 4.10)
 clear all
 close all
-nmax = 20;
+nmax = 25;
 w = zeros(1,nmax);
 a = 1;
 
@@ -29,7 +29,7 @@ end
 plot(w,-a*w,'bo','LineWidth',2)
 hold off
 
-pause
+%pause
 figure
 v = zeros(1,nmax+1);
 % Odd indices
@@ -64,4 +64,4 @@ for n=1:nmax
     lambda(2*n) = 2*a/(1+a*a*w(n)*w(n));
 end
 lambda(2*nmax+1) = 2*a/(1+a*a*v(nmax+1)*v(nmax+1));
-semilogy(1:(2*nmax+1),lambda)
+semilogy(1:(2*nmax+1),lambda,'gd')
