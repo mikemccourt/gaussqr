@@ -207,9 +207,11 @@ end
                      
                         if B == 2 
                             if (z(i) > x(l))
-                                chbf = chebfun(@(p) (p-x(l).*p).*(p-p.*z(i)),@(p) (x(l)-x(l).*p).*(p-p.*z(i)),@(p) (x(l)-x(l).*p).*(z(i)-p.*z(i)), [L x(l) z(i) U]);
+                                %chbf = chebfun(@(p) (p-x(l).*p).*(p-p.*z(i)),@(p) (x(l)-x(l).*p).*(p-p.*z(i)),@(p) (x(l)-x(l).*p).*(z(i)-p.*z(i)), [L x(l) z(i) U]);
+                                chbf = chebfun(@(p) K_F(x(l),p,i).*H_mat(p,z(i),i),@(p) K_F(x(l),p,i).*H_mat(p,z(i),i),@(p) K_F(x(l),p,i).*H_mat(p,z(i),i), [L x(l) z(i) U]);
                             else
-                                chbf = chebfun(@(p) (p-x(l).*p).*(p-p.*z(i)),@(p) (p-x(l).*p).*(z(i)-p.*z(i)),@(p) (x(l)-x(l).*p).*(z(i)-p.*z(i)), [L z(i) x(l) U]);
+                                %chbf = chebfun(@(p) (p-x(l).*p).*(p-p.*z(i)),@(p) (p-x(l).*p).*(z(i)-p.*z(i)),@(p) (x(l)-x(l).*p).*(z(i)-p.*z(i)), [L z(i) x(l) U]);
+                                chbf = chebfun(@(p) K_F(x(l),p,i).*H_mat(p,z(i),i),@(p) K_F(x(l),p,i).*H_mat(p,z(i),i),@(p) K_F(x(l),p,i).*H_mat(p,z(i),i), [L z(i) x(l) U]);
                             end
                         else
                             error('somthing error')
