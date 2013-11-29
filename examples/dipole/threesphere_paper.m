@@ -7,7 +7,7 @@
 %
 
 % Choose the solvers you want to use
-BEM = 1;
+BEM = 0;
 MFS = 1;
 kansa = 0;
 
@@ -19,10 +19,12 @@ srcpnts = [0, 0, 0.6*R(1)];
 radbasfun = 'imq';
 ep = 10;
 
+MFS_TSVD_tol = 1e-15;
+
 int_point_dist = 'halton';
 bdy_point_dist = 'spiral';
 
-mfs_frac = [1.0 0.8 0.4 0.2];
+mfs_frac = [0.8 0.6 0.4 0.2];
 mfs_sphere = [1.5 0.8 1.5 0.8 1.5];
 
 reference = [0,0,-R(end)];
@@ -30,7 +32,7 @@ reference = [0,0,-R(end)];
 match_couple = 0;
 sol_acc = 200;
 
-Nvec = 350:500:5350;
+Nvec = 350:1000:5350;
 N_eval = 1000;
 
 iter_out = 1;
@@ -91,7 +93,8 @@ phi_true = phi_an - phi_an(1);
 
 %% BEM solutions
 N_elements = zeros(length(Nvec),3);
-if BEM
+can_run_BEM = exist('BEM_potential','file');
+if BEM && can_run_BEM
     phi_comp_BEM = zeros(N_eval,length(Nvec));
     for k=1:length(Nvec)
         if iter_out
@@ -108,6 +111,9 @@ if BEM
 else
     for k=1:length(Nvec)
         [~, N_elements(k,:)] = prepare_multisphere_mesh(Nvec(k),R);
+    end
+    if BEM && not(can_run_BEM)
+        warning('BEM option unavailable: BEM_potential function missing')
     end
 end
 
@@ -290,7 +296,7 @@ if MFS
             sing_val = diag(S);
             inv_sing_val_TSVD = 1./sing_val;
             
-            indices = find(sing_val < 1e-5*max(sing_val));
+            indices = find(sing_val < MFS_TSVD_tol*max(sing_val));
             inv_sing_val_TSVD(indices) = 0;
             % inv_sing_val_TSVD(floor(0.2*length(inv_sing_val)):end) = 0;
             cbeta = U'*rhs;
