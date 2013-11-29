@@ -5,9 +5,11 @@ GAUSSQR_PARAMETERS.ERROR_STYLE = 2;
 
 rbf = @(e,r) exp(-(e*r).^2);
 f = @(x) sin(2*pi*x);
+f = @(x) 1./(1+x.^2);
 
 N = 24;
-x = pickpoints(-1,1,N);
+spaceopt = 'even';
+x = pickpoints(-1,1,N,spaceopt);
 y = f(x);
 
 NN = 100;
@@ -25,11 +27,12 @@ t3 = setdiff(1:N,[t1,t2]);
 
 DM = DistanceMatrix(x,x);
 
-epvec = [logspace(-2,-1,5),logspace(-1,.3,33),logspace(.3,1,6)];
-halfvec = [];
-thirdvec = [];
-loocvvec = [];
-errvec = [];
+%epvec = [logspace(-2,-.7,8),logspace(-.67,.54,83),logspace(.56,1,8)];
+epvec = [logspace(-2,0,10),logspace(.03,1,23)];
+halfvec = zeros(size(epvec));
+thirdvec = zeros(size(epvec));
+loocvvec = zeros(size(epvec));
+errvec = zeros(size(epvec));
 k = 1;
 for ep=epvec
     %%%%%%%%%%%%%%%%%%%%%%%%
@@ -81,29 +84,36 @@ for ep=epvec
     yp = gqr_eval(GQR,x_valid);
     thirdvec(k) = thirdvec(k) + errcompute(yp,y_valid);
     
+    % Computing the LOOCV step by step
+    for n=1:N
+        x_valid = x(n);
+        y_valid = f(x_valid);
+        x_train = x(setdiff(1:N,n));
+        y_train = f(x_train);
     
+        GQR = gqr_solve(x_train,y_train,ep,alpha);
+        yp = gqr_eval(GQR,x_valid);
+        loocvvec(k) = loocvvec(k) + errcompute(yp,y_valid);
+    end
+    
+    % Computing inverse for LOOCV
+%     GQR = gqr_solveprep(0,x,ep,alpha);
+%     Phi = gqr_phi(GQR,x);
+%     Phi1 = Phi(:,1:N);
+%     Psi = Phi*[eye(N);GQR.Rbar];
+%     invPsi = pinv(Psi);
+%     invPhi1 = pinv(Phi1');
+%     nu = (2*ep/alpha)^2;
+%     Lambda1 = diag((nu/(2+nu+2*sqrt(1+nu))).^(1:N));
+%     invLambda1 = pinv(Lambda1);
+%     invA = invPhi1*invLambda1*invPsi;
+%     EF = (invA*y)./diag(invA);
+%     loocvvec(k) = norm(EF,1);
+    
+    % Compute the error of the full system
     GQR = gqr_solve(x,y,ep,alpha);
     yp = gqr_eval(GQR,xx);
     errvec(k) = errcompute(yp,yy);
-    
-    
-    %A = rbf(ep,DM);
-    %invA = pinv(A);
-    %EF = (invA*y)./diag(invA);
-    %loocvvec(k) = norm(EF,1);
-    GQR = gqr_solveprep(0,x,ep,alpha);
-    Phi = gqr_phi(GQR,x);
-    Phi1 = Phi(:,1:N);
-    Psi = Phi*[eye(N);GQR.Rbar];
-    invPsi = pinv(Psi);
-    invPhi1 = pinv(Phi1');
-    nu = (2*ep/alpha)^2;
-    Lambda1 = diag((nu/(2+nu+2*sqrt(1+nu))).^(1:N));
-    invLambda1 = pinv(Lambda1);
-    invA = invPhi1*invLambda1*invPsi;
-    EF = (invA*y)./diag(invA);
-    loocvvec(k) = norm(EF,1);
-    
     
     fprintf('k=%d \t ep=%g \n',k,ep)
     k = k + 1;
@@ -114,5 +124,4 @@ loglog(epvec,thirdvec,'r','linewidth',3)
 loglog(epvec,halfvec,'g','linewidth',3)
 loglog(epvec,errvec,'linewidth',3), hold off
 xlabel('\epsilon')
-ylabel('error')
-legend('Leave one out','Leave 1/2 out','Leave 1/3 out','True solution')
+legend('Leave one out','Leave 1/3 out','Leave 1/2 out','Solution error')

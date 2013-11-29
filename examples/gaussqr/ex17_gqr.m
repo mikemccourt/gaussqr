@@ -7,9 +7,11 @@ GAUSSQR_PARAMETERS.MAX_EXTRA_EFUNC = -300;
 
 rbf = @(e,r) exp(-(e*r).^2);
 yf = @(x) cos(pi*x);
+%yf = @(x) besselj(0,abs(4*x));
 
+spaceopt = 'even';
 N = 10;
-x = pickpoints(-1,1,N);
+x = pickpoints(-1,1,N,spaceopt);
 y = yf(x);
 
 NN = 100;
@@ -19,7 +21,7 @@ yy = yf(xx);
 alpha = 1;
 I = eye(N);
 
-epvec = logspace(-2,1,50);
+epvec = [logspace(-2,-1,5),logspace(-1,1,500)];
 kvvec = [];
 errvec = [];
 k = 1;
@@ -36,7 +38,6 @@ for ep=epvec
     kvvec(k) = sqrt(errcompute(rbf(ep,0)-sum((psix/Psi)'.*kx)));
     
     k = k + 1;
-    fprintf('%g\t%g\t%g\n',k,ep,cond(Psi))
 end
 
 loglog(epvec,kvvec,'linewidth',3)
