@@ -66,13 +66,19 @@ switch nargin
             error('GQR object must have fields Marr, ep, alpha')
         else
             Marr = GQR.Marr;
-            ep = GQR.ep;
-            alpha = GQR.alpha;
         end
     case {4,5}
+        GQR = gqr_solveprep(-1,x,ep,alpha);
     otherwise
         error('nargin=%d unacceptable')
 end
+
+% Pull the needed parameters from the GQR object, which was either passed
+% to this function or created just a second ago
+ep = GQR.ep;
+alpha = GQR.alpha;
+beta = GQR.beta;
+delta2 = GQR.delta2;
 
 % Here we define: n as the number of data points
 %                 s as the dimension of the data
@@ -99,17 +105,6 @@ else
         warning('%d is an unacceptable derivative, reset to 0',deriv)
         deriv = zeros(1,s);
     end
-end
-
-if abs(real(alpha))~=alpha || abs(real(ep))~=ep
-    error('alpha=%g or ep=%g unacceptable; must be real and positive',alpha,ep)
-end
-
-beta = (1+(2*ep/alpha)^2)^(1/4);
-if beta-1<asympttol % This triggers an asymptotic expansion
-    delta2 = ep^2-ep^4/alpha^2+2*ep^6/alpha^4;
-else
-    delta2 = 1/2*alpha^2*(beta^2-1);
 end
 
 % Consider fast evaluation, and perform it if the problem

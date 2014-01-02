@@ -6,12 +6,15 @@ function [ep,alpha,Marr,Rbar] = gqr_solveprep(reg,x,ep,alpha,M)
 % one place rather than multiple files
 %
 % function GQR = gqr_solveprep(reg,x,ep)
-% Inputs : reg - pass a 1 for regression, 0 otherwise
+% Inputs : reg - pass 1 for regression, 0 interpolation
 %          x - input data values
 %          ep - value of epsilon shape parameter
 %          alpha - (optional) value of global scale parameter
 %          M - (optional) truncation value suggested by user
 % Outputs : GQR - the GaussQR object, with the needed members
+%   NOTE: reg=-1 allows for creating a GQR shell and testing the input x,
+%   ep, alpha values for validity.  This is nice if you want to compute the
+%   eigenvalues of certain ep and alpha values with GQR.eig()
 %
 % function GQR = gqr_solveprep(reg,x,ep,alpha)
 % Inputs : alpha - (optional) value of global scale parameter
@@ -25,7 +28,7 @@ function [ep,alpha,Marr,Rbar] = gqr_solveprep(reg,x,ep,alpha,M)
 % Outputs : ep - the acceptable shape parameter
 %           alpha - the acceptable scale parameter
 %           Marr - the GQR index list for interpolation
-%           lam - the eigenvalue base
+%           lam - the eigenvalue base (not the true eigenvalue)
 %                 lam = ep^2/(ep^2+alpha^2+delta^2)
 %
 % function [ep,alpha,Marr] = gqr_solveprep(0,...)
@@ -41,6 +44,7 @@ Mdefault = GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC;
 alphaDefault = GAUSSQR_PARAMETERS.ALPHA_DEFAULT;
 alertuser = GAUSSQR_PARAMETERS.WARNINGS_ON;
 storephi = GAUSSQR_PARAMETERS.STORED_PHI_FOR_EVALUATION;
+asympttol = GAUSSQR_PARAMETERS.RBFPHI_EXP_TOL;
 
 computealpha = 0;
 switch nargin
@@ -103,10 +107,21 @@ if ep==0 || alpha==0
     error(sprintf('Parameters cannot be zero: epsilon=%g, alpha=%g',ep,alpha))
 end
 
+% Evaluate auxiliary parameters
+beta = (1+(2*ep/alpha)^2)^(1/4);
+if beta-1<asympttol % This triggers an asymptotic expansion
+    delta2 = ep^2-ep^4/alpha^2+2*ep^6/alpha^4;
+else
+    delta2 = 1/2*alpha^2*(beta^2-1);
+end
+
 % Set up GQR object for evaluating eigenfunctions if necessary
 GQR.reg = reg;
 GQR.ep = ep;
 GQR.alpha = alpha;
+GQR.beta = beta;
+GQR.delta2 = delta2;
+GQR.eig = @(n) alpha/sqrt(alpha^2+ep^2+delta2)*(ep^2/(alpha^2+ep^2+delta2)).^(n-1);
 GQR.warnid = '';
 GQR.warnmsg = '';
 if storephi
@@ -158,8 +173,9 @@ switch reg
     case 0
         % First create Marr
         % We need the eigenvalues for this
-        nu = (2*ep/alpha)^2;
-        lam = nu/(2+nu+2*sqrt(1+nu));
+        % Only the relative eigenvalue ratio is needed
+        % Thus the constant alpha/sqrt(ep^2+alpha^2+delta2) is omitted
+        lam = ep^2/(ep^2+alpha^2+delta2);
         
         if Mextramax<0
             Mextramax = (1-Mextramax/100)*N;
@@ -239,8 +255,9 @@ switch reg
             GQR.stored_phi1 = phiMat(:,1:N);
             GQR.stored_phi2 = phiMat(:,N+1:end);
         end
+    case -1 % Nothing is needed here
     otherwise
-        error('reg=%g is unacceptable, 1 for regression, 0 for interpolation',reg)
+        error('reg=%g is unacceptable, 1 for regression, 0 for interpolation, -1 for eigenvalue setup',reg)
 end
         
 if returnGQR
