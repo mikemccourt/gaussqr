@@ -1,12 +1,14 @@
-function PHI = HSeigsolveqd(N,kernel,B,M,epsilon,qdopts,split)
+function PHI = HSeigsolvegeneral(kernel,domain,N,B,M,qdopts,split)
 %This function approximates Hilbert-Schmidt eigenvalues. 
 %The difference between this method and HSeigsolve is this function using
 %quadrature to help us.
 %
-%function PHI = HSeigsolve(N,B,M,qdopts)
+%function PHI = HSeigsolvegeneral(kernel,domain,N,B,M,qdopts)
 %
 %Inputs :  N      - number of points in the domain
-%          kernel - the kernel you want to use
+%          kernel - the kernel you want to use, kernel should look like
+%          e.g. @(x,z,j) min(x,z,j)
+%          [L U]  - domian of the kernel
 %          B      - choice of approximating basis
 %          M      - different quadrature method to compute the error
 %          epsilon- value of epsilon
@@ -41,17 +43,14 @@ if nargin <7
     split = 1;
     if nargin < 6
         qdopts.npts = N; % create the qdopts object if inputs don't have one.
-        if nargin < 5
-            if kernel == 2
-                epsilon = 1;
-            else
-                epsilon = 0;
-            end
-        end
     end
 end
 
-
+L = domain(1);
+U = domain(2);
+if (L >= U)
+    error('domain is wrong')
+end
 quadgkEXISTS = 0;
 if exist('quadgk')
     quadgkEXISTS = 1;
@@ -74,22 +73,9 @@ end
 
 
 PHI.N = N; %create object PHI
-PHI.epsilon = epsilon;
 %pick kernel
-switch kernel
-    case 1 
-         K_F= @(x,z,j) min(x,z)-x.*z;
-         L = 0;
-         U = 1;
-    case 2
-         K_F= @(x,z,j) sinh(epsilon.*min(x,z)).*sinh(epsilon.*(1-max(x,z)))./(epsilon.*sinh(epsilon));
-         L = 0;
-         U = 1;
-    case 3
-         K_F = @(x,z,j) exp(-abs(x-z));
-         L = -1;
-         U = 1;
-end
+K_F = kernel;
+
 
 %pick basis
 switch B
@@ -118,11 +104,7 @@ switch B
     case 3
         PHI.basisName = 'Chebyshev Polynomials';
         ptspace = 'cheb';
-        if kernel ~=3
-            H_mat = @(x,z,j) cos((j-1).*acos(2*x-1));
-        else
-            H_mat = @(x,z,j) cos((j-1).*acos(x));
-        end
+        H_mat = @(x,z,j) cos((j-1).*acos((2/(U-L))*x-(L+U)/(U-L)));       
         x = pickpoints(L,U,N+2,ptspace);
         x = x(2:end-1);
         j = 1:N;
