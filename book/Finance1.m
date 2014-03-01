@@ -74,8 +74,8 @@ C_truesol = @(x,t) normcdf(d1_truesol(x,t)).*x - K*normcdf(d2_truesol(x,t)).*exp
 % N is the total number of points to compute with
 % x_bc and x_int are the boundary and interior points
 % x_eval is a set of points to evaluate the solution on
-N = 30;
-pt_opt = 'cheb';
+N = 17;
+pt_opt = 'even';
 x = pickpoints(0,4*K,N,pt_opt);
 N = length(x);
 
@@ -91,20 +91,31 @@ N_eval = 300;
 x_eval = pickpoints(0,4*K,N_eval);
 
 % We must choose a shape parameter ep>0
-ep = .3;
+% This if-block will allow you to either choose epsilon here (if you
+% haven't yet) or run with an existing epsilon (for batch jobs)
+% If you have already run this script (and thus ep exists) the value
+% provided here is not accessed at all
+if not(exist('ep','var'))
+    ep = 1.25;
+end
 
 % This is an option as to what spatial solver to use
 %    hssvd = -1 for finite differences
 %          = 0  for RBF-direct
 %          = 1  for HS-SVD
 % NOTE: FD only allowed for evenly spaced points
-hssvd = 1;
+hssvd = 0;
 
 % The following are HS-SVD parameters
 % The alpha value determines eigenfunction locality
 % reg = 1 asks for a low rank eigenfunction expansion
-alpha = 3;
 reg = 0;
+alpha = 3;
+
+% If hssvd = 0, you can choose what RBF you want to run with
+%    rbf_choice = 1 is Gaussian
+%               = 2 is Multiquadric
+rbf_choice = 1;
 
 % Set up the solver we are using
 switch hssvd
@@ -124,9 +135,17 @@ switch hssvd
     case 0
         % Create a function for the RBF
         % The derivatives are needed to create the collocation matrix
-        rbf = @(e,r) exp(-(e*r).^2);
-        rbfdx = @(e,r,dx) -2*e^2*dx.*exp(-(e*r).^2);
-        rbfdxx = @(e,r) 2*e^2*(2*(e*r).^2-1).*exp(-(e*r).^2);
+        switch rbf_choice
+            case 1
+                rbf = @(e,r) exp(-(e*r).^2);
+                rbfdx = @(e,r,dx) -2*e^2*dx.*exp(-(e*r).^2);
+                rbfdxx = @(e,r) 2*e^2*(2*(e*r).^2-1).*exp(-(e*r).^2);
+            case 2
+                rbf = @(e,r) sqrt(1+(e*r).^2);
+                rbfdx = @(e,r,dx) e^2*dx./sqrt(1+(e*r).^2);
+                rbfdxx = @(e,r) e^2./(1+(e*r).^2).^(3/2);
+        end
+        % Could also consider the Multiquadrics
         % We also form distance matrices which we need for evaluation
         DM_all = DistanceMatrix(x_all,x_all);
         DM_bc = DistanceMatrix(x_bc,x_all);
@@ -165,7 +184,7 @@ end
 %   3) BDF2 + 1 BE   : u_{k+2} - 4/3*u_{k+1} + 1/3*u_k = 2/3*dt*Lu_{k+2}
 % Note here that t is actually measuring "time to expiry" not "time from
 % right now".  As a result, we are kind of solving this problem backwards
-ts_scheme = 3;
+ts_scheme = 4;
 dt = 1e-2;
 t_vec = 0:dt:T;
 % Compute necessary time stepping components
@@ -230,12 +249,17 @@ end
 % Dump the boundary conditions, which are not fun
 u_sol = u_sol(i_int,:);
 
+% Choose whether or not to plot the output
+plot_sol = 1;
+
 % Plot the error in the solution
-figure
-[XX,TT] = meshgrid(x_int,t_vec);
-h = surf(XX,TT,abs(u_sol' - C_truesol(XX,TT)));
-set(h,'edgecolor','none')
-title(sprintf('dt=%g,\tN=%d,\tspace=%s,\tts=%d,\tep=%g\t',dt,N,pt_opt,ts_scheme,ep))
-xlabel('Spot price')
-ylabel('time to expiry')
-zlabel('option value error')
+if plot_sol
+    figure
+    [XX,TT] = meshgrid(x_int,t_vec);
+    h = surf(XX,TT,abs(u_sol' - C_truesol(XX,TT)));
+    set(h,'edgecolor','none')
+    title(sprintf('dt=%g,\tN=%d,\tspace=%s,\tts=%d,hssvd=%d,\tep=%g\t',dt,N,pt_opt,ts_scheme,hssvd,ep))
+    xlabel('Spot price')
+    ylabel('time to expiry')
+    zlabel('option value error')
+end
