@@ -31,7 +31,6 @@
 % Right now, we are just going to work this in 1D, but I will consider
 % spicing it up later
 % NOTE: This requires the statistics toolbox, for now
-clear all
 
 % K is the scaled exercise price, which we set as 1
 K = 1;
@@ -76,7 +75,7 @@ C_truesol = @(x,t) normcdf(d1_truesol(x,t)).*x - K*normcdf(d2_truesol(x,t)).*exp
 % x_bc and x_int are the boundary and interior points
 % x_eval is a set of points to evaluate the solution on
 pt_opt = 'cheb';
-N = 40;
+N = 20;
 x = pickpoints(0,4*K,N,pt_opt);
 x_int = x(2:end-1);
 x_bc = x([1,end]);
@@ -91,29 +90,40 @@ x_eval = pickpoints(0,4*K,N_eval);
 % If we want to test with finite differences
 % Note that we MUST have pt_opt='even' to do this
 % This also will ONLY work with one of the BDF methods
-finite_diff_test = 0;
+finite_diff_test = 1;
 finite_diff_test = finite_diff_test*(strcmp(pt_opt,'even'));
 
-% Choose an RBF to solve with, for us it is the Gaussian
-% The derivatives are needed to create the collocation matrix
-rbf = @(e,r) exp(-(e*r).^2);
-rbfdx = @(e,r,dx) -2*e^2*dx.*exp(-(e*r).^2);
-rbfdxx = @(e,r) 2*e^2*(2*(e*r).^2-1).*exp(-(e*r).^2);
 % We must choose a shape parameter ep>0
-ep = 2;
-% We also form distance matrices which we need for evaluation
-DM_all = DistanceMatrix(x_all,x_all);
-DM_bc = DistanceMatrix(x_bc,x_all);
-DM_int = DistanceMatrix(x_int,x_all);
-DiffM_int = DifferenceMatrix(x_int,x_all);
-DM_eval = DistanceMatrix(x_eval,x_all);
-% The basis is evaluated using those distance matrices
-RM_all = rbf(ep,DM_all);
-RM_bc = rbf(ep,DM_bc);
-RM_int = rbf(ep,DM_int);
-RxM_int = rbfdx(ep,DM_int,DiffM_int);
-RxxM_int = rbfdxx(ep,DM_int);
-RM_eval = rbf(ep,DM_eval);
+ep = .5;
+
+% If we want to run with HS-SVD then we activate this option
+% The alpha value is only used for HS-SVD
+hssvd = 0;
+alpha = 1;
+
+% Create the necessary matrices for the Gaussian RBFs
+if hssvd==1
+    GQR = gqr_solveprep(0,x_all,ep,alpha);
+else
+    % Create a function for the RBF
+    % The derivatives are needed to create the collocation matrix
+    rbf = @(e,r) exp(-(e*r).^2);
+    rbfdx = @(e,r,dx) -2*e^2*dx.*exp(-(e*r).^2);
+    rbfdxx = @(e,r) 2*e^2*(2*(e*r).^2-1).*exp(-(e*r).^2);
+    % We also form distance matrices which we need for evaluation
+    DM_all = DistanceMatrix(x_all,x_all);
+    DM_bc = DistanceMatrix(x_bc,x_all);
+    DM_int = DistanceMatrix(x_int,x_all);
+    DiffM_int = DifferenceMatrix(x_int,x_all);
+    DM_eval = DistanceMatrix(x_eval,x_all);
+    % The basis is evaluated using those distance matrices
+    RM_all = rbf(ep,DM_all);
+    RM_bc = rbf(ep,DM_bc);
+    RM_int = rbf(ep,DM_int);
+    RxM_int = rbfdx(ep,DM_int,DiffM_int);
+    RxxM_int = rbfdxx(ep,DM_int);
+    RM_eval = rbf(ep,DM_eval);
+end
 
 % We can define our differential operator using differentiation matrices
 % The differentiation matrices can be defined now and used in perpetuity
@@ -121,14 +131,17 @@ RM_eval = rbf(ep,DM_eval);
 D0 = RM_int/RM_all;
 Dx = RxM_int/RM_all;
 Dxx = RxxM_int/RM_all;
-% Should we choose to instead run with finite differences
+
+% Should we choose to run with finite differences
 if finite_diff_test==1
     delta_x = 4*K/(N-1);
     D0 = eye(N_int,N);
     Dx = ([zeros(N_int,N_bc),eye(N_int)]-D0)/(2*delta_x);
     Dxx = (D0-2*[zeros(N_int,1),eye(N_int),zeros(N_int,1)]+[zeros(N_int,N_bc),eye(N_int)])/delta_x^2;
-    I = eye(N);
-    swap = I([N-1,1:N-2,N],:);
+    L_mat = r*diag(x_int)*Dx+1/2*B^2*diag(x_int.^2)*Dxx-r*D0;
+    L_mat = L_mat(:,[2:N-1,1,N]); % To put points in normal order
+else % But in the standard case
+    L_mat = r*diag(x_int)*Dx+1/2*B^2*diag(x_int.^2)*Dxx-r*D0;
 end
 
 % We need to set up a time stepping scheme
@@ -138,25 +151,20 @@ end
 %   3) BDF2 + 1 BE   : u_{k+2} - 4/3*u_{k+1} + 1/3*u_k = 2/3*dt*Lu_{k+2}
 % Note here that t is actually measuring "time to expiry" not "time from
 % right now".  As a result, we are kind of solving this problem backwards
-ts_scheme = 3;
+ts_scheme = 4;
 dt = 1e-3;
 t_vec = 0:dt:T;
 % Compute necessary time stepping components
 if ts_scheme==1 || ts_scheme==4
-    L = @(u,x,t) r*x.*(Dx*u) + 1/2*B^2*(x.^2).*(Dxx*u)-r*D0*u;
+    L = @(u) L_mat*u;
     if ts_scheme==4
-        odefun = @(t,u) [L(u,x_int,t);u(i_bc)-bc(x_bc,t)];
-        jac = [r*diag(x_int)*Dx+1/2*B^2*diag(x_int.^2)*Dxx-r*D0;...
-            zeros(N_bc,N_int),eye(N_bc)];
+        odefun = @(t,u) [L(u);u(i_bc)-bc(x_bc,t)];
+        jac = [L_mat;zeros(N_bc,N_int),eye(N_bc)];
         mass = [eye(N_int),zeros(N_int,N_bc);zeros(N_bc,N)];
         odeopt = odeset('InitialStep',dt,'Jacobian',jac,'Mass',mass,...
             'MStateDependence','none','MassSingular','yes');
     end
 elseif ts_scheme==2 || ts_scheme==3
-    L_mat = r*diag(x_int)*Dx+1/2*B^2*diag(x_int.^2)*Dxx-r*D0;
-    if finite_diff_test==1
-        L_mat = L_mat*swap;
-    end
     BE_mat = eye(N) - dt*[L_mat;zeros(N_bc,N)];
     if ts_scheme==3
         BDF_mat = eye(N) - 2/3*dt*[L_mat;zeros(N_bc,N)];
@@ -185,7 +193,7 @@ else
         switch ts_scheme
             case 1
                 % On the interior
-                u_sol(i_int,k+1) = u_sol(i_int,k) + dt*L(u_sol(:,k),x_int,t);
+                u_sol(i_int,k+1) = u_sol(i_int,k) + dt*L(u_sol(:,k));
                 % On the boundary
                 u_sol(i_bc,k+1) = bc(x_bc,t);
             case 2
