@@ -76,7 +76,7 @@ C_truesol = @(x,t) normcdf(d1_truesol(x,t)).*x - K*normcdf(d2_truesol(x,t)).*exp
 % x_bc and x_int are the boundary and interior points
 % x_eval is a set of points to evaluate the solution on
 pt_opt = 'cheb';
-N = 80;
+N = 40;
 x = pickpoints(0,4*K,N,pt_opt);
 x_int = x(2:end-1);
 x_bc = x([1,end]);
@@ -113,17 +113,27 @@ RM_eval = rbf(ep,DM_eval);
 D0 = RM_int/RM_all;
 Dx = RxM_int/RM_all;
 Dxx = RxxM_int/RM_all;
-L = @(u,x,t) r*x.*(Dx*u) + 1/2*B^2*(x.^2).*(Dxx*u)-r*D0*u;
 
 % We need to set up a time stepping scheme
 % Choices that are available
 %   1) Euler's Method: u_{k+1} = u_k + dt*Lu_k
 %   2) Backward Euler: u_{k+1} = u_k + dt*Lu_{k+1}
+%   3) BDF2 + 1 BE   : u_{k+2} - 4/3*u_{k+1} + 1/3*u_k = 2/3*dt*Lu_{k+2}
 % Note here that t is actually measuring "time to expiry" not "time from
 % right now".  As a result, we are kind of solving this problem backwards
 ts_scheme = 2;
 dt = 1e-2;
 t_vec = 0:dt:T;
+% Compute necessary time stepping components
+if ts_scheme==1
+    L = @(u,x,t) r*x.*(Dx*u) + 1/2*B^2*(x.^2).*(Dxx*u)-r*D0*u;
+elseif ts_scheme==2 || ts_scheme==3
+    L_mat = r*diag(x_int)*Dx+1/2*B^2*diag(x_int.^2)*Dxx-r*D0;
+    BE_mat = eye(N) - dt*[L_mat;zeros(length(x_bc),length(x_all))];
+	if ts_scheme==3
+        BDF_mat = eye(N) - 2/3*dt*[L_mat;zeros(length(x_bc),length(x_all))];
+    end
+end
 
 % u_coef will contain the coefficients for our solution basis
 % u_sol will contain the solution at the collocation points
@@ -147,12 +157,17 @@ for t=t_vec(2:end)
         case 2
             % Form the linear system [Int equations;BC equations]
             % We only need to form it once, so do that once and save it
-            if(not(exist('BE_mat','var')))
-                L_mat = r*diag(x_int)*Dx+1/2*B^2*diag(x_int.^2)*Dxx-r*D0;
-                BE_mat = eye(N) - dt*[L_mat;zeros(length(x_bc),length(x_all))];
-            end
             rhs = [u_sol(i_int,k);bc(x_bc,t)];
             u_sol(:,k+1) = BE_mat\rhs;
+        case 3
+            % Take one BE step to produce the necessary two old values
+            if k==1
+                rhs = [u_sol(i_int,1);bc(x_bc,t)];
+                u_sol(:,2) = BE_mat\rhs;
+            else
+                rhs = [4/3*u_sol(i_int,k)-1/3*u_sol(i_int,k-1);bc(x_bc,t)];
+                u_sol(:,k+1) = BDF_mat\rhs;
+            end
     end
     k = k + 1;
 end
@@ -165,7 +180,7 @@ figure
 [XX,TT] = meshgrid(x_int,t_vec);
 h = surf(XX,TT,abs(u_sol' - C_truesol(XX,TT)));
 set(h,'edgecolor','none')
-title(sprintf('dt=%g,\tN=%d,\tspacing=%s',dt,N,pt_opt))
+title(sprintf('dt=%g,\tN=%d,\tspace=%s,\tts=%d,\tep=%g\t',dt,N,pt_opt,ts_scheme,ep))
 xlabel('Spot price')
 ylabel('time to expiry')
 zlabel('option value error')
