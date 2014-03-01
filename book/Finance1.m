@@ -76,13 +76,13 @@ C_truesol = @(x,t) normcdf(d1_truesol(x,t)).*x - K*normcdf(d2_truesol(x,t)).*exp
 % x_bc and x_int are the boundary and interior points
 % x_eval is a set of points to evaluate the solution on
 pt_opt = 'cheb';
-N = 20;
+N = 80;
 x = pickpoints(0,4*K,N,pt_opt);
 x_int = x(2:end-1);
 x_bc = x([1,end]);
 x_all = [x_int;x_bc];
 i_int = 1:length(x_int);
-i_bc = length(i_int)+1:length(i_int)+length(bc);
+i_bc = length(i_int)+1:length(i_int)+length(x_bc);
 N_eval = 300;
 x_eval = pickpoints(0,4*K,N_eval);
 
@@ -121,8 +121,8 @@ L = @(u,x,t) r*x.*(Dx*u) + 1/2*B^2*(x.^2).*(Dxx*u)-r*D0*u;
 %   2) Backward Euler: u_{k+1} = u_k + dt*Lu_{k+1}
 % Note here that t is actually measuring "time to expiry" not "time from
 % right now".  As a result, we are kind of solving this problem backwards
-ts_scheme = 1;
-dt = 1e-4;
+ts_scheme = 2;
+dt = 1e-2;
 t_vec = 0:dt:T;
 
 % u_coef will contain the coefficients for our solution basis
