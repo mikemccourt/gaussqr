@@ -107,7 +107,6 @@ if hssvd==1
     GQR = gqr_solveprep(0,x_all,ep,alpha);
     Rbar = GQR.Rbar;
     Phi_all = gqr_phi(GQR,x_all);
-    Psi_all = 
     Phi_bc = gqr_phi(GQR,x_bc);
     Phi_int = gqr_phi(GQR,x_int);
 else
