@@ -76,13 +76,15 @@ C_truesol = @(x,t) normcdf(d1_truesol(x,t)).*x - K*normcdf(d2_truesol(x,t)).*exp
 % x_bc and x_int are the boundary and interior points
 % x_eval is a set of points to evaluate the solution on
 pt_opt = 'cheb';
-N = 40;
+N = 30;
 x = pickpoints(0,4*K,N,pt_opt);
 x_int = x(2:end-1);
 x_bc = x([1,end]);
 x_all = [x_int;x_bc];
 i_int = 1:length(x_int);
 i_bc = length(i_int)+1:length(i_int)+length(x_bc);
+N_int = length(i_int);
+N_bc = length(i_bc);
 N_eval = 300;
 x_eval = pickpoints(0,4*K,N_eval);
 
@@ -121,17 +123,25 @@ Dxx = RxxM_int/RM_all;
 %   3) BDF2 + 1 BE   : u_{k+2} - 4/3*u_{k+1} + 1/3*u_k = 2/3*dt*Lu_{k+2}
 % Note here that t is actually measuring "time to expiry" not "time from
 % right now".  As a result, we are kind of solving this problem backwards
-ts_scheme = 2;
-dt = 1e-2;
+ts_scheme = 4;
+dt = 1e-4;
 t_vec = 0:dt:T;
 % Compute necessary time stepping components
-if ts_scheme==1
+if ts_scheme==1 || ts_scheme==4
     L = @(u,x,t) r*x.*(Dx*u) + 1/2*B^2*(x.^2).*(Dxx*u)-r*D0*u;
+    if ts_scheme==4
+        odefun = @(t,u) [L(u,x_int,t);u(i_bc)-bc(x_bc,t)];
+        jac = [r*diag(x_int)*Dx+1/2*B^2*diag(x_int.^2)*Dxx-r*D0;...
+            zeros(N_bc,N_int),eye(N_bc)];
+        mass = [eye(N_int),zeros(N_int,N_bc);zeros(N_bc,N)];
+        odeopt = odeset('InitialStep',dt,'Jacobian',jac,'Mass',mass,...
+            'MStateDependence','none','MassSingular','yes');
+    end
 elseif ts_scheme==2 || ts_scheme==3
     L_mat = r*diag(x_int)*Dx+1/2*B^2*diag(x_int.^2)*Dxx-r*D0;
-    BE_mat = eye(N) - dt*[L_mat;zeros(length(x_bc),length(x_all))];
-	if ts_scheme==3
-        BDF_mat = eye(N) - 2/3*dt*[L_mat;zeros(length(x_bc),length(x_all))];
+    BE_mat = eye(N) - dt*[L_mat;zeros(N_bc,N)];
+    if ts_scheme==3
+        BDF_mat = eye(N) - 2/3*dt*[L_mat;zeros(N_bc,N)];
     end
 end
 
@@ -146,30 +156,36 @@ u_sol(:,1) = payout(x_all);
 u_coef(:,1) = RM_all\u_sol(:,1);
 
 % Perform the time stepping
-k = 1;
-for t=t_vec(2:end)
-    switch ts_scheme
-        case 1
-            % On the interior
-            u_sol(i_int,k+1) = u_sol(i_int,k) + dt*L(u_sol(:,k),x_int,t);
-            % On the boundary
-            u_sol(i_bc,k+1) = bc(x_bc,t);
-        case 2
-            % Form the linear system [Int equations;BC equations]
-            % We only need to form it once, so do that once and save it
-            rhs = [u_sol(i_int,k);bc(x_bc,t)];
-            u_sol(:,k+1) = BE_mat\rhs;
-        case 3
-            % Take one BE step to produce the necessary two old values
-            if k==1
-                rhs = [u_sol(i_int,1);bc(x_bc,t)];
-                u_sol(:,2) = BE_mat\rhs;
-            else
-                rhs = [4/3*u_sol(i_int,k)-1/3*u_sol(i_int,k-1);bc(x_bc,t)];
-                u_sol(:,k+1) = BDF_mat\rhs;
-            end
+% If using builtin ODE solver, just call it
+if ts_scheme==4
+    [t_ret,u_ret] = ode15s(odefun,t_vec,u_sol(:,1),odeopt);
+    u_sol = u_ret';
+else
+    k = 1;
+    for t=t_vec(2:end)
+        switch ts_scheme
+            case 1
+                % On the interior
+                u_sol(i_int,k+1) = u_sol(i_int,k) + dt*L(u_sol(:,k),x_int,t);
+                % On the boundary
+                u_sol(i_bc,k+1) = bc(x_bc,t);
+            case 2
+                % Form the linear system [Int equations;BC equations]
+                % We only need to form it once, so do that once and save it
+                rhs = [u_sol(i_int,k);bc(x_bc,t)];
+                u_sol(:,k+1) = BE_mat\rhs;
+            case 3
+                % Take one BE step to produce the necessary two old values
+                if k==1
+                    rhs = [u_sol(i_int,1);bc(x_bc,t)];
+                    u_sol(:,2) = BE_mat\rhs;
+                else
+                    rhs = [4/3*u_sol(i_int,k)-1/3*u_sol(i_int,k-1);bc(x_bc,t)];
+                    u_sol(:,k+1) = BDF_mat\rhs;
+                end
+        end
+        k = k + 1;
     end
-    k = k + 1;
 end
 
 % Dump the boundary conditions, which are not fun
