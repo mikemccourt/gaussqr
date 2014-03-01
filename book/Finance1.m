@@ -74,7 +74,7 @@ C_truesol = @(x,t) normcdf(d1_truesol(x,t)).*x - K*normcdf(d2_truesol(x,t)).*exp
 % N is the total number of points to compute with
 % x_bc and x_int are the boundary and interior points
 % x_eval is a set of points to evaluate the solution on
-N = 17;
+N = 100;
 pt_opt = 'even';
 x = pickpoints(0,4*K,N,pt_opt);
 N = length(x);
@@ -104,7 +104,7 @@ end
 %          = 0  for RBF-direct
 %          = 1  for HS-SVD
 % NOTE: FD only allowed for evenly spaced points
-hssvd = 0;
+hssvd = -1;
 
 % The following are HS-SVD parameters
 % The alpha value determines eigenfunction locality
@@ -160,8 +160,8 @@ switch hssvd
         delta_x = 4*K/(N-1);
         RM_all = 1; % This isn't needed for FD
         RM_int = eye(N_int,N);
-        RxM_int = ([zeros(N_int,N_bc),eye(N_int)]-D0)/(2*delta_x);
-        RxxM_int = (D0-2*[zeros(N_int,1),eye(N_int),zeros(N_int,1)]+[zeros(N_int,N_bc),eye(N_int)])/delta_x^2;
+        RxM_int = ([zeros(N_int,N_bc),eye(N_int)]-eye(N_int,N))/(2*delta_x);
+        RxxM_int = (eye(N_int,N)-2*[zeros(N_int,1),eye(N_int),zeros(N_int,1)]+[zeros(N_int,N_bc),eye(N_int)])/delta_x^2;
 end
 
 % Form the differentiation matrices
