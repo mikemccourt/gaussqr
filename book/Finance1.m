@@ -74,9 +74,8 @@ C_truesol = @(x,t) normcdf(d1_truesol(x,t)).*x - K*normcdf(d2_truesol(x,t)).*exp
 % N is the total number of points to compute with
 % x_bc and x_int are the boundary and interior points
 % x_eval is a set of points to evaluate the solution on
-pt_opt = 'cheb';
+pt_opt = 'even';
 N = 20;
-I = eye(N);
 x = pickpoints(0,4*K,N,pt_opt);
 x_int = x(2:end-1);
 x_bc = x([1,end]);
@@ -88,65 +87,67 @@ N_bc = length(i_bc);
 N_eval = 300;
 x_eval = pickpoints(0,4*K,N_eval);
 
-% If we want to test with finite differences
-% Note that we MUST have pt_opt='even' to do this
-% This also will ONLY work with one of the BDF methods
-finite_diff_test = 0;
-finite_diff_test = finite_diff_test*(strcmp(pt_opt,'even'));
-
 % We must choose a shape parameter ep>0
-ep = .5;
+ep = 2;
 
-% If we want to run with HS-SVD then we activate this option
+% This is an option as to what spatial solver to use
 % The alpha value is only used for HS-SVD
-hssvd = 0;
+%    hssvd = -1 for finite differences
+%          = 0  for RBF-direct
+%          = 1  for HS-SVD
+% NOTE: FD only allowed for evenly spaced points
+hssvd = -1;
 alpha = .5;
 
-% Create the necessary matrices for the Gaussian RBFs
-if hssvd==1
-    GQR = gqr_solveprep(0,x_all,ep,alpha);
-    Rbar = GQR.Rbar;
-    Phi_all = gqr_phi(GQR,x_all);
-    Phi_bc = gqr_phi(GQR,x_bc);
-    Phi_int = gqr_phi(GQR,x_int);
-else
-    % Create a function for the RBF
-    % The derivatives are needed to create the collocation matrix
-    rbf = @(e,r) exp(-(e*r).^2);
-    rbfdx = @(e,r,dx) -2*e^2*dx.*exp(-(e*r).^2);
-    rbfdxx = @(e,r) 2*e^2*(2*(e*r).^2-1).*exp(-(e*r).^2);
-    % We also form distance matrices which we need for evaluation
-    DM_all = DistanceMatrix(x_all,x_all);
-    DM_bc = DistanceMatrix(x_bc,x_all);
-    DM_int = DistanceMatrix(x_int,x_all);
-    DiffM_int = DifferenceMatrix(x_int,x_all);
-    DM_eval = DistanceMatrix(x_eval,x_all);
-    % The basis is evaluated using those distance matrices
-    RM_all = rbf(ep,DM_all);
-    RM_bc = rbf(ep,DM_bc);
-    RM_int = rbf(ep,DM_int);
-    RxM_int = rbfdx(ep,DM_int,DiffM_int);
-    RxxM_int = rbfdxx(ep,DM_int);
-    RM_eval = rbf(ep,DM_eval);
-end
-
+% Set up the solver we are using
 % We can define our differential operator using differentiation matrices
 % The differentiation matrices can be defined now and used in perpetuity
 % D0 just picks out the elements from the interior region
+switch hssvd
+    case 1
+        GQR = gqr_solveprep(0,x_all,ep,alpha);
+        Rmat = [eye(N);GQR.Rbar];
+        RM_all = gqr_phi(GQR,x_all)*Rmat;
+        RM_bc = gqr_phi(GQR,x_bc)*Rmat;
+        RM_int = gqr_phi(GQR,x_int)*Rmat;
+        RxM_int = gqr_phi(GQR,x_int,1)*Rmat;
+        RxxM_int = gqr_phi(GQR,x_int,2)*Rmat;
+    case 0
+        % Create a function for the RBF
+        % The derivatives are needed to create the collocation matrix
+        rbf = @(e,r) exp(-(e*r).^2);
+        rbfdx = @(e,r,dx) -2*e^2*dx.*exp(-(e*r).^2);
+        rbfdxx = @(e,r) 2*e^2*(2*(e*r).^2-1).*exp(-(e*r).^2);
+        % We also form distance matrices which we need for evaluation
+        DM_all = DistanceMatrix(x_all,x_all);
+        DM_bc = DistanceMatrix(x_bc,x_all);
+        DM_int = DistanceMatrix(x_int,x_all);
+        DiffM_int = DifferenceMatrix(x_int,x_all);
+        % The basis is evaluated using those distance matrices
+        RM_all = rbf(ep,DM_all);
+        RM_bc = rbf(ep,DM_bc);
+        RM_int = rbf(ep,DM_int);
+        RxM_int = rbfdx(ep,DM_int,DiffM_int);
+        RxxM_int = rbfdxx(ep,DM_int);
+    case -1
+        delta_x = 4*K/(N-1);
+        RM_all = 1; % This isn't needed for FD
+        RM_int = eye(N_int,N);
+        RxM_int = ([zeros(N_int,N_bc),eye(N_int)]-D0)/(2*delta_x);
+        RxxM_int = (D0-2*[zeros(N_int,1),eye(N_int),zeros(N_int,1)]+[zeros(N_int,N_bc),eye(N_int)])/delta_x^2;
+end
 
-% Should we choose to run with finite differences
-if finite_diff_test==1
-    delta_x = 4*K/(N-1);
-    D0 = eye(N_int,N);
-    Dx = ([zeros(N_int,N_bc),eye(N_int)]-D0)/(2*delta_x);
-    Dxx = (D0-2*[zeros(N_int,1),eye(N_int),zeros(N_int,1)]+[zeros(N_int,N_bc),eye(N_int)])/delta_x^2;
-    L_mat = r*diag(x_int)*Dx+1/2*B^2*diag(x_int.^2)*Dxx-r*D0;
-    L_mat = L_mat(:,[2:N-1,1,N]); % To put points in normal order
-else % But in the standard case
-    D0 = RM_int/RM_all;
-    Dx = RxM_int/RM_all;
-    Dxx = RxxM_int/RM_all;
-    L_mat = r*diag(x_int)*Dx+1/2*B^2*diag(x_int.^2)*Dxx-r*D0;
+% Form the differentiation matrices
+D0 = RM_int/RM_all;
+Dx = RxM_int/RM_all;
+Dxx = RxxM_int/RM_all;
+
+% Form the differential operator using the differentiation matrices
+L_mat = r*diag(x_int)*Dx+1/2*B^2*diag(x_int.^2)*Dxx-r*D0;
+
+% Swap the columns if needed for finite differences
+if hssvd==-1
+    L_mat = L_mat(:,[2:N-1,1,N]);
 end
 
 % We need to set up a time stepping scheme
@@ -157,7 +158,7 @@ end
 % Note here that t is actually measuring "time to expiry" not "time from
 % right now".  As a result, we are kind of solving this problem backwards
 ts_scheme = 4;
-dt = 1e-3;
+dt = 1e-4;
 t_vec = 0:dt:T;
 % Compute necessary time stepping components
 if ts_scheme==1 || ts_scheme==4
