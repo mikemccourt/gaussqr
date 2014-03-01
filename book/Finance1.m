@@ -76,6 +76,7 @@ C_truesol = @(x,t) normcdf(d1_truesol(x,t)).*x - K*normcdf(d2_truesol(x,t)).*exp
 % x_eval is a set of points to evaluate the solution on
 pt_opt = 'cheb';
 N = 20;
+I = eye(N);
 x = pickpoints(0,4*K,N,pt_opt);
 x_int = x(2:end-1);
 x_bc = x([1,end]);
@@ -90,7 +91,7 @@ x_eval = pickpoints(0,4*K,N_eval);
 % If we want to test with finite differences
 % Note that we MUST have pt_opt='even' to do this
 % This also will ONLY work with one of the BDF methods
-finite_diff_test = 1;
+finite_diff_test = 0;
 finite_diff_test = finite_diff_test*(strcmp(pt_opt,'even'));
 
 % We must choose a shape parameter ep>0
@@ -99,11 +100,16 @@ ep = .5;
 % If we want to run with HS-SVD then we activate this option
 % The alpha value is only used for HS-SVD
 hssvd = 0;
-alpha = 1;
+alpha = .5;
 
 % Create the necessary matrices for the Gaussian RBFs
 if hssvd==1
     GQR = gqr_solveprep(0,x_all,ep,alpha);
+    Rbar = GQR.Rbar;
+    Phi_all = gqr_phi(GQR,x_all);
+    Psi_all = 
+    Phi_bc = gqr_phi(GQR,x_bc);
+    Phi_int = gqr_phi(GQR,x_int);
 else
     % Create a function for the RBF
     % The derivatives are needed to create the collocation matrix
@@ -128,9 +134,6 @@ end
 % We can define our differential operator using differentiation matrices
 % The differentiation matrices can be defined now and used in perpetuity
 % D0 just picks out the elements from the interior region
-D0 = RM_int/RM_all;
-Dx = RxM_int/RM_all;
-Dxx = RxxM_int/RM_all;
 
 % Should we choose to run with finite differences
 if finite_diff_test==1
@@ -141,6 +144,9 @@ if finite_diff_test==1
     L_mat = r*diag(x_int)*Dx+1/2*B^2*diag(x_int.^2)*Dxx-r*D0;
     L_mat = L_mat(:,[2:N-1,1,N]); % To put points in normal order
 else % But in the standard case
+    D0 = RM_int/RM_all;
+    Dx = RxM_int/RM_all;
+    Dxx = RxxM_int/RM_all;
     L_mat = r*diag(x_int)*Dx+1/2*B^2*diag(x_int.^2)*Dxx-r*D0;
 end
 
@@ -174,12 +180,10 @@ end
 % u_coef will contain the coefficients for our solution basis
 % u_sol will contain the solution at the collocation points
 u_sol = zeros(N,length(t_vec));
-u_coef = zeros(N,length(t_vec));
 
 % We need to record our initial condition
 % We must also interpolate our initial condition
 u_sol(:,1) = payout(x_all);
-u_coef(:,1) = RM_all\u_sol(:,1);
 
 % Perform the time stepping
 % If using builtin ODE solver, just call it
