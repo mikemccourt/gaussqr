@@ -58,7 +58,7 @@ d2_truesol = @(x,t) d1_truesol(x,t) - sigma*sqrt(t);
 C_truesol = @(x,t) normcdf(d1_truesol(x,t)).*x - K*normcdf(d2_truesol(x,t)).*exp(-r*t);
 
 % We choose a certain number of random paths
-% N = 10000;
+N = 10000;
 
 % We choose an integration technique
 %   MC_scheme = 1 is for normal Monte Carlo
@@ -84,8 +84,9 @@ switch MC_scheme
         % Covariance matrix must be formed and factored
         Sigma = min(repmat(tvec,steps,1),repmat(tvec',1,steps));
         A = chol(Sigma);
-        % Compute our quasi-random walk
+        % Compute our quasi-random walk and return the last step
         rand_walks = Phi_X*A;
+        rand_walks = rand_walks(:,steps);
 end
 
 % We perform our summation
