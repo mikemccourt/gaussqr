@@ -74,9 +74,12 @@ C_truesol = @(x,t) normcdf(d1_truesol(x,t)).*x - K*normcdf(d2_truesol(x,t)).*exp
 % N is the total number of points to compute with
 % x_bc and x_int are the boundary and interior points
 % x_eval is a set of points to evaluate the solution on
-pt_opt = 'even';
-N = 20;
+N = 30;
+pt_opt = 'cheb';
 x = pickpoints(0,4*K,N,pt_opt);
+N = length(x);
+
+% Cut up the domain into pieces to work with
 x_int = x(2:end-1);
 x_bc = x([1,end]);
 x_all = [x_int;x_bc];
@@ -88,30 +91,36 @@ N_eval = 300;
 x_eval = pickpoints(0,4*K,N_eval);
 
 % We must choose a shape parameter ep>0
-ep = 2;
+ep = .3;
 
 % This is an option as to what spatial solver to use
-% The alpha value is only used for HS-SVD
 %    hssvd = -1 for finite differences
 %          = 0  for RBF-direct
 %          = 1  for HS-SVD
 % NOTE: FD only allowed for evenly spaced points
-hssvd = -1;
-alpha = .5;
+hssvd = 1;
+
+% The following are HS-SVD parameters
+% The alpha value determines eigenfunction locality
+% reg = 1 asks for a low rank eigenfunction expansion
+alpha = 3;
+reg = 0;
 
 % Set up the solver we are using
-% We can define our differential operator using differentiation matrices
-% The differentiation matrices can be defined now and used in perpetuity
-% D0 just picks out the elements from the interior region
 switch hssvd
     case 1
-        GQR = gqr_solveprep(0,x_all,ep,alpha);
-        Rmat = [eye(N);GQR.Rbar];
-        RM_all = gqr_phi(GQR,x_all)*Rmat;
-        RM_bc = gqr_phi(GQR,x_bc)*Rmat;
-        RM_int = gqr_phi(GQR,x_int)*Rmat;
-        RxM_int = gqr_phi(GQR,x_int,1)*Rmat;
-        RxxM_int = gqr_phi(GQR,x_int,2)*Rmat;
+    % Note the dividing factor required to account for the change in scale
+    % we are imposing to normalize our spatial domain to [-1,1]
+        GQR = gqr_solveprep(reg,(x_all-2)/2,ep,alpha);
+        if reg==0
+            Rmat = [eye(N);GQR.Rbar];
+        else
+            Rmat = 1;
+        end
+        RM_all = gqr_phi(GQR,(x_all-2)/2)*Rmat;
+        RM_int = gqr_phi(GQR,(x_int-2)/2)*Rmat;
+        RxM_int = gqr_phi(GQR,(x_int-2)/2,1)*Rmat/2;
+        RxxM_int = gqr_phi(GQR,(x_int-2)/2,2)*Rmat/4;
     case 0
         % Create a function for the RBF
         % The derivatives are needed to create the collocation matrix
@@ -125,7 +134,6 @@ switch hssvd
         DiffM_int = DifferenceMatrix(x_int,x_all);
         % The basis is evaluated using those distance matrices
         RM_all = rbf(ep,DM_all);
-        RM_bc = rbf(ep,DM_bc);
         RM_int = rbf(ep,DM_int);
         RxM_int = rbfdx(ep,DM_int,DiffM_int);
         RxxM_int = rbfdxx(ep,DM_int);
@@ -157,8 +165,8 @@ end
 %   3) BDF2 + 1 BE   : u_{k+2} - 4/3*u_{k+1} + 1/3*u_k = 2/3*dt*Lu_{k+2}
 % Note here that t is actually measuring "time to expiry" not "time from
 % right now".  As a result, we are kind of solving this problem backwards
-ts_scheme = 4;
-dt = 1e-4;
+ts_scheme = 3;
+dt = 1e-2;
 t_vec = 0:dt:T;
 % Compute necessary time stepping components
 if ts_scheme==1 || ts_scheme==4
