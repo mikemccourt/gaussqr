@@ -76,11 +76,13 @@ C_truesol = @(x,t) normcdf(d1_truesol(x,t)).*x - K*normcdf(d2_truesol(x,t)).*exp
 % x_bc and x_int are the boundary and interior points
 % x_eval is a set of points to evaluate the solution on
 pt_opt = 'cheb';
-N = 35;
+N = 20;
 x = pickpoints(0,4*K,N,pt_opt);
 x_int = x(2:end-1);
 x_bc = x([1,end]);
 x_all = [x_int;x_bc];
+i_int = 1:length(x_int);
+i_bc = length(i_int)+1:length(i_int)+length(bc);
 N_eval = 300;
 x_eval = pickpoints(0,4*K,N_eval);
 
@@ -107,17 +109,19 @@ RM_eval = rbf(ep,DM_eval);
 
 % We can define our differential operator using differentiation matrices
 % The differentiation matrices can be defined now and used in perpetuity
+% D0 just picks out the elements from the interior region
+D0 = RM_int/RM_all;
 Dx = RxM_int/RM_all;
 Dxx = RxxM_int/RM_all;
-L = @(u,x,t) r*x.*(Dx*u) + 1/2*B^2*(x.^2).*(Dxx*u)-r*u(1:end-2);
+L = @(u,x,t) r*x.*(Dx*u) + 1/2*B^2*(x.^2).*(Dxx*u)-r*D0*u;
 
 % We need to set up a time stepping scheme
-% Let's just try something simple for now
-% We'll use Euler's method:
-%      u_{k+1} = u_k + dt*Lu_k
-% We choose a time step that is really small
+% Choices that are available
+%   1) Euler's Method: u_{k+1} = u_k + dt*Lu_k
+%   2) Backward Euler: u_{k+1} = u_k + dt*Lu_{k+1}
 % Note here that t is actually measuring "time to expiry" not "time from
 % right now".  As a result, we are kind of solving this problem backwards
+ts_scheme = 1;
 dt = 1e-4;
 t_vec = 0:dt:T;
 
@@ -134,15 +138,27 @@ u_coef(:,1) = RM_all\u_sol(:,1);
 % Perform the time stepping
 k = 1;
 for t=t_vec(2:end)
-    % On the interior
-    u_sol(1:end-2,k+1) = u_sol(1:end-2,k) + dt*L(u_sol(:,k),x_int,t);
-    % On the boundary
-    u_sol(end-1:end,k+1) = bc(x_bc,t);
+    switch ts_scheme
+        case 1
+            % On the interior
+            u_sol(i_int,k+1) = u_sol(i_int,k) + dt*L(u_sol(:,k),x_int,t);
+            % On the boundary
+            u_sol(i_bc,k+1) = bc(x_bc,t);
+        case 2
+            % Form the linear system [Int equations;BC equations]
+            % We only need to form it once, so do that once and save it
+            if(not(exist('BE_mat','var')))
+                L_mat = r*diag(x_int)*Dx+1/2*B^2*diag(x_int.^2)*Dxx-r*D0;
+                BE_mat = eye(N) - dt*[L_mat;zeros(length(x_bc),length(x_all))];
+            end
+            rhs = [u_sol(i_int,k);bc(x_bc,t)];
+            u_sol(:,k+1) = BE_mat\rhs;
+    end
     k = k + 1;
 end
 
-% Dump the boundary conditions, which are never changing
-u_sol = u_sol(1:end-2,:);
+% Dump the boundary conditions, which are not fun
+u_sol = u_sol(i_int,:);
 
 % Plot the error in the solution
 figure
