@@ -53,8 +53,8 @@ S_0 = 2;
 
 % This is the computed expectation E[C(S)]
 %   t is the time when the option can be exercised, which is T
-d1_truesol = @(x,t) 1./(B*sqrt(t)).*(log(x/K)+(r+B^2/2)*t);
-d2_truesol = @(x,t) d1_truesol(x,t) - B*sqrt(t);
+d1_truesol = @(x,t) 1./(sigma*sqrt(t)).*(log(x/K)+(r+sigma^2/2)*t);
+d2_truesol = @(x,t) d1_truesol(x,t) - sigma*sqrt(t);
 C_truesol = @(x,t) normcdf(d1_truesol(x,t)).*x - K*normcdf(d2_truesol(x,t)).*exp(-r*t);
 
 % We choose a certain number of random paths
@@ -68,33 +68,29 @@ MC_scheme = 2;
 % Some options are only appropriate for Quasi Monte Carlo
 %   steps is the number of time steps to take
 %   N_pts_1D is the number of points per dimension for uniform points
-steps = 3;
+steps = 1;
+halton_setup = haltonset(steps);
 dt = T/steps;
 tvec = dt:dt:T;
-N_pts_1D = 20;
-N_pts = N_pts_1D^steps;
 
-% We evaluate our asset at each of these paths
+% We evaluate our random walks
 switch MC_scheme
     case 1
-        S_vals = S_0*exp((r-sigma^2/2)*T + sigma*sqrt(T)*randn(N,1));
-        MC_ans = mean(payout(S_vals));
+        rand_walks = randn(N,1);
     case 2
-        % Choose low-discrepancy points in (steps) dimensions
-        % Only in 3D right now
-        x_1D = pickpoints(0.01,.99,N_pts_1D);
-        X_1D = repmat(x_1D',N_pts_1D^2,1);
-        Y_1D = repmat(x_1D',N_pts_1D,N_pts_1D);
-        Z_1D = repmat(x_1D,N_pts_1D^2,1);
-        % Apply the inverse CDF to draw instead from N(0,I)
-        Phi_X = norminv([X_1D(:),Y_1D(:),Z_1D],0,1);
+        % Pick some Halton points and make sure not to use 0
+        X = net(halton_setup,N+1);
+        Phi_X = norminv(X(2:end,:),0,1);
         % Covariance matrix must be formed and factored
         Sigma = min(repmat(tvec,steps,1),repmat(tvec',1,steps));
         A = chol(Sigma);
-        integrand = (A'*Phi_X')';
-        S_vals = integrand(:,steps);
-        MC_ans = mean(payout(S_vals));
+        % Compute our quasi-random walk
+        rand_walks = Phi_X*A;
 end
+
+% We perform our summation
+S_vals = S_0*exp((r-sigma^2/2)*T + sigma*sqrt(T)*rand_walks);
+MC_ans = mean(payout(S_vals));
 
 % We evaluate the discrete mean of those outcomes
 % This is then plugged into our payout function
