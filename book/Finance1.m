@@ -17,8 +17,20 @@
 % average value is less than 4K.  This domain is like a d dimensional
 % triangle with 1-norm of the points less than 4Kd.
 %
+% The exact solution is the formula for the value of a European call option
+% as defined on Wikipedia:
+%      C(x,t) = F_Z(d1)*u - F_Z(d2)*K*exp(-r*(T-t)) 
+% where
+%      F_Z(z) = P(Z<z) for Z~N(0,1)
+%      d1(x) = 1/(B*sqrt(T-t))*(log(x/K)+(r+B^2/2)*(T-t))
+%      d2(x) = d1(x) - B*sqrt(T-t)
+% Our solution below uses t in place of T-t because we know the final value
+% and not the initial value.  This means that when solving the problem we
+% are really stepping backwards in time.
+%
 % Right now, we are just going to work this in 1D, but I will consider
 % spicing it up later
+% NOTE: This requires the statistics toolbox, for now
 clear all
 
 % K is the scaled exercise price, which we set as 1
@@ -52,12 +64,19 @@ payout = @(x) max(0,sum(x-K,2)/d);
 % sum(x)==4*K*d, meaning the x=0 BC is automatically built-in
 bc = @(x,t) K*(4-exp(-r*t))*(sum(x,2)==4*K*d);
 
+% The true solution is described above, and defined below
+% Note that we have substituted t for T-t since we are solving an initial
+% value problem and not a final value problem
+d1_truesol = @(x,t) 1./(B*sqrt(t)).*(log(x/K)+(r+B^2/2)*t);
+d2_truesol = @(x,t) d1_truesol(x,t) - B*sqrt(t);
+C_truesol = @(x,t) normcdf(d1_truesol(x,t)).*x - K*normcdf(d2_truesol(x,t)).*exp(-r*t);
+
 % Choose some collocation points in the domain
 % N is the total number of points to compute with
 % x_bc and x_int are the boundary and interior points
 % x_eval is a set of points to evaluate the solution on
 pt_opt = 'cheb';
-N = 29;
+N = 35;
 x = pickpoints(0,4*K,N,pt_opt);
 x_int = x(2:end-1);
 x_bc = x([1,end]);
@@ -97,6 +116,8 @@ L = @(u,x,t) r*x.*(Dx*u) + 1/2*B^2*(x.^2).*(Dxx*u)-r*u(1:end-2);
 % We'll use Euler's method:
 %      u_{k+1} = u_k + dt*Lu_k
 % We choose a time step that is really small
+% Note here that t is actually measuring "time to expiry" not "time from
+% right now".  As a result, we are kind of solving this problem backwards
 dt = 1e-4;
 t_vec = 0:dt:T;
 
@@ -120,8 +141,15 @@ for t=t_vec(2:end)
     k = k + 1;
 end
 
+% Dump the boundary conditions, which are never changing
 u_sol = u_sol(1:end-2,:);
 
+% Plot the error in the solution
+figure
 [XX,TT] = meshgrid(x_int,t_vec);
-h = surf(XX,TT,u_sol');
+h = surf(XX,TT,abs(u_sol' - C_truesol(XX,TT)));
 set(h,'edgecolor','none')
+title(sprintf('dt=%g,\tN=%d,\tspacing=%s',dt,N,pt_opt))
+xlabel('Spot price')
+ylabel('time to expiry')
+zlabel('option value error')
