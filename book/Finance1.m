@@ -76,7 +76,7 @@ C_truesol = @(x,t) normcdf(d1_truesol(x,t)).*x - K*normcdf(d2_truesol(x,t)).*exp
 % x_bc and x_int are the boundary and interior points
 % x_eval is a set of points to evaluate the solution on
 pt_opt = 'cheb';
-N = 30;
+N = 40;
 x = pickpoints(0,4*K,N,pt_opt);
 x_int = x(2:end-1);
 x_bc = x([1,end]);
@@ -88,13 +88,19 @@ N_bc = length(i_bc);
 N_eval = 300;
 x_eval = pickpoints(0,4*K,N_eval);
 
+% If we want to test with finite differences
+% Note that we MUST have pt_opt='even' to do this
+% This also will ONLY work with one of the BDF methods
+finite_diff_test = 0;
+finite_diff_test = finite_diff_test*(strcmp(pt_opt,'even'));
+
 % Choose an RBF to solve with, for us it is the Gaussian
 % The derivatives are needed to create the collocation matrix
 rbf = @(e,r) exp(-(e*r).^2);
-rbfdx = @(e,r,dx) 2*e^2*dx.*exp(-(e*r).^2);
+rbfdx = @(e,r,dx) -2*e^2*dx.*exp(-(e*r).^2);
 rbfdxx = @(e,r) 2*e^2*(2*(e*r).^2-1).*exp(-(e*r).^2);
 % We must choose a shape parameter ep>0
-ep = 3;
+ep = 2;
 % We also form distance matrices which we need for evaluation
 DM_all = DistanceMatrix(x_all,x_all);
 DM_bc = DistanceMatrix(x_bc,x_all);
@@ -115,6 +121,15 @@ RM_eval = rbf(ep,DM_eval);
 D0 = RM_int/RM_all;
 Dx = RxM_int/RM_all;
 Dxx = RxxM_int/RM_all;
+% Should we choose to instead run with finite differences
+if finite_diff_test==1
+    delta_x = 4*K/(N-1);
+    D0 = eye(N_int,N);
+    Dx = ([zeros(N_int,N_bc),eye(N_int)]-D0)/(2*delta_x);
+    Dxx = (D0-2*[zeros(N_int,1),eye(N_int),zeros(N_int,1)]+[zeros(N_int,N_bc),eye(N_int)])/delta_x^2;
+    I = eye(N);
+    swap = I([N-1,1:N-2,N],:);
+end
 
 % We need to set up a time stepping scheme
 % Choices that are available
@@ -123,8 +138,8 @@ Dxx = RxxM_int/RM_all;
 %   3) BDF2 + 1 BE   : u_{k+2} - 4/3*u_{k+1} + 1/3*u_k = 2/3*dt*Lu_{k+2}
 % Note here that t is actually measuring "time to expiry" not "time from
 % right now".  As a result, we are kind of solving this problem backwards
-ts_scheme = 4;
-dt = 1e-4;
+ts_scheme = 3;
+dt = 1e-3;
 t_vec = 0:dt:T;
 % Compute necessary time stepping components
 if ts_scheme==1 || ts_scheme==4
@@ -139,6 +154,9 @@ if ts_scheme==1 || ts_scheme==4
     end
 elseif ts_scheme==2 || ts_scheme==3
     L_mat = r*diag(x_int)*Dx+1/2*B^2*diag(x_int.^2)*Dxx-r*D0;
+    if finite_diff_test==1
+        L_mat = L_mat*swap;
+    end
     BE_mat = eye(N) - dt*[L_mat;zeros(N_bc,N)];
     if ts_scheme==3
         BDF_mat = eye(N) - 2/3*dt*[L_mat;zeros(N_bc,N)];
@@ -157,6 +175,7 @@ u_coef(:,1) = RM_all\u_sol(:,1);
 
 % Perform the time stepping
 % If using builtin ODE solver, just call it
+% Otherwise, manually perform the iterations
 if ts_scheme==4
     [t_ret,u_ret] = ode15s(odefun,t_vec,u_sol(:,1),odeopt);
     u_sol = u_ret';
