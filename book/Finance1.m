@@ -120,16 +120,17 @@ coupling = 0;
 %            = 'cp_even' has coupling (see below), even interiors
 %            = 'cp_cheb' has coupling (see below), Cheb interiors
 % NOTE: pt_opt may be overwritten below if incompatible with solver
-N = 21;
+N = 41;
 pt_opt = 'cheb';
 
 % Overwrite point selection if the solver is incompatible
-if solver==-1
-elseif solver==-2
+if solver==-1 && ~strcmp(pt_opt(end-3:end),'even')
+    pt_opt = 'even';
+elseif solver==-2 && ~strcmp(pt_opt(end-3:end),'chebs')
     pt_opt = 'cheb';
 end
 
-% Select some points
+% Select some points based on the user requests
 x = pickpoints(0,4*K,N,pt_opt);
 N = length(x);
 
@@ -192,12 +193,15 @@ switch solver
         RxM_int = ([zeros(N_int,N_bc),eye(N_int)]-eye(N_int,N))/(2*delta_x);
         RxxM_int = (eye(N_int,N)-2*[zeros(N_int,1),eye(N_int),zeros(N_int,1)]+[zeros(N_int,N_bc),eye(N_int)])/delta_x^2;
     case -2
+        % Form the Chebyshev differentiation matrices
         D_cheb = cheb(N);
         D2_cheb = D_cheb^2;
-        RM_all = 1; % This isn't needed for FD
+        RM_all = 1; % This isn't needed for polynomial collocation
         RM_int = eye(N_int,N);
-        RxM_int = D_cheb(2:N-1,:);
-        RxxM_int = D2_cheb(2:N-1,:);
+        % Note the division by 2 or 2^2 for the change in scale
+        % cheb expects [-1,1] but we're on [0,4]
+        RxM_int = D_cheb(2:N-1,:)/2;
+        RxxM_int = D2_cheb(2:N-1,:)/4;
 end
 
 % Form the differentiation matrices
