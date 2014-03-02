@@ -125,8 +125,10 @@ pt_opt = 'cheb';
 
 % Overwrite point selection if the solver is incompatible
 if solver==-1 && ~strcmp(pt_opt(end-3:end),'even')
+    warning('Incompatible: solver=%d, pt_opt=%s.  Reset to ''even''',solver,pt_opt);
     pt_opt = 'even';
-elseif solver==-2 && ~strcmp(pt_opt(end-3:end),'chebs')
+elseif solver==-2 && ~strcmp(pt_opt(end-3:end),'cheb')
+    warning('Incompatible: solver=%d, pt_opt=%s.  Reset to ''cheb''',solver,pt_opt);
     pt_opt = 'cheb';
 end
 
