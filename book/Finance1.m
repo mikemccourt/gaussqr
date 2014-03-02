@@ -49,7 +49,18 @@ B = .3*eye(d) + .05*(ones(d)-eye(d));
 r = .05;
 
 % tol is our computational tolerance
+% NOTE: This is inactive right now
 tol = 1e-4;
+
+% We need to set up a time stepping scheme
+% Choices that are available
+%   1) Euler's Method: u_{k+1} = u_k + dt*Lu_k
+%   2) Backward Euler: u_{k+1} = u_k + dt*Lu_{k+1}
+%   3) BDF2 + 1 BE   : u_{k+2} - 4/3*u_{k+1} + 1/3*u_k = 2/3*dt*Lu_{k+2}
+% Note here that t is actually measuring "time to expiry" not "time from
+% right now".  As a result, we are kind of solving this problem backwards
+ts_scheme = 4;
+dt = 1e-2;
 
 % payout(x) is the contract function which describes the payout
 % This is also used to generate initial conditions
@@ -63,33 +74,6 @@ payout = @(x) max(0,sum(x-K,2)/d);
 % sum(x)==4*K*d, meaning the x=0 BC is automatically built-in
 bc = @(x,t) K*(4-exp(-r*t))*(sum(x,2)==4*K*d);
 
-% The true solution is described above, and defined below
-% Note that we have substituted t for T-t since we are solving an initial
-% value problem and not a final value problem
-d1_truesol = @(x,t) 1./(B*sqrt(t)).*(log(x/K)+(r+B^2/2)*t);
-d2_truesol = @(x,t) d1_truesol(x,t) - B*sqrt(t);
-C_truesol = @(x,t) normcdf(d1_truesol(x,t)).*x - K*normcdf(d2_truesol(x,t)).*exp(-r*t);
-
-% Choose some collocation points in the domain
-% N is the total number of points to compute with
-% x_bc and x_int are the boundary and interior points
-% x_eval is a set of points to evaluate the solution on
-N = 100;
-pt_opt = 'even';
-x = pickpoints(0,4*K,N,pt_opt);
-N = length(x);
-
-% Cut up the domain into pieces to work with
-x_int = x(2:end-1);
-x_bc = x([1,end]);
-x_all = [x_int;x_bc];
-i_int = 1:length(x_int);
-i_bc = length(i_int)+1:length(i_int)+length(x_bc);
-N_int = length(i_int);
-N_bc = length(i_bc);
-N_eval = 300;
-x_eval = pickpoints(0,4*K,N_eval);
-
 % We must choose a shape parameter ep>0
 % This if-block will allow you to either choose epsilon here (if you
 % haven't yet) or run with an existing epsilon (for batch jobs)
@@ -100,16 +84,18 @@ if not(exist('ep','var'))
 end
 
 % This is an option as to what spatial solver to use
-%    hssvd = -1 for finite differences
+%    hssvd = -2 for polynomial collocation
+%          = -1 for finite differences
 %          = 0  for RBF-direct
 %          = 1  for HS-SVD
 % NOTE: FD only allowed for evenly spaced points
-hssvd = -1;
+% NOTE: polynomials allowed only on Chebyshev spaced points
+solver = -2;
 
 % The following are HS-SVD parameters
 % The alpha value determines eigenfunction locality
 % reg = 1 asks for a low rank eigenfunction expansion
-reg = 0;
+reg = 1;
 alpha = 3;
 
 % If hssvd = 0, you can choose what RBF you want to run with
@@ -117,8 +103,51 @@ alpha = 3;
 %               = 2 is Multiquadric
 rbf_choice = 1;
 
+% Because of the discontinuity in the solution at t=0, we also have the
+% option of trying to solve the problem in a coupled sense
+% Choosing coupling=1 will activate this option and solve two problems: one
+% on [0,K] and the other on [K,4K]
+% At x=K, the solution will have matching values and first derivatives, but
+% nothing else is required
+% NOTE: Not active yet
+coupling = 0;
+
+% Choose some collocation points in the domain
+% N is the total number of points to compute with
+% pt_opt is the distribution of points in the domain
+%     pt_opt = 'even' is uniformly space
+%            = 'cheb' has Chebyshev spacing
+%            = 'cp_even' has coupling (see below), even interiors
+%            = 'cp_cheb' has coupling (see below), Cheb interiors
+% NOTE: pt_opt may be overwritten below if incompatible with solver
+N = 21;
+pt_opt = 'cheb';
+
+% Overwrite point selection if the solver is incompatible
+if solver==-1
+elseif solver==-2
+    pt_opt = 'cheb';
+end
+
+% Select some points
+x = pickpoints(0,4*K,N,pt_opt);
+N = length(x);
+
+% Cut up the domain into pieces to work with
+% x_bc and x_int are the boundary and interior points
+% x_eval is a set of points to evaluate the solution on
+x_int = x(2:end-1);
+x_bc = x([1,end]);
+x_all = [x_int;x_bc];
+i_int = 1:length(x_int);
+i_bc = length(i_int)+1:length(i_int)+length(x_bc);
+N_int = length(i_int);
+N_bc = length(i_bc);
+N_eval = 300;
+x_eval = pickpoints(0,4*K,N_eval);
+
 % Set up the solver we are using
-switch hssvd
+switch solver
     case 1
     % Note the dividing factor required to account for the change in scale
     % we are imposing to normalize our spatial domain to [-1,1]
@@ -162,30 +191,29 @@ switch hssvd
         RM_int = eye(N_int,N);
         RxM_int = ([zeros(N_int,N_bc),eye(N_int)]-eye(N_int,N))/(2*delta_x);
         RxxM_int = (eye(N_int,N)-2*[zeros(N_int,1),eye(N_int),zeros(N_int,1)]+[zeros(N_int,N_bc),eye(N_int)])/delta_x^2;
+    case -2
+        D_cheb = cheb(N);
+        D2_cheb = D_cheb^2;
+        RM_all = 1; % This isn't needed for FD
+        RM_int = eye(N_int,N);
+        RxM_int = D_cheb(2:N-1,:);
+        RxxM_int = D2_cheb(2:N-1,:);
 end
 
 % Form the differentiation matrices
+% Note that only L_mat is used after this block
 D0 = RM_int/RM_all;
 Dx = RxM_int/RM_all;
 Dxx = RxxM_int/RM_all;
-
 % Form the differential operator using the differentiation matrices
 L_mat = r*diag(x_int)*Dx+1/2*B^2*diag(x_int.^2)*Dxx-r*D0;
-
-% Swap the columns if needed for finite differences
-if hssvd==-1
+% Swap the columns, if needed for finite differences
+if solver<0
     L_mat = L_mat(:,[2:N-1,1,N]);
 end
 
-% We need to set up a time stepping scheme
-% Choices that are available
-%   1) Euler's Method: u_{k+1} = u_k + dt*Lu_k
-%   2) Backward Euler: u_{k+1} = u_k + dt*Lu_{k+1}
-%   3) BDF2 + 1 BE   : u_{k+2} - 4/3*u_{k+1} + 1/3*u_k = 2/3*dt*Lu_{k+2}
-% Note here that t is actually measuring "time to expiry" not "time from
-% right now".  As a result, we are kind of solving this problem backwards
-ts_scheme = 4;
-dt = 1e-2;
+
+% Set up the time stepping mechanism
 t_vec = 0:dt:T;
 % Compute necessary time stepping components
 if ts_scheme==1 || ts_scheme==4
@@ -249,6 +277,13 @@ end
 % Dump the boundary conditions, which are not fun
 u_sol = u_sol(i_int,:);
 
+% The true solution is described above, and defined below
+% Note that we have substituted t for T-t since we are solving an initial
+% value problem and not a final value problem
+d1_truesol = @(x,t) 1./(B*sqrt(t)).*(log(x/K)+(r+B^2/2)*t);
+d2_truesol = @(x,t) d1_truesol(x,t) - B*sqrt(t);
+C_truesol = @(x,t) normcdf(d1_truesol(x,t)).*x - K*normcdf(d2_truesol(x,t)).*exp(-r*t);
+
 % Choose whether or not to plot the output
 plot_sol = 1;
 
@@ -258,7 +293,7 @@ if plot_sol
     [XX,TT] = meshgrid(x_int,t_vec);
     h = surf(XX,TT,abs(u_sol' - C_truesol(XX,TT)));
     set(h,'edgecolor','none')
-    title(sprintf('dt=%g,\tN=%d,\tspace=%s,\tts=%d,hssvd=%d,\tep=%g\t',dt,N,pt_opt,ts_scheme,hssvd,ep))
+    title(sprintf('dt=%g,\tN=%d,\tspace=%s,\tts=%d,solver=%d,\tep=%g\t',dt,N,pt_opt,ts_scheme,solver,ep))
     xlabel('Spot price')
     ylabel('time to expiry')
     zlabel('option value error')
