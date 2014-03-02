@@ -103,15 +103,6 @@ alpha = 3;
 %               = 2 is Multiquadric
 rbf_choice = 1;
 
-% Because of the discontinuity in the solution at t=0, we also have the
-% option of trying to solve the problem in a coupled sense
-% Choosing coupling=1 will activate this option and solve two problems: one
-% on [0,K] and the other on [K,4K]
-% At x=K, the solution will have matching values and first derivatives, but
-% nothing else is required
-% NOTE: Not active yet
-coupling = 0;
-
 % Choose some collocation points in the domain
 % N is the total number of points to compute with
 % pt_opt is the distribution of points in the domain
@@ -120,7 +111,7 @@ coupling = 0;
 %            = 'cp_even' has coupling (see below), even interiors
 %            = 'cp_cheb' has coupling (see below), Cheb interiors
 % NOTE: pt_opt may be overwritten below if incompatible with solver
-N = 41;
+N = 100;
 pt_opt = 'cheb';
 
 % Overwrite point selection if the solver is incompatible
@@ -130,6 +121,23 @@ if solver==-1 && ~strcmp(pt_opt(end-3:end),'even')
 elseif solver==-2 && ~strcmp(pt_opt(end-3:end),'cheb')
     warning('Incompatible: solver=%d, pt_opt=%s.  Reset to ''cheb''',solver,pt_opt);
     pt_opt = 'cheb';
+end
+
+% Because of the discontinuity in the solution at t=0, we also have the
+% option of trying to solve the problem in a coupled sense
+% Choosing coupling=1 will activate this option and solve two problems: one
+% on [0,K] and the other on [K,4K]
+% At x=K, the solution will have matching values and first derivatives, but
+% nothing else is required
+% coupling_decay(t) should start at 1 and decay to 0, so that at T=1 it has
+% almost no effect on the problem
+% Possible ideas include exp(-t) or 1-sqrt(t)
+% NOTE: Not active yet
+coupling = 0;
+coupling_decay = @(t) exp(-7*t/T);
+
+if coupling
+else
 end
 
 % Select some points based on the user requests
@@ -218,7 +226,6 @@ if solver<0
     L_mat = L_mat(:,[2:N-1,1,N]);
 end
 
-
 % Set up the time stepping mechanism
 t_vec = 0:dt:T;
 % Compute necessary time stepping components
@@ -237,6 +244,62 @@ elseif ts_scheme==2 || ts_scheme==3
         BDF_mat = eye(N) - 2/3*dt*[L_mat;zeros(N_bc,N)];
     end
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Below this is just a hack, to see if I can get coupling working somewhat
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ts_scheme = 4;
+x_1 = pickpoints(0,K,ceil(N/2));
+% I need the number of points in each domain to be different to prevent
+% singularity in the Jacobian of the algebraic portion of the problem
+% I think this is just an artifact of the way its set up and not really
+% important
+x_2 = pickpoints(K,4*K,ceil(N/2)+1);
+x_all = [x_1;x_2];
+N_1 = length(x_1);
+N_2 = length(x_2);
+N = N_1 + N_2;
+delta_x1 = K/(N_1-1);
+delta_x2 = 3*K/(N_2-1);
+IN_1 = eye(N_1);
+IN_2 = eye(N_2);
+Dx_1 = full(gallery('tridiag',N_1,-1,0,1))/(2*delta_x1);
+Dx_2 = full(gallery('tridiag',N_2,-1,0,1))/(2*delta_x2);
+Dxx_1 = -full(gallery('tridiag',N_1))/delta_x1^2;
+Dxx_2 = -full(gallery('tridiag',N_2))/delta_x2^2;
+Lint_1 = r*diag(x_1)*Dx_1+.5*B^2*diag(x_1.^2)*Dxx_1-r*IN_1;
+Lint_2 = r*diag(x_2)*Dx_2+.5*B^2*diag(x_2.^2)*Dxx_2-r*IN_2;
+L_1 = [IN_1(1,:);Lint_1(2:N_1-1,:);IN_1(N_1,:)];
+L_2 = [IN_2(1,:);Lint_2(2:N_2-1,:);IN_2(N_2,:)];
+cp_1_2_dirichlet = [zeros(1,N_1-1),1,-1,zeros(1,N_2-1)];
+cp_2_1_neumann = [zeros(1,N_1-3),-[-1.5 2 -.5]/delta_x1,[-1.5 2 -.5]/delta_x2,zeros(1,N_2-3)];
+L_mat = [L_1,zeros(N_1,N_2);zeros(N_2,N_1),L_2];
+L_mat(N_1:N_1+1,:) = [cp_1_2_dirichlet;cp_2_1_neumann];
+
+% Isolate the boundary and coupling conditions
+%   [Int_1;Int_2;CP_1;CP_2;BC_1;BC_2]
+%   swap*x = x_isolated
+IN = eye(N);
+swap = [IN(2:N_1-1,:);IN(N_1+2:N-1,:);IN(N_1:N_1+1,:);IN(1,:);IN(N,:)];
+x_all = swap*x_all;
+L_mat = swap*L_mat*swap';
+
+% This will help for plotting
+i_int = [1:N_1-2,N-3,N_1-1:N-4];
+x_int = x_all(i_int);
+
+% Set up ODE solver for coupling problem
+% This includes a coupling fix to account for the discontinuous initial
+% conditions
+% coupling_decay(t) should start at 1 and decay to 0, so that at T=1 it has
+% almost no effect on the problem
+cp_fix = @(t) [zeros(N-3,1);coupling_decay(t);0;0];
+bc_only = [zeros(N-2,N);zeros(2,N-2),eye(2)];
+odefun = @(t,u) L_mat*u - bc_only*bc(x_all,t) - cp_fix(t);
+mass = [eye(N-4),zeros(N-4,4);zeros(4,N)];
+
+odeopt = odeset('InitialStep',dt,'Jacobian',L_mat,'Mass',mass,...
+    'MStateDependence','none','MassSingular','yes');
 
 % u_coef will contain the coefficients for our solution basis
 % u_sol will contain the solution at the collocation points
@@ -290,17 +353,30 @@ d1_truesol = @(x,t) 1./(B*sqrt(t)).*(log(x/K)+(r+B^2/2)*t);
 d2_truesol = @(x,t) d1_truesol(x,t) - B*sqrt(t);
 C_truesol = @(x,t) normcdf(d1_truesol(x,t)).*x - K*normcdf(d2_truesol(x,t)).*exp(-r*t);
 
-% Choose whether or not to plot the output
-plot_sol = 1;
+% Choose whether or not to plot something
+%   plot_sol = -1 means plot just the true solution
+%            =  0 means no plot
+%            =  1 plots the computed solution
+%            =  2 plots the error in the solution
+plot_sol = 2;
 
 % Plot the error in the solution
-if plot_sol
+if plot_sol~=0
     figure
     [XX,TT] = meshgrid(x_int,t_vec);
-    h = surf(XX,TT,abs(u_sol' - C_truesol(XX,TT)));
+    switch plot_sol
+        case -1
+            h = surf(XX,TT,C_truesol(XX,TT));
+            zlabel('true option value')
+        case 1
+            h = surf(XX,TT,u_sol');
+            zlabel('option value')
+        case 2
+            h = surf(XX,TT,abs(u_sol' - C_truesol(XX,TT)));
+            zlabel('option value error')
+    end
     set(h,'edgecolor','none')
     title(sprintf('dt=%g,\tN=%d,\tspace=%s,\tts=%d,solver=%d,\tep=%g\t',dt,N,pt_opt,ts_scheme,solver,ep))
     xlabel('Spot price')
     ylabel('time to expiry')
-    zlabel('option value error')
 end
