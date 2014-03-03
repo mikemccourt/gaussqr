@@ -71,9 +71,7 @@ bc = @(x,t) K*(4-exp(-r*t))*(sum(x,2)==4*K*d);
 % haven't yet) or run with an existing epsilon (for batch jobs)
 % If you have already run this script (and thus ep exists) the value
 % provided here is not accessed at all
-if not(exist('ep','var'))
-    ep = 1.25;
-end
+ep = .5;
 
 % This is an option as to what spatial solver to use
 %    hssvd = -2 for polynomial collocation
@@ -82,7 +80,7 @@ end
 %          = 1  for HS-SVD
 % NOTE: FD only allowed for evenly spaced points
 % NOTE: polynomials allowed only on Chebyshev spaced points
-solver = -1;
+solver = 0;
 
 % The following are HS-SVD parameters
 % The alpha value determines eigenfunction locality
@@ -103,8 +101,8 @@ rbf_choice = 1;
 %            = 'cp_even' has coupling (see below), even interiors
 %            = 'cp_cheb' has coupling (see below), Cheb interiors
 % NOTE: pt_opt may be overwritten below if incompatible with solver
-N = 100;
-pt_opt = 'cheb';
+N = 20;
+pt_opt = 'cp_cheb';
 
 % Overwrite point selection if the solver is incompatible
 if solver==-1 && ~strcmp(pt_opt(end-3:end),'even')
@@ -125,37 +123,85 @@ end
 % almost no effect on the problem
 % Possible ideas include exp(-t) or 1-sqrt(t)
 % NOTE: Not active yet
-coupling = 1;
-coupling_decay = @(t) exp(-7*t/T);
+coupling = strcmp(pt_opt(1:3),'cp_');
+pt_opt = pt_opt(end-3:end);
+% coupling_decay = @(t) exp(-7*t/T);
+coupling_decay = @(t) 0*t;
 
 if coupling
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Below this is just a hack, to see if I can get coupling working somewhat
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    x_1 = pickpoints(0,K,ceil(N/2));
+    x_1 = pickpoints(0,K,ceil(N/2),pt_opt);
     % I need the number of points in each domain to be different to prevent
     % singularity in the Jacobian of the algebraic portion of the problem
     % I think this is just an artifact of the way its set up and not really
     % important
-    x_2 = pickpoints(K,4*K,ceil(N/2)+1);
+    x_2 = pickpoints(K,4*K,ceil(N/2)+1,pt_opt);
     x_all = [x_1;x_2];
     N_1 = length(x_1);
     N_2 = length(x_2);
     N = N_1 + N_2;
-    delta_x1 = K/(N_1-1);
-    delta_x2 = 3*K/(N_2-1);
     IN_1 = eye(N_1);
     IN_2 = eye(N_2);
-    Dx_1 = full(gallery('tridiag',N_1,-1,0,1))/(2*delta_x1);
-    Dx_2 = full(gallery('tridiag',N_2,-1,0,1))/(2*delta_x2);
-    Dxx_1 = -full(gallery('tridiag',N_1))/delta_x1^2;
-    Dxx_2 = -full(gallery('tridiag',N_2))/delta_x2^2;
+    % The Dirichlet coupling is the same in all cases
+    cp_1_2_dirichlet = [zeros(1,N_1-1),1,-1,zeros(1,N_2-1)];
+    
+    switch solver
+        case 1
+        case 0
+            % Create a function for the RBF
+            % The derivatives are needed to create the collocation matrix
+            switch rbf_choice
+                case 1
+                    rbf = @(e,r) exp(-(e*r).^2);
+                    rbfdx = @(e,r,dx) -2*e^2*dx.*exp(-(e*r).^2);
+                    rbfdxx = @(e,r) 2*e^2*(2*(e*r).^2-1).*exp(-(e*r).^2);
+                case 2
+                    rbf = @(e,r) sqrt(1+(e*r).^2);
+                    rbfdx = @(e,r,dx) e^2*dx./sqrt(1+(e*r).^2);
+                    rbfdxx = @(e,r) e^2./(1+(e*r).^2).^(3/2);
+            end
+            % Could also consider the Multiquadrics
+            % We also form distance matrices which we need for evaluation
+            DM_1 = DistanceMatrix(x_1,x_1);
+            DiffM_1 = DifferenceMatrix(x_1,x_1);
+            DM_2 = DistanceMatrix(x_2,x_2);
+            DiffM_2 = DifferenceMatrix(x_2,x_2);
+            % The basis is evaluated using those distance matrices
+            RM_1 = rbf(ep,DM_1);
+            RxM_1 = rbfdx(ep,DM_1,DiffM_1);
+            RxxM_1 = rbfdxx(ep,DM_1);
+            RM_2 = rbf(ep,DM_2);
+            RxM_2 = rbfdx(ep,DM_2,DiffM_2);
+            RxxM_2 = rbfdxx(ep,DM_2);
+            % Form the differentiation matrices
+            Dx_1 = RxM_1/RM_1;
+            Dxx_1 = RxxM_1/RM_1;
+            Dx_2 = RxM_2/RM_2;
+            Dxx_2 = RxxM_2/RM_2;
+            cp_2_1_neumann = [Dx_1(N_1,:),-Dx_2(1,:)];
+        case -1
+            delta_x1 = K/(N_1-1);
+            delta_x2 = 3*K/(N_2-1);
+            Dx_1 = full(gallery('tridiag',N_1,-1,0,1))/(2*delta_x1);
+            Dx_2 = full(gallery('tridiag',N_2,-1,0,1))/(2*delta_x2);
+            Dxx_1 = -full(gallery('tridiag',N_1))/delta_x1^2;
+            Dxx_2 = -full(gallery('tridiag',N_2))/delta_x2^2;
+            cp_2_1_neumann = [zeros(1,N_1-3),-[-1.5 2 -.5]/delta_x1,[-1.5 2 -.5]/delta_x2,zeros(1,N_2-3)];
+        case -2
+            % Form the Chebyshev differentiation matrices
+            Dx_1 = cheb(N_1)*2;
+            Dx_2 = cheb(N_2)*2/3;
+            Dxx_1 = Dx_1^2;
+            Dxx_2 = Dx_2^2;
+            cp_2_1_neumann = [Dx_1(N_1,:),-Dx_2(1,:)];
+    end
+    
     Lint_1 = r*diag(x_1)*Dx_1+.5*B^2*diag(x_1.^2)*Dxx_1-r*IN_1;
     Lint_2 = r*diag(x_2)*Dx_2+.5*B^2*diag(x_2.^2)*Dxx_2-r*IN_2;
     L_1 = [IN_1(1,:);Lint_1(2:N_1-1,:);IN_1(N_1,:)];
     L_2 = [IN_2(1,:);Lint_2(2:N_2-1,:);IN_2(N_2,:)];
-    cp_1_2_dirichlet = [zeros(1,N_1-1),1,-1,zeros(1,N_2-1)];
-    cp_2_1_neumann = [zeros(1,N_1-3),-[-1.5 2 -.5]/delta_x1,[-1.5 2 -.5]/delta_x2,zeros(1,N_2-3)];
     L_mat = [L_1,zeros(N_1,N_2);zeros(N_2,N_1),L_2];
     L_mat(N_1:N_1+1,:) = [cp_1_2_dirichlet;cp_2_1_neumann];
     
@@ -231,7 +277,6 @@ else
             % Could also consider the Multiquadrics
             % We also form distance matrices which we need for evaluation
             DM_all = DistanceMatrix(x_all,x_all);
-            DM_bc = DistanceMatrix(x_bc,x_all);
             DM_int = DistanceMatrix(x_int,x_all);
             DiffM_int = DifferenceMatrix(x_int,x_all);
             % The basis is evaluated using those distance matrices
@@ -247,14 +292,14 @@ else
             RxxM_int = (eye(N_int,N)-2*[zeros(N_int,1),eye(N_int),zeros(N_int,1)]+[zeros(N_int,N_bc),eye(N_int)])/delta_x^2;
         case -2
             % Form the Chebyshev differentiation matrices
-            D_cheb = cheb(N);
+            % Note the division by 2 for the change in scale
+            % cheb expects [-1,1] but we're on [0,4]
+            D_cheb = cheb(N)/2;
             D2_cheb = D_cheb^2;
             RM_all = 1; % This isn't needed for polynomial collocation
             RM_int = eye(N_int,N);
-            % Note the division by 2 or 2^2 for the change in scale
-            % cheb expects [-1,1] but we're on [0,4]
-            RxM_int = D_cheb(2:N-1,:)/2;
-            RxxM_int = D2_cheb(2:N-1,:)/4;
+            RxM_int = D_cheb(2:N-1,:);
+            RxxM_int = D2_cheb(2:N-1,:);
     end
     
     % Form the differentiation matrices
@@ -306,25 +351,31 @@ C_truesol = @(x,t) normcdf(d1_truesol(x,t)).*x - K*normcdf(d2_truesol(x,t)).*exp
 %            =  0 means no plot
 %            =  1 plots the computed solution
 %            =  2 plots the error in the solution
+%            =  3 plots the error in the solution at time t=T
 plot_sol = 2;
 
 % Plot the error in the solution
 if plot_sol~=0
     figure
     [XX,TT] = meshgrid(x_int,t_vec);
-    switch plot_sol
-        case -1
-            h = surf(XX,TT,C_truesol(XX,TT));
-            zlabel('true option value')
-        case 1
-            h = surf(XX,TT,u_sol');
-            zlabel('option value')
-        case 2
-            h = surf(XX,TT,abs(u_sol' - C_truesol(XX,TT)));
-            zlabel('option value error')
+    if plot_sol~=3
+        switch plot_sol
+            case -1
+                h = surf(XX,TT,C_truesol(XX,TT));
+                zlabel('true option value')
+            case 1
+                h = surf(XX,TT,u_sol');
+                zlabel('option value')
+            case 2
+                h = surf(XX,TT,abs(u_sol' - C_truesol(XX,TT)));
+                zlabel('option value error')
+        end
+        ylabel('time to expiry')
+    else
+        h = surf(XX,TT,abs(u_sol' - C_truesol(XX,TT)));
+        ylabel('option value error at t=T')
     end
     set(h,'edgecolor','none')
     title(sprintf('dt=%g,\tN=%d,\tspace=%s,\tts=%d,solver=%d,\tep=%g\t',dt,N,pt_opt,ts_scheme,solver,ep))
     xlabel('Spot price')
-    ylabel('time to expiry')
 end
