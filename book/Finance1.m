@@ -249,7 +249,7 @@ if coupling
     bc_only = [zeros(N-2,N);zeros(2,N-2),eye(2)];
     odefun = @(t,u) L_mat*u - bc_only*bc(x_all,t) - cp_fix(t);
     mass = [eye(N-4),zeros(N-4,4);zeros(4,N)];
-    odeopt = odeset('InitialStep',dt,'Jacobian',L_mat,'Mass',mass,...
+    odeopt = odeset('Jacobian',L_mat,'Mass',mass,...
         'MStateDependence','none','MassSingular','yes');
 else
     % Select some points based on the user requests
@@ -375,7 +375,7 @@ C_truesol = @(x,t) normcdf(d1_truesol(x,t)).*x - K*normcdf(d2_truesol(x,t)).*exp
 %            =  1 plots the computed solution
 %            =  2 plots the error in the solution
 %            =  3 plots the error in the solution at time t=T
-plot_sol = 0;
+plot_sol = 3;
 
 % Plot the error in the solution
 if plot_sol~=0
@@ -399,6 +399,6 @@ if plot_sol~=0
         ylabel('option value error at t=T')
     end
     set(h,'edgecolor','none')
-    title(sprintf('dt=%g,\tN=%d,\tspace=%s,solver=%d,\tep=%g\t',dt,N,pt_opt,solver,ep))
+    title(sprintf('N=%d,\tspace=%s,solver=%d,\tep=%g\t',N,pt_opt,solver,ep))
     xlabel('Spot price')
 end
