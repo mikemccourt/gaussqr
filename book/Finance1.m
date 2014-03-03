@@ -155,7 +155,8 @@ if coupling
                 Rmat_1 = [IN_1;GQR_1.Rbar];
                 Rmat_2 = [IN_2;GQR_2.Rbar];
             else
-                Rmat = 1;
+                Rmat_1 = 1;
+                Rmat_2 = 1;
             end
             % Note the dividing factor required to account for the change in scale
             % we are imposing to normalize our spatial domain to [-1,1]
