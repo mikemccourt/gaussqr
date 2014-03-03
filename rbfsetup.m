@@ -30,7 +30,7 @@ otherDir = strcat(thisDir,dirslash,'fromothers');
 bookDir = strcat(thisDir,dirslash,'book');
 
 % Add the directories to the path
-addpath(sourceDir,gaussqrDir,gqrauxiliaryDir,mqrauxiliaryDir,utilitiesDir,otherDir,maternqrDir,gqrexamplesDir,mqrexamplesDir,dipoleDir,approxeigsDir,testfunctionsDir,dipolesourceDir,bookDir,1);
+addpath(sourceDir,gaussqrDir,gqrauxiliaryDir,mqrauxiliaryDir,utilitiesDir,otherDir,maternqrDir,gqrexamplesDir,mqrexamplesDir,dipoleDir,approxeigsDir,testfunctionsDir,dipolesourceDir,bookDir,'-begin');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Setup global constants and parameters
