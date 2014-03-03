@@ -28,6 +28,8 @@
 % and not the initial value.  This means that when solving the problem we
 % are really stepping backwards in time.
 %
+% To perform the time stepping, we use ode15s
+%
 % Right now, we are just going to work this in 1D, but I will consider
 % spicing it up later
 % NOTE: This requires the statistics toolbox, for now
@@ -51,16 +53,6 @@ r = .05;
 % tol is our computational tolerance
 % NOTE: This is inactive right now
 tol = 1e-4;
-
-% We need to set up a time stepping scheme
-% Choices that are available
-%   1) Euler's Method: u_{k+1} = u_k + dt*Lu_k
-%   2) Backward Euler: u_{k+1} = u_k + dt*Lu_{k+1}
-%   3) BDF2 + 1 BE   : u_{k+2} - 4/3*u_{k+1} + 1/3*u_k = 2/3*dt*Lu_{k+2}
-% Note here that t is actually measuring "time to expiry" not "time from
-% right now".  As a result, we are kind of solving this problem backwards
-ts_scheme = 4;
-dt = 1e-2;
 
 % payout(x) is the contract function which describes the payout
 % This is also used to generate initial conditions
@@ -90,13 +82,13 @@ end
 %          = 1  for HS-SVD
 % NOTE: FD only allowed for evenly spaced points
 % NOTE: polynomials allowed only on Chebyshev spaced points
-solver = -2;
+solver = -1;
 
 % The following are HS-SVD parameters
 % The alpha value determines eigenfunction locality
 % reg = 1 asks for a low rank eigenfunction expansion
-reg = 1;
 alpha = 3;
+reg = 1;
 
 % If hssvd = 0, you can choose what RBF you want to run with
 %    rbf_choice = 1 is Gaussian
@@ -226,122 +218,80 @@ if solver<0
     L_mat = L_mat(:,[2:N-1,1,N]);
 end
 
-% Set up the time stepping mechanism
-t_vec = 0:dt:T;
-% Compute necessary time stepping components
-if ts_scheme==1 || ts_scheme==4
-    L = @(u) L_mat*u;
-    if ts_scheme==4
-        odefun = @(t,u) [L(u);u(i_bc)-bc(x_bc,t)];
-        jac = [L_mat;zeros(N_bc,N_int),eye(N_bc)];
-        mass = [eye(N_int),zeros(N_int,N_bc);zeros(N_bc,N)];
-        odeopt = odeset('InitialStep',dt,'Jacobian',jac,'Mass',mass,...
-            'MStateDependence','none','MassSingular','yes');
-    end
-elseif ts_scheme==2 || ts_scheme==3
-    BE_mat = eye(N) - dt*[L_mat;zeros(N_bc,N)];
-    if ts_scheme==3
-        BDF_mat = eye(N) - 2/3*dt*[L_mat;zeros(N_bc,N)];
-    end
-end
+% We need to set up the ODE solver
+% The mass matrix is like the identity, but has zeros for the boundary
+% condtiions, which are not governed by an ODE
+% The jacobian is exactly what you think it is
+%   odefun is the L in d/dt u = L u
+%          on the boundary, it is just u = BC
+odefun = @(t,u) [L_mat*u;u(i_bc)-bc(x_bc,t)];
+jac = [L_mat;zeros(N_bc,N_int),eye(N_bc)];
+mass = [eye(N_int),zeros(N_int,N_bc);zeros(N_bc,N)];
+odeopt = odeset('Jacobian',jac,'Mass',mass,...
+    'MStateDependence','none','MassSingular','yes');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Below this is just a hack, to see if I can get coupling working somewhat
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-ts_scheme = 4;
-x_1 = pickpoints(0,K,ceil(N/2));
-% I need the number of points in each domain to be different to prevent
-% singularity in the Jacobian of the algebraic portion of the problem
-% I think this is just an artifact of the way its set up and not really
-% important
-x_2 = pickpoints(K,4*K,ceil(N/2)+1);
-x_all = [x_1;x_2];
-N_1 = length(x_1);
-N_2 = length(x_2);
-N = N_1 + N_2;
-delta_x1 = K/(N_1-1);
-delta_x2 = 3*K/(N_2-1);
-IN_1 = eye(N_1);
-IN_2 = eye(N_2);
-Dx_1 = full(gallery('tridiag',N_1,-1,0,1))/(2*delta_x1);
-Dx_2 = full(gallery('tridiag',N_2,-1,0,1))/(2*delta_x2);
-Dxx_1 = -full(gallery('tridiag',N_1))/delta_x1^2;
-Dxx_2 = -full(gallery('tridiag',N_2))/delta_x2^2;
-Lint_1 = r*diag(x_1)*Dx_1+.5*B^2*diag(x_1.^2)*Dxx_1-r*IN_1;
-Lint_2 = r*diag(x_2)*Dx_2+.5*B^2*diag(x_2.^2)*Dxx_2-r*IN_2;
-L_1 = [IN_1(1,:);Lint_1(2:N_1-1,:);IN_1(N_1,:)];
-L_2 = [IN_2(1,:);Lint_2(2:N_2-1,:);IN_2(N_2,:)];
-cp_1_2_dirichlet = [zeros(1,N_1-1),1,-1,zeros(1,N_2-1)];
-cp_2_1_neumann = [zeros(1,N_1-3),-[-1.5 2 -.5]/delta_x1,[-1.5 2 -.5]/delta_x2,zeros(1,N_2-3)];
-L_mat = [L_1,zeros(N_1,N_2);zeros(N_2,N_1),L_2];
-L_mat(N_1:N_1+1,:) = [cp_1_2_dirichlet;cp_2_1_neumann];
-
-% Isolate the boundary and coupling conditions
-%   [Int_1;Int_2;CP_1;CP_2;BC_1;BC_2]
-%   swap*x = x_isolated
-IN = eye(N);
-swap = [IN(2:N_1-1,:);IN(N_1+2:N-1,:);IN(N_1:N_1+1,:);IN(1,:);IN(N,:)];
-x_all = swap*x_all;
-L_mat = swap*L_mat*swap';
-
-% This will help for plotting
-i_int = [1:N_1-2,N-3,N_1-1:N-4];
-x_int = x_all(i_int);
-
-% Set up ODE solver for coupling problem
-% This includes a coupling fix to account for the discontinuous initial
-% conditions
-% coupling_decay(t) should start at 1 and decay to 0, so that at T=1 it has
-% almost no effect on the problem
-cp_fix = @(t) [zeros(N-3,1);coupling_decay(t);0;0];
-bc_only = [zeros(N-2,N);zeros(2,N-2),eye(2)];
-odefun = @(t,u) L_mat*u - bc_only*bc(x_all,t) - cp_fix(t);
-mass = [eye(N-4),zeros(N-4,4);zeros(4,N)];
-
-odeopt = odeset('InitialStep',dt,'Jacobian',L_mat,'Mass',mass,...
-    'MStateDependence','none','MassSingular','yes');
-
-% u_coef will contain the coefficients for our solution basis
-% u_sol will contain the solution at the collocation points
-u_sol = zeros(N,length(t_vec));
+% x_1 = pickpoints(0,K,ceil(N/4));
+% % I need the number of points in each domain to be different to prevent
+% % singularity in the Jacobian of the algebraic portion of the problem
+% % I think this is just an artifact of the way its set up and not really
+% % important
+% x_2 = pickpoints(K,4*K,3*ceil(N/4)+1);
+% x_all = [x_1;x_2];
+% N_1 = length(x_1);
+% N_2 = length(x_2);
+% N = N_1 + N_2;
+% delta_x1 = K/(N_1-1);
+% delta_x2 = 3*K/(N_2-1);
+% IN_1 = eye(N_1);
+% IN_2 = eye(N_2);
+% Dx_1 = full(gallery('tridiag',N_1,-1,0,1))/(2*delta_x1);
+% Dx_2 = full(gallery('tridiag',N_2,-1,0,1))/(2*delta_x2);
+% Dxx_1 = -full(gallery('tridiag',N_1))/delta_x1^2;
+% Dxx_2 = -full(gallery('tridiag',N_2))/delta_x2^2;
+% Lint_1 = r*diag(x_1)*Dx_1+.5*B^2*diag(x_1.^2)*Dxx_1-r*IN_1;
+% Lint_2 = r*diag(x_2)*Dx_2+.5*B^2*diag(x_2.^2)*Dxx_2-r*IN_2;
+% L_1 = [IN_1(1,:);Lint_1(2:N_1-1,:);IN_1(N_1,:)];
+% L_2 = [IN_2(1,:);Lint_2(2:N_2-1,:);IN_2(N_2,:)];
+% cp_1_2_dirichlet = [zeros(1,N_1-1),1,-1,zeros(1,N_2-1)];
+% cp_2_1_neumann = [zeros(1,N_1-3),-[-1.5 2 -.5]/delta_x1,[-1.5 2 -.5]/delta_x2,zeros(1,N_2-3)];
+% L_mat = [L_1,zeros(N_1,N_2);zeros(N_2,N_1),L_2];
+% L_mat(N_1:N_1+1,:) = [cp_1_2_dirichlet;cp_2_1_neumann];
+% 
+% % Isolate the boundary and coupling conditions
+% %   [Int_1;Int_2;CP_1;CP_2;BC_1;BC_2]
+% %   swap*x = x_isolated
+% IN = eye(N);
+% swap = [IN(2:N_1-1,:);IN(N_1+2:N-1,:);IN(N_1:N_1+1,:);IN(1,:);IN(N,:)];
+% x_all = swap*x_all;
+% L_mat = swap*L_mat*swap';
+% 
+% % This will help for plotting
+% i_int = [1:N_1-2,N-3,N_1-1:N-4];
+% x_int = x_all(i_int);
+% 
+% % Set up ODE solver for coupling problem
+% % This includes a coupling fix to account for the discontinuous initial
+% % conditions
+% % coupling_decay(t) should start at 1 and decay to 0, so that at T=1 it has
+% % almost no effect on the problem
+% cp_fix = @(t) [zeros(N-3,1);coupling_decay(t);0;0];
+% bc_only = [zeros(N-2,N);zeros(2,N-2),eye(2)];
+% odefun = @(t,u) L_mat*u - bc_only*bc(x_all,t) - cp_fix(t);
+% mass = [eye(N-4),zeros(N-4,4);zeros(4,N)];
+% odeopt = odeset('InitialStep',dt,'Jacobian',L_mat,'Mass',mass,...
+%     'MStateDependence','none','MassSingular','yes');
 
 % We need to record our initial condition
-% We must also interpolate our initial condition
-u_sol(:,1) = payout(x_all);
+u_init = payout(x_all);
 
 % Perform the time stepping
-% If using builtin ODE solver, just call it
-% Otherwise, manually perform the iterations
-if ts_scheme==4
-    [t_ret,u_ret] = ode15s(odefun,t_vec,u_sol(:,1),odeopt);
-    u_sol = u_ret';
-else
-    k = 1;
-    for t=t_vec(2:end)
-        switch ts_scheme
-            case 1
-                % On the interior
-                u_sol(i_int,k+1) = u_sol(i_int,k) + dt*L(u_sol(:,k));
-                % On the boundary
-                u_sol(i_bc,k+1) = bc(x_bc,t);
-            case 2
-                % Form the linear system [Int equations;BC equations]
-                % We only need to form it once, so do that once and save it
-                rhs = [u_sol(i_int,k);bc(x_bc,t)];
-                u_sol(:,k+1) = BE_mat\rhs;
-            case 3
-                % Take one BE step to produce the necessary two old values
-                if k==1
-                    rhs = [u_sol(i_int,1);bc(x_bc,t)];
-                    u_sol(:,2) = BE_mat\rhs;
-                else
-                    rhs = [4/3*u_sol(i_int,k)-1/3*u_sol(i_int,k-1);bc(x_bc,t)];
-                    u_sol(:,k+1) = BDF_mat\rhs;
-                end
-        end
-        k = k + 1;
-    end
-end
+% Store the solutions the way I like them stored
+[t_ret,u_ret] = ode15s(odefun,[0,T],u_init,odeopt);
+u_sol = u_ret';
+t_vec = t_ret';
 
 % Dump the boundary conditions, which are not fun
 u_sol = u_sol(i_int,:);
