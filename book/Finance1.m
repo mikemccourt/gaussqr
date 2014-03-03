@@ -71,7 +71,7 @@ bc = @(x,t) K*(4-exp(-r*t))*(sum(x,2)==4*K*d);
 % haven't yet) or run with an existing epsilon (for batch jobs)
 % If you have already run this script (and thus ep exists) the value
 % provided here is not accessed at all
-ep = .0001;
+ep = .1;
 
 % This is an option as to what spatial solver to use
 %    hssvd = -2 for polynomial collocation
@@ -85,7 +85,7 @@ solver = 1;
 % The following are HS-SVD parameters
 % The alpha value determines eigenfunction locality
 % reg = 1 asks for a low rank eigenfunction expansion
-alpha = .2;
+alpha = .3;
 reg = 0;
 
 % If hssvd = 0, you can choose what RBF you want to run with
@@ -159,12 +159,12 @@ if coupling
             end
             % Note the dividing factor required to account for the change in scale
             % we are imposing to normalize our spatial domain to [-1,1]
-            RM_1 = gqr_phi(GQR_1,2*x_1-1)*Rmat;
-            RxM_1 = gqr_phi(GQR_1,2*x_1-1,1)*Rmat*2;
-            RxxM_1 = gqr_phi(GQR_1,2*x_1-1,2)*Rmat*4;
-            RM_2 = gqr_phi(GQR_2,2*x_2/3-1)*Rmat;
-            RxM_2 = gqr_phi(GQR_2,2*x_2/3-1,1)*Rmat*2/3;
-            RxxM_2 = gqr_phi(GQR_2,2*x_2/3-1,2)*Rmat*4/9;
+            RM_1 = gqr_phi(GQR_1,2*x_1-1)*Rmat_1;
+            RxM_1 = gqr_phi(GQR_1,2*x_1-1,1)*Rmat_1*2;
+            RxxM_1 = gqr_phi(GQR_1,2*x_1-1,2)*Rmat_1*4;
+            RM_2 = gqr_phi(GQR_2,2*x_2/3-1)*Rmat_2;
+            RxM_2 = gqr_phi(GQR_2,2*x_2/3-1,1)*Rmat_2*2/3;
+            RxxM_2 = gqr_phi(GQR_2,2*x_2/3-1,2)*Rmat_2*4/9;
             % Form the differentiation matrices
             Dx_1 = RxM_1/RM_1;
             Dxx_1 = RxxM_1/RM_1;
@@ -374,7 +374,7 @@ C_truesol = @(x,t) normcdf(d1_truesol(x,t)).*x - K*normcdf(d2_truesol(x,t)).*exp
 %            =  1 plots the computed solution
 %            =  2 plots the error in the solution
 %            =  3 plots the error in the solution at time t=T
-plot_sol = 2;
+plot_sol = 0;
 
 % Plot the error in the solution
 if plot_sol~=0
