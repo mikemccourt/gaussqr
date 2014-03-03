@@ -71,7 +71,7 @@ bc = @(x,t) K*(4-exp(-r*t))*(sum(x,2)==4*K*d);
 % haven't yet) or run with an existing epsilon (for batch jobs)
 % If you have already run this script (and thus ep exists) the value
 % provided here is not accessed at all
-ep = .5;
+ep = .0001;
 
 % This is an option as to what spatial solver to use
 %    hssvd = -2 for polynomial collocation
@@ -80,13 +80,13 @@ ep = .5;
 %          = 1  for HS-SVD
 % NOTE: FD only allowed for evenly spaced points
 % NOTE: polynomials allowed only on Chebyshev spaced points
-solver = 0;
+solver = 1;
 
 % The following are HS-SVD parameters
 % The alpha value determines eigenfunction locality
 % reg = 1 asks for a low rank eigenfunction expansion
-alpha = 3;
-reg = 1;
+alpha = .2;
+reg = 0;
 
 % If hssvd = 0, you can choose what RBF you want to run with
 %    rbf_choice = 1 is Gaussian
@@ -149,6 +149,28 @@ if coupling
     
     switch solver
         case 1
+            GQR_1 = gqr_solveprep(reg,2*x_1-1,ep,alpha);
+            GQR_2 = gqr_solveprep(reg,2*x_2/3-1,ep,alpha);
+            if reg==0
+                Rmat_1 = [IN_1;GQR_1.Rbar];
+                Rmat_2 = [IN_2;GQR_2.Rbar];
+            else
+                Rmat = 1;
+            end
+            % Note the dividing factor required to account for the change in scale
+            % we are imposing to normalize our spatial domain to [-1,1]
+            RM_1 = gqr_phi(GQR_1,2*x_1-1)*Rmat;
+            RxM_1 = gqr_phi(GQR_1,2*x_1-1,1)*Rmat*2;
+            RxxM_1 = gqr_phi(GQR_1,2*x_1-1,2)*Rmat*4;
+            RM_2 = gqr_phi(GQR_2,2*x_2/3-1)*Rmat;
+            RxM_2 = gqr_phi(GQR_2,2*x_2/3-1,1)*Rmat*2/3;
+            RxxM_2 = gqr_phi(GQR_2,2*x_2/3-1,2)*Rmat*4/9;
+            % Form the differentiation matrices
+            Dx_1 = RxM_1/RM_1;
+            Dxx_1 = RxxM_1/RM_1;
+            Dx_2 = RxM_2/RM_2;
+            Dxx_2 = RxxM_2/RM_2;
+            cp_2_1_neumann = [Dx_1(N_1,:),-Dx_2(1,:)];
         case 0
             % Create a function for the RBF
             % The derivatives are needed to create the collocation matrix
@@ -376,6 +398,6 @@ if plot_sol~=0
         ylabel('option value error at t=T')
     end
     set(h,'edgecolor','none')
-    title(sprintf('dt=%g,\tN=%d,\tspace=%s,\tts=%d,solver=%d,\tep=%g\t',dt,N,pt_opt,ts_scheme,solver,ep))
+    title(sprintf('dt=%g,\tN=%d,\tspace=%s,solver=%d,\tep=%g\t',dt,N,pt_opt,solver,ep))
     xlabel('Spot price')
 end
