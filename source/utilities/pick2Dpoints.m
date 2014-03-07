@@ -1,10 +1,21 @@
 function [x,spacestr] = pick2Dpoints(a,b,N,spaceopt,ep)
 % function [x,spacestr] = pick2Dpoints(a,b,N,spaceopt,ep)
-% Must pass a=[D1 lower bound,   D2 lower bound]
-%           b=[D1 upper bound,   D2 upper bound]
-%           N=[num points in D1, num points in D2]
-% Note that ep is only needed for 'inner' points
-% This assumes that a, b, are 2 element row vectors
+% This function returns a matrix of 2D points, each row is a point
+%
+%   Inputs: a  - [dim1 lower bound,   dim2 lower bound]
+%           b  - [dim1 upper bound,   dim2 upper bound]
+%           N  - [num points in dim1, num points in dim2]
+%                Note: N scalar is treated as [N,N]
+%           spaceopt - (optional, default='even') choice of point distribution
+%                      'even' - uniformly spaced points
+%                      'cheb' - Chebyshev tensor grid
+%                      'inner' - centrally clustered points
+%                      'halton' - Halton quasi-random points
+%                      'wam' - See wamquadrangle
+%           ep - (only for 'inner' points) shape parameter
+%   Outputs: x - 2D points with spaceopt distribution
+%            spacestr - string explaining your point choice
+%
 % N should be a 2-vector, but if N is scalar, we reset N=[N,N]
 % Note that the Halton points only really need prod(N)
 
@@ -20,7 +31,7 @@ if length(N)==1
 end
 
 switch lower(spaceopt)
-    case 'even'
+    case {'even','unif'}
         x1 = repmat(linspace(a(1),b(1),N(1))',1,N(2));
         x2 = repmat(linspace(a(2),b(2),N(2)),N(1),1);
         x = [x1(:),x2(:)];
@@ -42,7 +53,7 @@ switch lower(spaceopt)
         x2s = repmat(x2',N(1),1);
         x = [x1s(:),x2s(:)];
         spacestr=' Chebyshev points';
-    case 'halton'
+    case {'halton','halt'}
         pN = prod(N);
         xh = haltonseq(pN,2);
         x = (repmat(b,pN,1)-repmat(a,pN,1)).*xh+repmat(a,pN,1);
@@ -52,4 +63,6 @@ switch lower(spaceopt)
         % used more flexibly, i.e., arbitrary quadrilateral
         x = wamquadrangle(N(1)-1,[a(1) a(2); b(1) a(2); b(1) b(2); a(1) b(2)]);
         spacestr = ' WAM quadrilateral';
+    otherwise
+        error('Unrecognized spaceopt=%s',spaceopt)
 end

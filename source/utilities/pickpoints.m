@@ -28,7 +28,7 @@ if nargin<6
 end
 
 switch lower(spaceopt)
-    case 'even'
+    case {'even','unif'}
         x = linspace(a,b,N)';
         spacestr=' evenly spaced';
     case 'inner'
@@ -40,7 +40,7 @@ switch lower(spaceopt)
     case 'cheb'
         x = -.5*(b-a)*cos(pi*(0:N-1)/(N-1))' + .5*(b+a);
         spacestr=' Chebyshev points';
-    case 'halton'
+    case {'halton','halt'}
         x = (b-a)*haltonseq(N,1) + a;
         spacestr=' halton points';
     case 'rand'
@@ -51,4 +51,6 @@ switch lower(spaceopt)
         xmax = max(x);
         x = (b-a)/(2*xmax)*x + (b+a)/2;
         spacestr=' eigenfunction points';
+    otherwise
+        error('Unrecognized spaceopt=%s',spaceopt)
 end
