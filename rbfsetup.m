@@ -37,17 +37,15 @@ addpath(sourceDir,gaussqrDir,gqrauxiliaryDir,mqrauxiliaryDir,utilitiesDir,otherD
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 global GAUSSQR_PARAMETERS
 
-% Checks if the spline toolbox is available
-% This is used to produce some results for the MaternQR stuff
-GAUSSQR_PARAMETERS.SPLINE_TOOLBOX_AVAILABLE = length(findstr('splines',path))>0;
-
-% Checks if the curve fitting toolbox is available
-% This is used to produce some results for the MaternQR stuff
-GAUSSQR_PARAMETERS.CURVEFIT_TOOLBOX_AVAILABLE = length(findstr('curvefit',path))>0;
-
-% Checks if the symbolic toolbox is available
-% This is used to produce some results for the MaternQR stuff
-GAUSSQR_PARAMETERS.SYMBOLIC_TOOLBOX_AVAILABLE = length(findstr('symbolic',path))>0;
+% Check to see if various toolboxes are available
+v = ver;
+GAUSSQR_PARAMETERS.CURVEFIT_TOOLBOX_AVAILABLE = any(strcmp('Curve Fitting Toolbox', {v.Name}));
+GAUSSQR_PARAMETERS.IMAGEPROC_TOOLBOX_AVAILABLE = any(strcmp('Image Processing Toolbox', {v.Name}));
+GAUSSQR_PARAMETERS.NEURALNETWORK_TOOLBOX_AVAILABLE = any(strcmp('Neural Network Toolbox', {v.Name}));
+GAUSSQR_PARAMETERS.OPTIMIZATION_TOOLBOX_AVAILABLE = any(strcmp('Optimization Toolbox', {v.Name}));
+GAUSSQR_PARAMETERS.STATISTICS_TOOLBOX_AVAILABLE = any(strcmp('Statistics Toolbox', {v.Name}));
+GAUSSQR_PARAMETERS.SYMBOLIC_TOOLBOX_AVAILABLE = any(strcmp('Symbolic Math Toolbox', {v.Name}));
+GAUSSQR_PARAMETERS.WAVELET_TOOLBOX_AVAILABLE = any(strcmp('Wavelet Toolbox', {v.Name}));
 
 % At what point should the asymptotic approximation to Hermite be used
 % Anything between 35-60 you shouldn't be able to tell the difference

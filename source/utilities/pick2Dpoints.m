@@ -18,6 +18,12 @@ function [x,spacestr] = pick2Dpoints(a,b,N,spaceopt,ep)
 %
 % N should be a 2-vector, but if N is scalar, we reset N=[N,N]
 % Note that the Halton points only really need prod(N)
+% Also, the Halton points do NOT include [0,0]
+global GAUSSQR_PARAMETERS
+if ~isstruct(GAUSSQR_PARAMETERS)
+    error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
+end
+stats_available = GAUSSQR_PARAMETERS.STATISTICS_TOOLBOX_AVAILABLE;
 
 if nargin<5
     ep=0;
@@ -54,9 +60,15 @@ switch lower(spaceopt)
         x = [x1s(:),x2s(:)];
         spacestr=' Chebyshev points';
     case {'halton','halt'}
-        pN = prod(N);
-        xh = haltonseq(pN,2);
-        x = (repmat(b,pN,1)-repmat(a,pN,1)).*xh+repmat(a,pN,1);
+        % Add the round in there to make sure an integer is used
+        pN = round(prod(N));
+        if stats_available
+            point_generator = haltonset(2,'Skip',1);
+            xh = net(point_generator,pN);
+        else
+            xh = haltonseq(pN,2);
+        end
+            x = (repmat(b,pN,1)-repmat(a,pN,1)).*xh+repmat(a,pN,1);
         spacestr=' Halton points';
     case 'wam'
         % Here, centered symmetric (actually Chebyshev points), but can be
