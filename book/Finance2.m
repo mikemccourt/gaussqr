@@ -1,4 +1,4 @@
-% Finance1.m
+% Finance2.m
 % Basic finance example
 % Drawn from Larsson et al 2013
 %
@@ -35,17 +35,19 @@
 % NOTE: This requires the statistics toolbox, for now
 
 % K is the scaled exercise price, which we set as 1
-% NOTE: Changing this would require changing stuff below as well
 K = 1;
 
 % T is the exercise time, chosen to be 1
 T = 1;
 
 % d is the number of assets in the option
-d = 1;
+% NOTE: This value has to be fixed for this problem
+d = 2;
 
-% B is the volatility
-B = .3;
+% B is the dxd volatility matrix (nonsingular)
+% It has diagonal elements .3, off diagonal elements .05
+B = .3*eye(d) + .05*(ones(d)-eye(d));
+BBt = B*B';
 
 % r is the risk-free interest rate
 r = .05;
@@ -64,23 +66,23 @@ payout = @(x) max(0,sum(x-K,2)/d);
 % are not required to provide well-posedness.
 % Note: This function will return zero everywhere except along the plane
 % sum(x)==4*K*d, meaning the x=0 BC is automatically built-in
-bc = @(x,t) K*(4-exp(-r*t))*(sum(x,2)==4*K*d);
+bc = @(x,t) (mean(x,2)-K*exp(-r*t)).*(mean(x,2)>=4*K);
 
 % We must choose a shape parameter ep>0
 % This if-block will allow you to either choose epsilon here (if you
 % haven't yet) or run with an existing epsilon (for batch jobs)
 % If you have already run this script (and thus ep exists) the value
 % provided here is not accessed at all
-ep = .1;
+ep = 1;
 
 % This is an option as to what spatial solver to use
-%   solver = -2 for polynomial collocation
+%    hssvd = -2 for polynomial collocation
 %          = -1 for finite differences
 %          = 0  for RBF-direct
 %          = 1  for HS-SVD
 % NOTE: FD only allowed for evenly spaced points
 % NOTE: polynomials allowed only on Chebyshev spaced points
-solver = -2;
+solver = 0;
 
 % The following are HS-SVD parameters
 % The alpha value determines eigenfunction locality
@@ -88,7 +90,7 @@ solver = -2;
 alpha = .3;
 reg = 0;
 
-% If solver = 0, you can choose what RBF you want to run with
+% If hssvd = 0, you can choose what RBF you want to run with
 %    rbf_choice = 1 is Gaussian
 %               = 2 is Multiquadric
 rbf_choice = 1;
@@ -98,17 +100,19 @@ rbf_choice = 1;
 % pt_opt is the distribution of points in the domain
 %     pt_opt = 'even' is uniformly space
 %            = 'cheb' has Chebyshev spacing
+%            = 'halt' is the Halton points
+%            = 'tr_halt' is triangular, Halton interiors
 %            = 'cp_even' has coupling (see below), even interiors
 %            = 'cp_cheb' has coupling (see below), Cheb interiors
 % NOTE: pt_opt may be overwritten below if incompatible with solver
-N = 20;
-pt_opt = 'cp_cheb';
+N = 60;
+pt_opt = 'cheb';
 
 % Overwrite point selection if the solver is incompatible
-if solver==-1 && ~strcmp(pt_opt(end-3:end),'even')
+if solver==-1 && ~strcmp(pt_opt,'even')
     warning('Incompatible: solver=%d, pt_opt=%s.  Reset to ''even''',solver,pt_opt);
     pt_opt = 'even';
-elseif solver==-2 && ~strcmp(pt_opt(end-3:end),'cheb')
+elseif solver==-2 && ~strcmp(pt_opt,'cheb')
     warning('Incompatible: solver=%d, pt_opt=%s.  Reset to ''cheb''',solver,pt_opt);
     pt_opt = 'cheb';
 end
@@ -122,10 +126,8 @@ end
 % coupling_decay(t) should start at 1 and decay to 0, so that at T=1 it has
 % almost no effect on the problem
 % Possible ideas include exp(-t) or 1-sqrt(t)
+% NOTE: Not active yet
 coupling = strcmp(pt_opt(1:3),'cp_');
-pt_opt = pt_opt(end-3:end);
-% coupling_decay = @(t) exp(-7*t/T);
-coupling_decay = @(t) 0*t;
 
 if coupling
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -252,35 +254,78 @@ if coupling
         'MStateDependence','none','MassSingular','yes');
 else
     % Select some points based on the user requests
-    x = pickpoints(0,4*K,N,pt_opt);
-    N = length(x);
-    
-    % Cut up the domain into pieces to work with
-    % x_bc and x_int are the boundary and interior points
-    % x_eval is a set of points to evaluate the solution on
-    x_int = x(2:end-1);
-    x_bc = x([1,end]);
-    x_all = [x_int;x_bc];
-    N_int = length(i_int);
-    N_bc = length(i_bc);
-    i_int = 1:N_int;
-    i_bc = N_int+1:N_int+N_bc;
+    % even, cheb and halt both involve the full square of points
+    % tr_halt involves a triangle of points instead
+    % tr_cheb doesn't exist yet
+    sqN = ceil(sqrt(N));
+    switch pt_opt
+        case {'even','cheb'}
+            % Start with all the points and separate them into the interior
+            % and boundary regions
+            x_all = pick2Dpoints([0,0],4*d*K*[1,1],sqN,pt_opt);
+            i_bc = unique([1:sqN,(sqN-1)*sqN+1:sqN^2,1:sqN:sqN^2,sqN:sqN:sqN^2]);
+            i_int = setdiff(1:sqN^2,i_bc);
+            x_bc = x_all(i_bc,:);
+            x_int = x_all(i_int,:);
+            N_int = length(x_int);
+            N_bc = length(x_bc);
+        case 'halt'
+            % If we have the Halton points we need to build in boundary
+            % points because they don't exist in the set
+            x_unif = 4*d*K*pickpoints(0,1,sqN,'even');
+            x_bc = [[zeros(sqN-1,1) x_unif(1:end-1)]; ...
+                [x_unif(2:end) zeros(sqN-1,1)]; ...
+                [4*d*K*ones(sqN-1,1)  x_unif(2:end)]; ...
+                [x_unif(1:end-1)  4*d*K*ones(sqN-1,1)]];
+            N_bc = length(x_bc);
+            x_int = pick2Dpoints([0,0],4*d*K*[1,1],sqrt(N-N_bc),'halton');
+            N_int = length(x_int);
+            x_all = [x_int;x_bc];
+            i_int = 1:N_int;
+            i_bc = N_int+1:N_int+N_bc;
+        case 'tr_halt'
+            % Construct a square of points and dump the points outside the domain
+            % These are the triangle points, which can only be used for the RBFs
+            x_sq = pick2Dpoints([0,0],4*d*K*[1,1],sqN,'halton');
+            x_int = x_sq(sum(x_sq,2)<4*d*K,:);
+            
+            x_unif = 4*d*K*pickpoints(0,1,sqN,'even');
+            x_bc = [[zeros(sqN-2,1) x_unif(2:end-1)]; ...
+                [x_unif(1:end-1) zeros(sqN-1,1)]; ...
+                [x_unif (4*d*K-x_unif)]];
+            x_all = [x_int;x_bc];
+            N_int = length(x_int);
+            N_bc = length(x_bc);
+            i_int = 1:N_int;
+            i_bc = N_int+1:N_int+N_bc;
+        case 'tr_cheb'
+            error('Not implemented yet')
+    end
+        
+    N = length(x_all);
+    pause
     
     % Set up the solver we are using
     switch solver
         case 1
             % Note the dividing factor required to account for the change in scale
-            % we are imposing to normalize our spatial domain to [-1,1]
-            GQR = gqr_solveprep(reg,(x_all-2)/2,ep,alpha);
+            % we are imposing to center our domain around 0
+            % That's why this (2*K*d) term is floating around
+            % We compress our domain, and then also need to apply it to our
+            % derivatives because of the chain rule
+            GQR = gqr_solveprep(reg,x_all/(2*K*d)-1,ep,alpha);
             if reg==0
                 Rmat = [eye(N);GQR.Rbar];
             else
                 Rmat = 1;
             end
-            RM_all = gqr_phi(GQR,(x_all-2)/2)*Rmat;
-            RM_int = gqr_phi(GQR,(x_int-2)/2)*Rmat;
-            RxM_int = gqr_phi(GQR,(x_int-2)/2,1)*Rmat/2;
-            RxxM_int = gqr_phi(GQR,(x_int-2)/2,2)*Rmat/4;
+            RM_all = gqr_phi(GQR,x_all/(2*K*d)-1)*Rmat;
+            RM_int = gqr_phi(GQR,x_all/(2*K*d)-1)*Rmat;
+            RxM_int = gqr_phi(GQR,x_all/(2*K*d)-1,[1,0])*Rmat/(2*K*d);
+            RyM_int = gqr_phi(GQR,x_all/(2*K*d)-1,[0,1])*Rmat/(2*K*d);
+            RxxM_int = gqr_phi(GQR,x_all/(2*K*d)-1,[2,0])*Rmat/(2*K*d)^2;
+            RxyM_int = gqr_phi(GQR,x_all/(2*K*d)-1,[1,1])*Rmat/(2*K*d)^2;
+            RyyM_int = gqr_phi(GQR,x_all/(2*K*d)-1,[0,4])*Rmat/(2*K*d)^2;
         case 0
             % Create a function for the RBF
             % The derivatives are needed to create the collocation matrix
@@ -288,22 +333,28 @@ else
                 case 1
                     rbf = @(e,r) exp(-(e*r).^2);
                     rbfdx = @(e,r,dx) -2*e^2*dx.*exp(-(e*r).^2);
-                    rbfdxx = @(e,r) 2*e^2*(2*(e*r).^2-1).*exp(-(e*r).^2);
+                    rbfdxx = @(e,r,dx) 2*e^2*(2*(e*dx).^2-1).*exp(-(e*r).^2);
+                    rbfdxy = @(e,r,dx,dy) 4*e^4*dx.*dy.*exp(-(e*r).^2);
                 case 2
                     rbf = @(e,r) sqrt(1+(e*r).^2);
                     rbfdx = @(e,r,dx) e^2*dx./sqrt(1+(e*r).^2);
-                    rbfdxx = @(e,r) e^2./(1+(e*r).^2).^(3/2);
+                    rbfdxx = @(e,r,dy) e^2*(1+(e*dy).^2)./(1+(e*r).^2).^(3/2);
+                    rbfdxy = @(e,r,dx,dy) e^4*dx.*dy./sqrt(1+(e*r).^2);
             end
             % Could also consider the Multiquadrics
             % We also form distance matrices which we need for evaluation
             DM_all = DistanceMatrix(x_all,x_all);
             DM_int = DistanceMatrix(x_int,x_all);
-            DiffM_int = DifferenceMatrix(x_int,x_all);
+            DiffxM_int = DifferenceMatrix(x_int(:,1),x_all(:,1));
+            DiffyM_int = DifferenceMatrix(x_int(:,2),x_all(:,2));
             % The basis is evaluated using those distance matrices
             RM_all = rbf(ep,DM_all);
             RM_int = rbf(ep,DM_int);
-            RxM_int = rbfdx(ep,DM_int,DiffM_int);
-            RxxM_int = rbfdxx(ep,DM_int);
+            RxM_int = rbfdx(ep,DM_int,DiffxM_int);
+            RyM_int = rbfdx(ep,DM_int,DiffyM_int);
+            RxxM_int = rbfdxx(ep,DM_int,DiffxM_int);
+            RyyM_int = rbfdxx(ep,DM_int,DiffyM_int);
+            RxyM_int = rbfdxy(ep,DM_int,DiffxM_int,DiffyM_int);
         case -1
             delta_x = 4*K/(N-1);
             RM_all = 1; % This isn't needed for FD
@@ -326,12 +377,19 @@ else
     % Note that only L_mat is used after this block
     D0 = RM_int/RM_all;
     Dx = RxM_int/RM_all;
+    Dy = RyM_int/RM_all;
     Dxx = RxxM_int/RM_all;
+    Dyy = RyyM_int/RM_all;
+    Dxy = RxyM_int/RM_all;
     % Form the differential operator using the differentiation matrices
-    L_mat = r*diag(x_int)*Dx+1/2*B^2*diag(x_int.^2)*Dxx-r*D0;
+    L_mat = r*(diag(x_int(:,1))*Dx + diag(x_int(:,2))*Dy) + ...
+        1/2*(BBt(1,1)*diag(x_int(:,1).^2)*Dxx + ...
+             BBt(2,2)*diag(x_int(:,2).^2)*Dyy + ...
+             2*BBt(1,2)*diag(x_int(:,1).*x_int(:,2))*Dxy) - ...
+        r*D0;
     % Swap the columns, if needed for finite differences
     if solver<0
-        L_mat = L_mat(:,[2:N-1,1,N]);
+        error('Need to figure this out')
     end
     
     % We need to set up the ODE solver
@@ -353,49 +411,26 @@ u_init = payout(x_all);
 % Perform the time stepping
 % Store the solutions the way I like them stored
 [t_ret,u_ret] = ode15s(odefun,[0,T],u_init,odeopt);
-u_sol = u_ret';
-t_vec = t_ret';
+u_sol = u_ret(end,:)';
 
-% Dump the boundary conditions, which are not fun
-u_sol = u_sol(i_int,:);
-
-% The true solution is described above, and defined below
-% Note that we have substituted t for T-t since we are solving an initial
-% value problem and not a final value problem
-d1_truesol = @(x,t) 1./(B*sqrt(t)).*(log(x/K)+(r+B^2/2)*t);
-d2_truesol = @(x,t) d1_truesol(x,t) - B*sqrt(t);
-C_truesol = @(x,t) normcdf(d1_truesol(x,t)).*x - K*normcdf(d2_truesol(x,t)).*exp(-r*t);
-
-% Choose whether or not to plot something
+% Choose whether or not to plot something at time t=T
 %   plot_sol = -1 means plot just the true solution
 %            =  0 means no plot
 %            =  1 plots the computed solution
 %            =  2 plots the error in the solution
-%            =  3 plots the error in the solution at time t=T
-plot_sol = 3;
+plot_sol = -1;
 
 % Plot the error in the solution
+% Use griddata to move scattered results to surface grid plot
 if plot_sol~=0
     figure
-    [XX,TT] = meshgrid(x_int,t_vec);
-    if plot_sol~=3
-        switch plot_sol
-            case -1
-                h = surf(XX,TT,C_truesol(XX,TT));
-                zlabel('true option value')
-            case 1
-                h = surf(XX,TT,u_sol');
-                zlabel('option value')
-            case 2
-                h = surf(XX,TT,abs(u_sol' - C_truesol(XX,TT)));
-                zlabel('option value error')
-        end
-        ylabel('time to expiry')
-    else
-        h = surf(XX,TT,abs(u_sol' - C_truesol(XX,TT)));
-        ylabel('option value error at t=T')
-    end
+    x_plot = pickpoints(0,4*K*d,30);
+    [X1,X2] = meshgrid(x_plot,x_plot);
+    u_func = TriScatteredInterp(x_all(:,1),x_all(:,2),u_sol);
+    h = surf(X1,X2,u_func(X1,X2));
     set(h,'edgecolor','none')
     title(sprintf('N=%d,\tspace=%s,solver=%d,\tep=%g\t',N,pt_opt,solver,ep))
-    xlabel('Spot price')
+    xlabel('Spot price for asset 1')
+    ylabel('Spot price for asset 2')
+    zlabel('Computed option value')
 end
