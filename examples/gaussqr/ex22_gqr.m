@@ -16,9 +16,12 @@ true_solution = @(x) exp(x) + x.^2;
 
 % Choose the RBF that I want to use
 % It'll be Gaussian so that I can compare to the GaussQR method
-ep = 1;
+ep = .2;
 rbf = @(e,r) exp(-(e*r).^2);
 rbfxx = @(e,r) 2*e^2*(2*(e*r).^2-1).*exp(-(e*r).^2);
+
+% Choose the RBF-Direct or GaussQR solver
+use_gaussqr = 1;
 
 % Choose some points in the domain that are not evenly spaced, to emphasize
 % that this does not require the standard FD structure
@@ -61,11 +64,19 @@ for i=i_int
     % K is the interpolation matrix, sometimes called the Gram matrix
     % The right hand side is designed so that the differentiation matrix
     % annihilates our basis
-    DistMat = DistanceMatrix(x_closest,x_closest);
-    K = rbf(ep,DistMat);
-    RHSDistMat = DistanceMatrix(this_x,x_closest);
-    kxx = rbfxx(ep,RHSDistMat);
-    closest_coefs{i} = kxx/K;
+    if use_gaussqr
+        GQR = gqr_solveprep(0,x_closest,ep,1);
+        psixx = gqr_phi(GQR,this_x,2)*[eye(n_closest);GQR.Rbar];
+        Psi = GQR.stored_phi1 + GQR.stored_phi2*GQR.Rbar;
+        Diff_Mat_this_x = psixx/Psi;
+    else
+        DistMat = DistanceMatrix(x_closest,x_closest);
+        K = rbf(ep,DistMat);
+        RHSDistMat = DistanceMatrix(this_x,x_closest);
+        kxx = rbfxx(ep,RHSDistMat);
+        Diff_Mat_this_x = kxx/K;
+    end
+    closest_coefs{i} = Diff_Mat_this_x;
 end
 
 % Define the matrix that we need to invert for this problem: Ax=b
