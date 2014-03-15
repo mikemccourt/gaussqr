@@ -1,5 +1,35 @@
 function GQR = gqr_solve(x,y,ep,alpha,M)
+% This function creates a GQR object that stores all the necessary
+% information to conduct a GaussQR interpolation
+% The standard way of calling this function is
+%     gqr_solve(x,y,ep,alpha)
+%
+% function GQR = gqr_solve(x,y,ep,alpha)
+%   Inputs : x - Function locations
+%            y - Function values
+%            ep - Gaussian shape parameter
+%            alpha - GaussQR locality parameter
+%  Outputs : GQR - The GaussQR object needed for computation
+%
 % function GQR = gqr_solve(x,y,ep,alpha,M)
+%   Inputs : M - Eigenfunction length
+% This allows the user to bypass the default set in rbfsetup
+% The default is GAUSSQR_PARAMETERS.MAX_EXTRA_EFUNC
+%
+% function GQR = gqr_solve(x,y,ep)
+%   **Not Recommended**
+% Calling the function in this manner will cause GaussQR to guess at the
+% appropriate alpha value, which it is not good at doing.
+%
+% function GQR = gqr_solve(GQR,y)
+% If you have already called gqr_solveprep manually, you can pass the GQR
+% object returned from that to this function to prevent having to
+% reevaluate and factor the matrix.
+%
+%
+% ============================
+% Argument explanation
+% ============================
 % This function accepts required inputs x, y and ep
 % x is a Nxd vector of input data points of the form
 %     x = [x1';x2';...;xN'], x1 is a column vector
@@ -33,10 +63,15 @@ alertuser = GAUSSQR_PARAMETERS.WARNINGS_ON;
 storephi = GAUSSQR_PARAMETERS.STORED_PHI_FOR_EVALUATION;
 
 % Check input stuff, and call solveprep, to create GQR object
+N = size(y,1);
 switch nargin
+    case 2
+        GQR = x;
+        if size(GQR.Rbar,2)~=N
+            error('GQR dimensions mismatch y: expected %d, but got %d',size(GQR.Rbar,2),size(y,1))
+        end
     case {3,4,5}
-        [N,d] = size(x);
-        if sum(N~=size(y,1))
+        if N~=size(x,1)
             error('Different number of input and output points (x and y)')
         elseif size(y,2)~=1
             error('You can only pass a 1D output vector y')
