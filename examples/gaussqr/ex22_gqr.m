@@ -72,8 +72,8 @@ for i=i_int
     else
         DistMat = DistanceMatrix(x_closest,x_closest);
         K = rbf(ep,DistMat);
-        RHSDistMat = DistanceMatrix(this_x,x_closest);
-        kxx = rbfxx(ep,RHSDistMat);
+        DiffOpMat = DistanceMatrix(this_x,x_closest);
+        kxx = rbfxx(ep,DiffOpMat);
         Diff_Mat_this_x = kxx/K;
     end
     closest_coefs{i} = Diff_Mat_this_x;
@@ -106,7 +106,7 @@ b = zeros(N,1);
 b(i_int) = interior_func(x(i_int));
 b(i_bc) = boundary_func(x(i_bc));
 
-% Solve the system and plot the answer and the error
+% Solve the system and plot the error
 u = A\b;
 [x_plot,plot_ind] = sort(x);
 u_plot = u(plot_ind);
