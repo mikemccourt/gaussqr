@@ -9,6 +9,10 @@ function err = errcompute(x,y,n)
 % Optional arguments
 %   n - length of vector x and y
 %       to be used if some values of x and y are identical by design
+%
+% If called using one argument:
+%    function err = errcompute(x)
+% it computes the error wrt a vector of all zeros.
 
 global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
@@ -19,10 +23,11 @@ errstyle = GAUSSQR_PARAMETERS.ERROR_STYLE;
 alertuser = GAUSSQR_PARAMETERS.WARNINGS_ON;
 
 switch nargin
-    case 1
-        y = zeros(size(x));
-    case 2
+    case {1,2}
         n = size(x,1);
+        if nargin==1
+            y = zeros(size(x));
+        end
     case 3
         if n<1 || n>length(x)
             warning('Must have 1<n<length(x)')

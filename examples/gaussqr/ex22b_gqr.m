@@ -78,7 +78,7 @@ for i=[i_int,i_bcN]
     this_x = x(i,:);
     [~,sorted_indices] = sort(sum((x-repmat(this_x,N,1)).^2,2));
     closest_indices{i} = sorted_indices(1:n_closest)';
-    x_closest = x(sorted_indices(1:n_closest),:);
+    x_closest = x(closest_indices{i},:);
     
     % This step below performs the standard RBF solve
     % It just looks different because instead of solving Kc=y we are
@@ -86,6 +86,7 @@ for i=[i_int,i_bcN]
     % K is the interpolation matrix, sometimes called the Gram matrix
     % The right hand side is designed so that the differentiation matrix
     % annihilates our basis
+    % Also note that the differential operator is Laplacian - lambda^2*I
     if use_gaussqr
         GQR = gqr_solveprep(0,x_closest,ep,1);
         InterpMat = GQR.stored_phi1 + GQR.stored_phi2*GQR.Rbar;
@@ -99,7 +100,7 @@ for i=[i_int,i_bcN]
         InterpMat = rbf(ep,DistMat);
         DiffOpDistMat = DistanceMatrix(this_x,x_closest);
         if ismember(i,i_int)
-            DiffOp = rbfL(ep,DiffOpDistMat);
+            DiffOp = rbfL(ep,DiffOpDistMat) - lambda^2*rbf(ep,DiffOpDistMat);
         else
             yDiffMat = DifferenceMatrix(this_x(:,2),x_closest(:,2));
             DiffOp = rbfy(ep,DiffOpDistMat,yDiffMat);
@@ -121,7 +122,6 @@ A = zeros(N);
 % We also need to apply the -lambda^2u
 for i=i_int
     A(i,closest_indices{i}) = closest_coefs{i};
-    A(i,i) = A(i,i) - lambda^2;
 end
 
 % We also must define the boundary condition operator
@@ -166,7 +166,7 @@ surf(X,Y,E)
 % zlim([-1,1])
 plot(x_bcN(:,1),x_bcN(:,2),'or',x_bcD(:,1),x_bcD(:,2),'bx',x_int(:,1),x_int(:,2),'m.')
 zlabel('log_{10} Absolute Error')
-E_err = norm(10.^E(isfinite(E)))/sqrt(N);
+E_err = errcompute(u,dirichlet_bc(x(:,1),x(:,2)));
 title(sprintf('N=%d, k=%d, ep=%g, err=%g',N,n_closest,ep,E_err))
 
 % Plot the sparsity pattern for this matrix
