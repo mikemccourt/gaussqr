@@ -72,6 +72,10 @@ optimopt_QP = optimset('LargeScale','off','Display','off','MaxIter',1000);
 
 % Solve the quadratic program
 [sol_QP,fval,exitflag,output] = quadprog(H_QP,f_QP,A_QP,b_QP,Aeq_QP,beq_QP,lb_QP,ub_QP,x0_QP,optimopt_QP);
+
+% Create the coefficients and identify the support vectors
+% A fudge factor is created to allow for slightly nonzero values
+svm_fuzzy_logic = 1e-3;
 svm_coef = train_class.*sol_QP;
 support_vectors = sol_QP>svm_fuzzy_logic;
 
@@ -80,7 +84,6 @@ support_vectors = sol_QP>svm_fuzzy_logic;
 % but only for i such that 0<alpha_i<C, not <=
 % I take the mean of all such values, but they should all be the same
 % NOTE: It's possible no such point will exist, maybe
-svm_fuzzy_logic = 1e-3;
 bias_find_coef = find(sol_QP>svm_fuzzy_logic & sol_QP<1-svm_fuzzy_logic);
 bias = mean(train_class(bias_find_coef) - K(bias_find_coef,:)*svm_coef);
 
