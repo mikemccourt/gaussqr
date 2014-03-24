@@ -1,3 +1,6 @@
+% To allow for the low-rank expansion parameter to be set
+global GAUSSQR_PARAMETERS
+
 % Initial example for support-vector machines
 if exist('rng','builtin')
     rng(0);
@@ -9,6 +12,16 @@ end
 % Define our Gaussian RBF
 rbf = @(e,r) exp(-(e*r).^2);
 ep = 1;
+
+% Choose a box constraint
+box_constraint = 1;
+
+% Choose the number of cross-validations to compute
+cv_fold = 3;
+
+% Use the low rank matrix multiplication strategy
+low_rank = 1;
+GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .5;
 
 % Define our normal distributions
 grnmean = [1,0];
@@ -50,63 +63,77 @@ end
 train_data = [grnpts;redpts];
 train_class = ones(grn_train_N+red_train_N,1);
 train_class(grn_train_N+1:grn_train_N+red_train_N) = -1;
+N_train = length(train_class);
 test_data = [grnpop;redpop];
 test_class = ones(grn_test_N+red_test_N,1);
 test_class(grn_test_N+1:grn_test_N+red_test_N) = -1;
-
-% Design the necessary quadratic programming problem
-box_constraint = .2;
-DM = DistanceMatrix(train_data,train_data);
-K = rbf(ep,DM);
-H_QP = (train_class*train_class').*K;
-H_QP = .5*(H_QP + H_QP'); % To make sure it symmetric at machine precision
-f_QP = -ones(size(train_class)); % quadprog solves the min, not the max problem
-A_QP = zeros(size(f_QP'));
-b_QP = 0;
-Aeq_QP = train_class';
-beq_QP = 0;
-lb_QP = zeros(size(train_class));
-ub_QP = box_constraint*ones(size(train_class));
-x0_QP = zeros(size(train_class));
-optimopt_QP = optimset('LargeScale','off','Display','off','MaxIter',1000);
-
-% Solve the quadratic program
-[sol_QP,fval,exitflag,output] = quadprog(H_QP,f_QP,A_QP,b_QP,Aeq_QP,beq_QP,lb_QP,ub_QP,x0_QP,optimopt_QP);
-
-% Create the coefficients and identify the support vectors
-% A fudge factor is created to allow for slightly nonzero values
-svm_fuzzy_logic = 1e-3;
-svm_coef = train_class.*sol_QP;
-support_vectors = sol_QP>svm_fuzzy_logic;
-
-% To solve for b, we can just compute
-%    b = y_i - sum_j=1^n alpha_i*y_i K(x_i,x_j)
-% but only for i such that 0<alpha_i<C, not <=
-% I take the mean of all such values, but they should all be the same
-% NOTE: It's possible no such point will exist, maybe
-bias_find_coef = find(sol_QP>svm_fuzzy_logic & sol_QP<1-svm_fuzzy_logic);
-bias = mean(train_class(bias_find_coef) - K(bias_find_coef,:)*svm_coef);
-
-% Create a function to evaluate the SVM
-svm_eval = @(x) sign(rbf(ep,DistanceMatrix(x,train_data))*svm_coef + bias);
-
-% Evaluate the classifications of the test data
-% Separate the correct classifications from the incorrect classifications
-predicted_class = svm_eval(test_data);
-correct = predicted_class==test_class;
-incorrect = predicted_class~=test_class;
+N_test = length(test_class);
 
 % Plot the results, if requested
-if plot_results
-    plot(grnpop(:,1),grnpop(:,2),'g+','markersize',12)
-    hold on
-    plot(redpop(:,1),redpop(:,2),'rx','markersize',12)
-    plot(test_data(correct,1),test_data(correct,2),'ob','markersize',12)
-    plot(test_data(incorrect,1),test_data(incorrect,2),'oc','markersize',12,'linewidth',2)
-    plot(grnmean(1),grnmean(2),'gh','linewidth',3)
-    plot(redmean(1),redmean(2),'rh','linewidth',3)
-    plot(grnpts(:,1),grnpts(:,2),'g.')
-    plot(redpts(:,1),redpts(:,2),'r.')
-    plot(train_data(support_vectors,1),train_data(support_vectors,2),'ok','markersize',3)
-    hold off
+switch(plot_results)
+    case 1
+        % Fit the SVM using the necessary parameters
+        SVM = gqr_fitsvm(train_data,train_class,ep,box_constraint,low_rank);
+
+        % Evaluate the classifications of the test data
+        % Separate the correct classifications from the incorrect classifications
+        predicted_class = SVM.eval(test_data);
+        correct = predicted_class==test_class;
+        incorrect = predicted_class~=test_class;
+        
+        % Plot the results
+        d = 0.02;
+        [CD1,CD2] = meshgrid(min(train_data(:,1)):d:max(train_data(:,1)),...
+            min(train_data(:,2)):d:max(train_data(:,2)));
+        contour_data = [CD1(:),CD2(:)];
+        contour_class = SVM.eval(contour_data);
+
+        plot(grnpop(:,1),grnpop(:,2),'g+','markersize',12)
+        hold on
+        plot(redpop(:,1),redpop(:,2),'rx','markersize',12)
+        plot(test_data(correct,1),test_data(correct,2),'ob','markersize',12)
+        plot(test_data(incorrect,1),test_data(incorrect,2),'oc','markersize',12,'linewidth',2)
+        plot(grnmean(1),grnmean(2),'gh','linewidth',3)
+        plot(redmean(1),redmean(2),'rh','linewidth',3)
+        plot(grnpts(:,1),grnpts(:,2),'g.')
+        plot(redpts(:,1),redpts(:,2),'r.')
+        plot(train_data(SVM.sv_index,1),train_data(SVM.sv_index,2),'ok','markersize',3)
+        contour(CD1,CD2,reshape(contour_class,size(CD1)),[0 0],'k');
+        hold off
+    case 2
+        % Test a bunch of ep values with a fixed box_constraint to see what the
+        % results look like
+        epvec = logspace(-1,2,20);
+        errvec = [];
+        k = 1;
+        for ep=epvec
+            SVM = gqr_fitsvm(train_data,train_class,ep,box_constraint);
+            errvec(k) = sum(test_class ~= SVM.eval(test_data));
+            k = k + 1
+        end
+        semilogx(epvec,errvec)
+    case 3
+        % Test a bunch of box_constraint values with a fixed ep to see what the
+        % results look like
+        bcvec = linspace(0.01,10,20);
+        errvec = [];
+        k = 1;
+        for bc=bcvec
+            SVM = gqr_fitsvm(train_data,train_class,ep,bc);
+            errvec(k) = sum(test_class ~= SVM.eval(test_data));
+            k = k + 1
+        end
+        plot(bcvec,errvec)
+    case 4
+        % Define the objective function and try to find the minimum ep
+        % value on an interval
+        epvec = logspace(-1,2,20);
+        errvec = [];
+        k = 1;
+        for ep=epvec
+            errvec(k) = gqr_svmcv(cv_fold,train_data,train_class,ep,box_constraint);
+            k = k + 1
+        end
+        semilogx(epvec,errvec)
+        ep_opt = fminbnd(@(ep)gqr_svmcv(cv_fold,train_data,train_class,ep,box_constraint),1,10);
 end

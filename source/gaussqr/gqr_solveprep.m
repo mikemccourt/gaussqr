@@ -121,7 +121,7 @@ GQR.ep = ep;
 GQR.alpha = alpha;
 GQR.beta = beta;
 GQR.delta2 = delta2;
-GQR.eig = @(n) alpha/sqrt(alpha^2+ep^2+delta2)*(ep^2/(alpha^2+ep^2+delta2)).^(n-1);
+GQR.eig = @(n) alpha/sqrt(alpha^2+ep^2+delta2)*(ep^2/(alpha^2+ep^2+delta2)).^(sum(n)-d);
 GQR.warnid = '';
 GQR.warnmsg = '';
 if storephi
