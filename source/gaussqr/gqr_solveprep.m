@@ -24,14 +24,13 @@ function [ep,alpha,Marr,Rbar] = gqr_solveprep(reg,x,ep,alpha,M)
 %     If you want to pass an M, but not an alpha, use
 %          GQR = gqr_solveprep(reg,x,ep,[],M)
 %
-% function [ep,alpha,Marr,Rbar] = gqr_solveprep(1,...)
+% function [ep,alpha,Marr,Rbar] = gqr_solveprep(0,...)
 % Outputs : ep - the acceptable shape parameter
 %           alpha - the acceptable scale parameter
 %           Marr - the GQR index list for interpolation
-%           lam - the eigenvalue base (not the true eigenvalue)
-%                 lam = ep^2/(ep^2+alpha^2+delta^2)
+%           Rbar - the matrix such that psi = gqr_phi*[I;Rbar]
 %
-% function [ep,alpha,Marr] = gqr_solveprep(0,...)
+% function [ep,alpha,Marr] = gqr_solveprep(1,...)
 % Outputs : ep - the acceptable shape parameter
 %           alpha - the acceptable scale parameter
 %           Marr - the GQR index list for regression
@@ -121,7 +120,7 @@ GQR.ep = ep;
 GQR.alpha = alpha;
 GQR.beta = beta;
 GQR.delta2 = delta2;
-GQR.eig = @(n) alpha/sqrt(alpha^2+ep^2+delta2)*(ep^2/(alpha^2+ep^2+delta2)).^(sum(n)-d);
+GQR.eig = @(n) alpha/sqrt(alpha^2+ep^2+delta2)*(ep^2/(alpha^2+ep^2+delta2)).^(sum(n,1)-d);
 GQR.warnid = '';
 GQR.warnmsg = '';
 if storephi
