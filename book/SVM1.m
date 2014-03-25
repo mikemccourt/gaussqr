@@ -11,17 +11,17 @@ end
 
 % Define our Gaussian RBF
 rbf = @(e,r) exp(-(e*r).^2);
-ep = 1;
+ep = 10;
 
 % Choose a box constraint
-box_constraint = 1;
+box_constraint = .1;
 
 % Choose the number of cross-validations to compute
 cv_fold = 3;
 
 % Use the low rank matrix multiplication strategy
-low_rank = 1;
-GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .5;
+low_rank = 0;
+GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .15;
 
 % Define our normal distributions
 grnmean = [1,0];
@@ -103,11 +103,11 @@ switch(plot_results)
     case 2
         % Test a bunch of ep values with a fixed box_constraint to see what the
         % results look like
-        epvec = logspace(-1,2,20);
+        epvec = logspace(-2,2,20);
         errvec = [];
         k = 1;
         for ep=epvec
-            SVM = gqr_fitsvm(train_data,train_class,ep,box_constraint);
+            SVM = gqr_fitsvm(train_data,train_class,ep,box_constraint,low_rank);
             errvec(k) = sum(test_class ~= SVM.eval(test_data));
             k = k + 1
         end
@@ -119,7 +119,7 @@ switch(plot_results)
         errvec = [];
         k = 1;
         for bc=bcvec
-            SVM = gqr_fitsvm(train_data,train_class,ep,bc);
+            SVM = gqr_fitsvm(train_data,train_class,ep,bc,low_rank);
             errvec(k) = sum(test_class ~= SVM.eval(test_data));
             k = k + 1
         end
@@ -127,13 +127,13 @@ switch(plot_results)
     case 4
         % Define the objective function and try to find the minimum ep
         % value on an interval
-        epvec = logspace(-1,2,20);
+        epvec = logspace(-2,2,20);
         errvec = [];
         k = 1;
         for ep=epvec
-            errvec(k) = gqr_svmcv(cv_fold,train_data,train_class,ep,box_constraint);
+            errvec(k) = gqr_svmcv(cv_fold,train_data,train_class,ep,box_constraint,low_rank);
             k = k + 1
         end
         semilogx(epvec,errvec)
-        ep_opt = fminbnd(@(ep)gqr_svmcv(cv_fold,train_data,train_class,ep,box_constraint),1,10);
+%         ep_opt = fminbnd(@(ep)gqr_svmcv(cv_fold,train_data,train_class,ep,box_constraint),1,10);
 end
