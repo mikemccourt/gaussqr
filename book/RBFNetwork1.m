@@ -1,8 +1,6 @@
 % RBFNetwork1
 % This first example considers Tikhonov Regularization for fixed centers
 % and shape parameters
-global GAUSSQR_PARAMETERS
-GAUSSQR_PARAMETERS.STORED_PHI_FOR_EVALUATION = 1;
 
 % Initial example for support-vector machines
 if exist('rng','builtin')
@@ -15,10 +13,12 @@ end
 N = 50;
 M = 15;
 yf = @(x) (1-4*x+32*x.^2).*exp(-16*x.^2);
+rbf = @(e,r) exp(-(e*r).^2);
 
 % Pick points to evaluate the function at
 % Add some error to the data
-x = pickpoints(-1,1,N,'rand');
+x = pickpoints(-1,1,N-2,'rand');
+x = [x;-1;1];
 noise = .2;
 y = yf(x) + noise*randn(N,1);
 
@@ -38,8 +38,6 @@ H = rbf(ep,DistanceMatrix(x,z));
 % Note that we are feeding this the centers, with which to form the stable
 % basis, and also the eigenfunction basis for comparison
 GQR = gqr_solveprep(0,z,ep,gqr_alpha);
-Phi1 = GQR.stored_phi1;
-Lambda1 = diag(GQR.eig(GQR.Marr(1:M)));
 Psi = gqr_phi(GQR,x)*[eye(M);GQR.Rbar];
 GQR_reg = gqr_solveprep(1,z,ep,gqr_alpha,M);
 Phi_reg = gqr_phi(GQR_reg,x);
@@ -63,6 +61,7 @@ for lam=lamvec
     w = iAHt*y;
 
     % Evaluate the cost and sum-squared error for that choice
+    P = eye(N) - H*iAHt;
     C = y'*P*y;
     S = y'*P*P*y;
 
@@ -73,7 +72,6 @@ for lam=lamvec
 
     % Evaluate the parameterization schemes
     % The projection matrix is needed for this
-    P = eye(N) - H*iAHt;
     loovec(k) = y'*P*diag(1./diag(P).^2)*P*y/N;
     gcvvec(k) = N*y'*P^2*y/trace(P)^2;
     
