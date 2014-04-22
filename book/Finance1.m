@@ -71,7 +71,7 @@ bc = @(x,t) K*(4-exp(-r*t))*(sum(x,2)==4*K*d);
 % haven't yet) or run with an existing epsilon (for batch jobs)
 % If you have already run this script (and thus ep exists) the value
 % provided here is not accessed at all
-ep = .1;
+ep = .01;
 
 % This is an option as to what spatial solver to use
 %   solver = -2 for polynomial collocation
@@ -80,12 +80,12 @@ ep = .1;
 %          = 1  for HS-SVD
 % NOTE: FD only allowed for evenly spaced points
 % NOTE: polynomials allowed only on Chebyshev spaced points
-solver = -2;
+solver = 1;
 
 % The following are HS-SVD parameters
 % The alpha value determines eigenfunction locality
 % reg = 1 asks for a low rank eigenfunction expansion
-alpha = .3;
+alpha = 1;
 reg = 0;
 
 % If solver = 0, you can choose what RBF you want to run with
@@ -101,7 +101,7 @@ rbf_choice = 1;
 %            = 'cp_even' has coupling (see below), even interiors
 %            = 'cp_cheb' has coupling (see below), Cheb interiors
 % NOTE: pt_opt may be overwritten below if incompatible with solver
-N = 20;
+N = 30;
 pt_opt = 'cp_cheb';
 
 % Overwrite point selection if the solver is incompatible
@@ -124,7 +124,7 @@ end
 % Possible ideas include exp(-t) or 1-sqrt(t)
 coupling = strcmp(pt_opt(1:3),'cp_');
 pt_opt = pt_opt(end-3:end);
-% coupling_decay = @(t) exp(-7*t/T);
+% coupling_decay = @(t) exp(-12*t/T);
 coupling_decay = @(t) 0*t;
 
 if coupling
@@ -261,8 +261,8 @@ else
     x_int = x(2:end-1);
     x_bc = x([1,end]);
     x_all = [x_int;x_bc];
-    N_int = length(i_int);
-    N_bc = length(i_bc);
+    N_int = length(x_int);
+    N_bc = length(x_bc);
     i_int = 1:N_int;
     i_bc = N_int+1:N_int+N_bc;
     
@@ -391,11 +391,12 @@ if plot_sol~=0
                 zlabel('option value error')
         end
         ylabel('time to expiry')
+        set(h,'edgecolor','none')
     else
-        h = surf(XX,TT,abs(u_sol' - C_truesol(XX,TT)));
+        plot(x_int,abs(u_sol(:,end)-C_truesol(x_int,T)));
         ylabel('option value error at t=T')
     end
-    set(h,'edgecolor','none')
     title(sprintf('N=%d,\tspace=%s,solver=%d,\tep=%g\t',N,pt_opt,solver,ep))
     xlabel('Spot price')
 end
+max_err = max(abs(u_sol(:,end)-C_truesol(x_int,T)));
