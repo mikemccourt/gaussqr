@@ -71,7 +71,7 @@ bc = @(x,t) K*(4-exp(-r*t))*(sum(x,2)==4*K*d);
 % haven't yet) or run with an existing epsilon (for batch jobs)
 % If you have already run this script (and thus ep exists) the value
 % provided here is not accessed at all
-ep = .01;
+ep = .001;
 
 % This is an option as to what spatial solver to use
 %   solver = -2 for polynomial collocation
@@ -85,7 +85,7 @@ solver = 1;
 % The following are HS-SVD parameters
 % The alpha value determines eigenfunction locality
 % reg = 1 asks for a low rank eigenfunction expansion
-alpha = 1;
+alpha = 5;
 reg = 0;
 
 % If solver = 0, you can choose what RBF you want to run with
@@ -124,8 +124,8 @@ end
 % Possible ideas include exp(-t) or 1-sqrt(t)
 coupling = strcmp(pt_opt(1:3),'cp_');
 pt_opt = pt_opt(end-3:end);
-% coupling_decay = @(t) exp(-12*t/T);
-coupling_decay = @(t) 0*t;
+ coupling_decay = @(t) exp(-12*t/T);
+%coupling_decay = @(t) 0*t;
 
 if coupling
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -372,7 +372,7 @@ C_truesol = @(x,t) normcdf(d1_truesol(x,t)).*x - K*normcdf(d2_truesol(x,t)).*exp
 %            =  1 plots the computed solution
 %            =  2 plots the error in the solution
 %            =  3 plots the error in the solution at time t=T
-plot_sol = 3;
+plot_sol = -1;
 
 % Plot the error in the solution
 if plot_sol~=0
