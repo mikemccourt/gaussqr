@@ -11,7 +11,7 @@ else
 end
 
 N = 50;
-M = 15;
+M = 10;
 yf = @(x) (1-4*x+32*x.^2).*exp(-16*x.^2);
 rbf = @(e,r) exp(-(e*r).^2);
 
@@ -30,7 +30,7 @@ xx = pickpoints(-1,1,300);
 yy = yf(xx);
 
 % Pick a shape parameter and form the design matrix
-ep = .05;
+ep = .01;
 gqr_alpha = 1;
 H = rbf(ep,DistanceMatrix(x,z));
 
@@ -44,14 +44,10 @@ Phi_reg = gqr_phi(GQR_reg,x);
 
 % Pick a range of Tikhonov Regularization parameters and loop over it
 lamvec = logspace(-10,5,40);
-dirvec = [];
-gqrvec = [];
-eigvec = [];
-loovec = [];
-gcvvec = [];
-y_best = 0;
-lam_best = 0;
-err_best = Inf;
+dirvec = [];gqrvec = [];eigvec = [];
+loovec = [];loevec = [];
+gcvvec = [];gcevec = [];
+eig_err_best = Inf;dir_err_best = Inf;gce_err_best = Inf;gcd_err_best = [];
 k = 1;
 for lam=lamvec
     % Form the variance matrix and solve for the weights
@@ -62,8 +58,8 @@ for lam=lamvec
 
     % Evaluate the cost and sum-squared error for that choice
     P = eye(N) - H*iAHt;
-    C = y'*P*y;
-    S = y'*P*P*y;
+    Py = P*y;
+    S = Py'*Py;
 
     % Evaluate predictions on the test/plotting points
     % Check the error
@@ -72,8 +68,8 @@ for lam=lamvec
 
     % Evaluate the parameterization schemes
     % The projection matrix is needed for this
-    loovec(k) = y'*P*diag(1./diag(P).^2)*P*y/N;
-    gcvvec(k) = N*y'*P^2*y/trace(P)^2;
+    lodvec(k) = Py'*diag(1./diag(P).^2)*Py/N;
+    gcdvec(k) = N*S/trace(P)^2;
     
     % Compute instead the coefficients for the HS-SVD method
     % We will first compute with the stable basis
@@ -82,21 +78,59 @@ for lam=lamvec
     gqrvec(k) = errcompute(yp,yy);
     
     % Compute as well with the eigenfunctions
-    GQR_reg.coef = (Phi_reg'*Phi_reg + lam*eye(M))\(Phi_reg'*y);
+    % First the CV content for the eigenfunction basis
+    % Then the predictions at the test points
+    A = (Phi_reg'*Phi_reg + lam*eye(M));
+    iAHt = A\(Phi_reg');
+    w = iAHt*y;
+    P = eye(N) - Phi_reg*iAHt;
+    Py = P*y;
+    gcevec(k) = N*Py'*Py/trace(P)^2;
+    loevec(k) = Py'*diag(1./diag(P).^2)*Py/N;
+    GQR_reg.coef = w;
     yp = gqr_eval(GQR_reg,xx);
     eigvec(k) = errcompute(yp,yy);
-    
-    if gqrvec(k)<err_best
-        err_best = gqrvec(k);
-        lam_best = lam;
-        y_best = yp;
+
+    if eigvec(k)<eig_err_best
+        eig_err_best = eigvec(k);eig_lam_best = lam;eig_y_best = yp;
+    end
+    if dirvec(k)<dir_err_best
+        dir_err_best = dirvec(k);dir_lam_best = lam;dir_y_best = yp;
+    end
+    if gcevec(k)<gce_err_best
+        gce_err_best = gcevec(k);gce_lam_best = lam;gce_y_best = yp;
+    end
+    if gcdvec(k)<gce_err_best
+        gcd_err_best = gcdvec(k);gcd_lam_best = lam;gcd_y_best = yp;
     end
     k = k + 1;
 end
-loglog(lamvec,[dirvec;gqrvec;eigvec;gcvvec])
-title(sprintf('ep=%g,N=%d,M=%d',ep,N,M))
-legend('Direct','Stable','Eigs','GCV')
 
+[tmp,id] = min(dirvec);
+[tmp,ig] = min(gcdvec);
+[tmp,ie] = min(eigvec);
+[tmp,ic] = min(gcevec);
+figure
+handles(1) = loglog(lamvec,dirvec,'linewidth',3);
+hold on
+handles(3) = loglog(lamvec,gcdvec,'--','linewidth',3);
+handles(2) = loglog(lamvec,eigvec,'r','linewidth',3);
+handles(4) = loglog(lamvec,gcevec,'--r','linewidth',3);
+loglog(lamvec(id),dirvec(id),'x','linewidth',3,'markersize',12)
+loglog(lamvec(ig),gcdvec(ig),'x','linewidth',3,'markersize',12)
+loglog(lamvec(ie),eigvec(ie),'r+','linewidth',3,'markersize',12)
+loglog(lamvec(ic),gcevec(ic),'r+','linewidth',3,'markersize',12)
+handles(5) = loglog(lamvec,gqrvec,'ok','linewidth',2);
+title(sprintf('ep=%g,N=%d,M=%d',ep,N,M))
+xlabel('\mu')
+legend(handles,'Standard Basis','Standard GCV',...
+       'Eigenfunction Basis','Eigenfunction GCV',...
+       'Stable Basis','location','northwest')
+hold off
+
+pause
+% This can compute the lam=0 error, which I guess should be mu now that
+% I think about it
 GQR_reg.coef = Phi_reg\y;
 yp = gqr_eval(GQR_reg,xx);
 lam0_err = errcompute(yp,yy);
@@ -106,9 +140,12 @@ figure
 plot(x,y,'or')
 hold on
 plot(xx,yy,'linewidth',2)
-plot(xx,y_best,'--k','linewidth',2)
-plot(xx,yp,'-.m','linewidth',2)
+plot(xx,eig_y_best,'--k','linewidth',2)
+plot(xx,dir_y_best,'-.m','linewidth',2)
 hold off
 ylim([-1,2])
-title(sprintf('ep=%g,lam=%g,N=%d,M=%d',ep,lam_best,N,M))
-legend('Data','True',sprintf('lam=%g err=%g',lam_best,err_best),sprintf('lam=0 err=%g',lam0_err))
+title(sprintf('ep=%g,lam=%g,N=%d,M=%d',ep,eig_lam_best,N,M))
+legend('Data','True',...
+    sprintf('Eig Opt err=%g',eig_err_best),...
+    sprintf('Stand Opt err=%g',dir_err_best),...
+    'location','south')
