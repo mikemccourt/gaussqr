@@ -46,35 +46,28 @@ k = 1;
 h_waitbar = waitbar(0,'Initiating');pause(.1)
 progress = 0;
 for ep=epvec
-    % Also, form necessary GQR stuff
-    % Note that we are using the eigenfunctions only here
+    % Form the Gaussian eigenfunction object and evaluate/decompose Phi
     GQR = gqr_solveprep(1,z,ep,gqr_alpha,M);
     Phi = gqr_phi(GQR,x);
+    [U,S,V] = svd(Phi,0);Sv = diag(S);
     
     j = 1;
     for lam=lamvec
-        % Form the variance matrix and solve for the weights
-        % This uses the direct method
-        H = Phi;
-        A = H'*H + lam*eye(M);
-        iAHt = A\(H');
-
-        % Evaluate the cost and sum-squared error for that choice
-        P = eye(N) - H*iAHt;
+        % Evaluate the projection matrix and residual for the CV calculations
+        P = eye(N) - U*diag(1./(1+lam./Sv.^2))*U';
         Py = P*y;
-        S = Py'*Py;
 
-        % Evaluate the parameterization schemes
-        % The projection matrix is needed for this
+        % Evaluate the CV parameterization schemes
         loomat(k,j) = Py'*diag(1./diag(P).^2)*Py/N;
-        gcvmat(k,j) = N*S/trace(P)^2;
+        gcvmat(k,j) = N*Py'*Py/trace(P)^2;
 
         % Evaluate predictions on the test/plotting points
         % Check the error
-        GQR.coef = iAHt*y;
+        GQR.coef = V*((U'*y)./(Sv+lam./Sv));
         yp = gqr_eval(GQR,xx);
         eigmat(k,j) = errcompute(yp,yy);
 
+        % Record any optimal values that occur during the search
         if eigmat(k,j)<err_eig
             err_eig = eigmat(k,j);ep_eig = ep;lam_eig = lam;y_eig = yp;
         end
@@ -98,7 +91,7 @@ h_subplots = figure;
 % This is the plot of the computed error
 subplot(1,3,1)
 h = surf(E,L,log10(eigmat'));
-title(sprintf('Error,N=%d,M=%d',N,M))
+% title(sprintf('Error,N=%d,M=%d',N,M))
 set(h,'edgecolor','none')
 set(gca,'xscale','log');set(gca,'yscale','log');
 xlim([1e-2,1e1]),ylim([1e-10,1e5]),zlim([-2.5,-1])
@@ -107,7 +100,7 @@ view([-1 -1 1]),grid off
 % This is the plot of the LOOCV valuess
 subplot(1,3,2)
 h = surf(E,L,log10(loomat'));
-title(sprintf('LOOCV,N=%d,M=%d',N,M))
+% title(sprintf('LOOCV,N=%d,M=%d',N,M))
 set(h,'edgecolor','none')
 set(gca,'xscale','log');set(gca,'yscale','log');
 xlim([1e-2,1e1]),ylim([1e-10,1e5])
@@ -116,7 +109,7 @@ view([-1 -1 1]),grid off
 % This is the plot of the GCV values
 subplot(1,3,3)
 h = surf(E,L,log10(gcvmat'));
-title(sprintf('GCV,N=%d,M=%d',N,M))
+% title(sprintf('GCV,N=%d,M=%d',N,M))
 set(h,'edgecolor','none')
 set(gca,'xscale','log');set(gca,'yscale','log');
 xlim([1e-2,1e1]),ylim([1e-10,1e5])
