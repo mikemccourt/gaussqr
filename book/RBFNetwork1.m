@@ -11,7 +11,7 @@ else
 end
 
 N = 50;
-M = 10;
+M = 15;
 yf = @(x) (1-4*x+32*x.^2).*exp(-16*x.^2);
 rbf = @(e,r) exp(-(e*r).^2);
 
@@ -30,7 +30,7 @@ xx = pickpoints(-1,1,300);
 yy = yf(xx);
 
 % Pick a shape parameter and form the design matrix
-ep = .01;
+ep = .1;
 gqr_alpha = 1;
 H = rbf(ep,DistanceMatrix(x,z));
 
@@ -43,7 +43,7 @@ GQR_reg = gqr_solveprep(1,z,ep,gqr_alpha,M);
 Phi_reg = gqr_phi(GQR_reg,x);
 
 % Pick a range of Tikhonov Regularization parameters and loop over it
-lamvec = logspace(-10,5,40);
+lamvec = logspace(-15,5,40);
 dirvec = [];gqrvec = [];eigvec = [];
 loovec = [];loevec = [];
 gcvvec = [];gcevec = [];
@@ -113,14 +113,14 @@ end
 figure
 handles(1) = loglog(lamvec,dirvec,'linewidth',3);
 hold on
-handles(3) = loglog(lamvec,gcdvec,'--','linewidth',3);
-handles(2) = loglog(lamvec,eigvec,'r','linewidth',3);
+handles(2) = loglog(lamvec,gcdvec,'--','linewidth',3);
+handles(3) = loglog(lamvec,eigvec,'r','linewidth',3);
 handles(4) = loglog(lamvec,gcevec,'--r','linewidth',3);
 loglog(lamvec(id),dirvec(id),'x','linewidth',3,'markersize',12)
 loglog(lamvec(ig),gcdvec(ig),'x','linewidth',3,'markersize',12)
 loglog(lamvec(ie),eigvec(ie),'r+','linewidth',3,'markersize',12)
 loglog(lamvec(ic),gcevec(ic),'r+','linewidth',3,'markersize',12)
-handles(5) = loglog(lamvec,gqrvec,'ok','linewidth',2);
+handles(5) = loglog(lamvec,gqrvec,'ok','linewidth',1);
 title(sprintf('ep=%g,N=%d,M=%d',ep,N,M))
 xlabel('\mu')
 legend(handles,'Standard Basis','Standard GCV',...
@@ -128,7 +128,6 @@ legend(handles,'Standard Basis','Standard GCV',...
        'Stable Basis','location','northwest')
 hold off
 
-pause
 % This can compute the lam=0 error, which I guess should be mu now that
 % I think about it
 GQR_reg.coef = Phi_reg\y;
@@ -146,6 +145,6 @@ hold off
 ylim([-1,2])
 title(sprintf('ep=%g,lam=%g,N=%d,M=%d',ep,eig_lam_best,N,M))
 legend('Data','True',...
-    sprintf('Eig Opt err=%g',eig_err_best),...
-    sprintf('Stand Opt err=%g',dir_err_best),...
+    sprintf('Eig Opt err=%2.2g',eig_err_best),...
+    sprintf('Stand Opt err=%2.2g',dir_err_best),...
     'location','south')
