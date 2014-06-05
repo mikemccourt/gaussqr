@@ -11,7 +11,7 @@ else
 end
 
 N = 50;
-M = 15;
+M = 10;
 yf = @(x) (1-4*x+32*x.^2).*exp(-16*x.^2);
 rbf = @(e,r) exp(-(e*r).^2);
 
@@ -30,7 +30,7 @@ xx = pickpoints(-1,1,300);
 yy = yf(xx);
 
 % Pick a shape parameter and form the design matrix
-ep = .05;
+ep = .01;
 gqr_alpha = 1;
 H = rbf(ep,DistanceMatrix(x,z));
 
@@ -96,6 +96,9 @@ end
 loglog(lamvec,[dirvec;gqrvec;eigvec;gcvvec])
 title(sprintf('ep=%g,N=%d,M=%d',ep,N,M))
 legend('Direct','Stable','Eigs','GCV')
+
+% Command for producing rbfnetworkotherbases plot
+% loglog(lamvec,dirvec,lamvec,gqrvec,'r',lamvec,eigvec,'ok','linewidth',2),ylim([.01,.1]),xlabel('\mu'),ylabel('RMS error'),legend('Standard Basis','Stable Basis','Eigenfunction Basis')
 
 GQR_reg.coef = Phi_reg\y;
 yp = gqr_eval(GQR_reg,xx);

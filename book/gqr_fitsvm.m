@@ -35,9 +35,9 @@ if low_rank
     % This requires an extra set of unknowns
     %     sol_QP_gamma = Phi_1'*Lambda_1'*sol_QP_alpha
     % We don't care what gamma is though, we just want alpha
-    gqr_alpha = .3;
+    gqr_alpha = 1e6;
     GQR = gqr_solveprep(1,x,ep,gqr_alpha);
-    lamvec = GQR.eig(GQR.Marr);
+    lamvec = sqrt(GQR.eig(GQR.Marr));
     N_eig = length(lamvec);
     Phi1 = gqr_phi(GQR,x);
     V = Phi1.*(y*lamvec);
@@ -71,6 +71,13 @@ optimopt_QP = optimset('LargeScale','off','Display','off','MaxIter',500);
 if low_rank
     sol_QP = sol_QP(N_eig+1:N_eig+N); % Only take the right values
 end
+
+% This is one way to measure how well the SVM is doing
+% The quadratic program minimizes
+%    .5*x'*H*x + f'x,   x is sol_QP
+% So we can undo that to find x'*H*x which is the margin
+% The sum appears because f_QP is all ones
+SVM.margin = .5/(fval + sum(sol_QP));
 
 % Create the coefficients and identify the support vectors
 % A fudge factor is created to allow for slightly nonzero values
