@@ -5,21 +5,26 @@ x = linspace(0,1,11)';
 xx = linspace(0,1,1201)';
 %% iterated Brownian bridge kernel
 x=x(2:end-1);
-ep = 0; beta = 20;
+ep = 50; beta = 1;
 phifunc = @(n,x) sqrt(2)*sin(pi*x*n);
 lambdafunc = @(n) ((n*pi).^2+ep^2).^(-beta);
+if beta < 3
+    M = 1000;
+else
+    M = ceil(1/pi*sqrt(eps^(-1/beta)*(N^2*pi^2+ep^2)-ep^2));
+end
 %% Brownian motion kernel, K(x,z) = min(x,z)
 % x=x(2:end);
 % phifunc = @(n,x) sqrt(2)*sin(pi*x*(2*n-1)/2);
 % lambdafunc = @(n) 4./((2*n-1).^2*pi^2);
+% M = 1000;
 %% "reversed" Brownian motion kernel, K(x,z) = 1 - max(x,z)
 % x=x(1:end-1);
 % phifunc = @(n,x) sqrt(2)*cos(pi*x*(2*n-1)/2);
 % lambdafunc = @(n) 4./((2*n-1).^2*pi^2);
+% M = 1000;
 %% Mercer series
 N = length(x);
-%M = ceil(1/pi*sqrt(eps^(-1/beta)*(N^2*pi^2+ep^2)-ep^2));
-M = 1000;
 Lambda = diag(lambdafunc(1:M));
 Phi_interp = phifunc(1:M,x);
 Phi_eval = phifunc(1:M,xx);
