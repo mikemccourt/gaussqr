@@ -10,8 +10,9 @@ else
     randn('state',0);
 end
 
+% Testing data
 N = 50;
-M = 10;
+M = 15;
 yf = @(x) (1-4*x+32*x.^2).*exp(-16*x.^2);
 rbf = @(e,r) exp(-(e*r).^2);
 
@@ -25,93 +26,87 @@ y = yf(x) + noise*randn(N,1);
 % Choose points at which to center the basis functions, as needed
 z = pickpoints(-1,1,M,'halton');
 
+% Pick a range of Tikhonov Regularization parameters
+muvec = [logspace(-10,-5,5),logspace(-4.9,5,50)];
+
 % For plotting purposes
 xx = pickpoints(-1,1,300);
 yy = yf(xx);
 
 % Pick a shape parameter and form the design matrix
-ep = .01;
-gqr_alpha = 1;
-H = rbf(ep,DistanceMatrix(x,z));
+% The relevant computations are done with the SVD
+% This is only for stability and can be changed for larger sizes
+ep = 8;
+K_fit = rbf(ep,DistanceMatrix(x,z));
+K_predict = rbf(ep,DistanceMatrix(xx,z));
+[U,S,V] = svd(K_fit,0);Sv = diag(S);
 
-% Also, form necessary GQR stuff
-% Note that we are feeding this the centers, with which to form the stable
-% basis, and also the eigenfunction basis for comparison
-GQR = gqr_solveprep(0,z,ep,gqr_alpha);
-Psi = gqr_phi(GQR,x)*[eye(M);GQR.Rbar];
-GQR_reg = gqr_solveprep(1,z,ep,gqr_alpha,M);
-Phi_reg = gqr_phi(GQR_reg,x);
-
-% Pick a range of Tikhonov Regularization parameters and loop over it
-lamvec = logspace(-10,5,40);
-dirvec = [];
-gqrvec = [];
-eigvec = [];
+% Conduct the loop over the regularization values
+errvec = [];
 loovec = [];
 gcvvec = [];
-y_best = 0;
-lam_best = 0;
-err_best = Inf;
+err_min = Inf;gcv_min = Inf;loo_min = Inf;
 k = 1;
-for lam=lamvec
-    % Form the variance matrix and solve for the weights
-    % This uses the direct method
-    A = H'*H + lam*eye(M);
-    iAHt = A\(H');
-    w = iAHt*y;
-
-    % Evaluate the cost and sum-squared error for that choice
-    P = eye(N) - H*iAHt;
-    C = y'*P*y;
-    S = y'*P*P*y;
+for mu=muvec
+    % Solve for the newtork weights, here with the standard basis
+    w = VK*((UK'*y)./(SKv+mu./SKv));
 
     % Evaluate predictions on the test/plotting points
     % Check the error
-    yp = rbf(ep,DistanceMatrix(xx,z))*w;
-    dirvec(k) = errcompute(yp,yy);
+    yp = K_predict*w;
+    errvec(k) = errcompute(yp,yy);
+
+    % Find the projection matrix, used to evaluated the residual
+    P = eye(N) - UK*diag(1./(1+mu./SKv.^2))*UK';
+    Py = P*y;
 
     % Evaluate the parameterization schemes
-    % The projection matrix is needed for this
-    loovec(k) = y'*P*diag(1./diag(P).^2)*P*y/N;
-    gcvvec(k) = N*y'*P^2*y/trace(P)^2;
-    
-    % Compute instead the coefficients for the HS-SVD method
-    % We will first compute with the stable basis
-    GQR.coef = (Psi'*Psi + lam*eye(M))\(Psi'*y);
-    yp = gqr_eval(GQR,xx);
-    gqrvec(k) = errcompute(yp,yy);
-    
-    % Compute as well with the eigenfunctions
-    GQR_reg.coef = (Phi_reg'*Phi_reg + lam*eye(M))\(Phi_reg'*y);
-    yp = gqr_eval(GQR_reg,xx);
-    eigvec(k) = errcompute(yp,yy);
-    
-    if gqrvec(k)<err_best
-        err_best = gqrvec(k);
-        lam_best = lam;
-        y_best = yp;
+    % The projection matrix is needed for this as well
+    loovec(k) = Py'*diag(1./diag(P).^2)*Py/N;
+    gcvvec(k) = N*Py'*Py/trace(P)^2;
+    if errvec(k)<err_min
+        err_min = errvec(k);err_mu_best = mu;err_y_best = yp;
+    end
+    if gcvvec(k)<gcv_min
+        gcv_min = gcvvec(k);gcv_mu_best = mu;gcv_y_best = yp;
+    end
+    if loovec(k)<loo_min
+        loo_min = loovec(k);loo_mu_best = mu;loo_y_best = yp;
     end
     k = k + 1;
 end
-loglog(lamvec,[dirvec;gqrvec;eigvec;gcvvec])
+
+[tmp,id] = min(errvec);
+[tmp,ig] = min(gcvvec);
+[tmp,il] = min(loovec);
+handles = [];
+figure
+handles(1) = loglog(muvec,errvec,'k','linewidth',3);
+hold on
+handles(2) = loglog(muvec,gcvvec,'--','linewidth',3);
+handles(3) = loglog(muvec,loovec,'-.','color',[.7 .5 0],'linewidth',3);
+loglog(muvec(id),errvec(id),'k+','linewidth',3,'markersize',16)
+loglog(muvec(ig),gcvvec(ig),'x','linewidth',3,'markersize',16)
+loglog(muvec(il),loovec(il),'x','color',[.7 .5 0],'linewidth',3,'markersize',16)
 title(sprintf('ep=%g,N=%d,M=%d',ep,N,M))
-legend('Direct','Stable','Eigs','GCV')
+xlabel('\mu')
+legend(handles,'Error','GCV','LOOCV','location','northwest')
+hold off
 
-% Command for producing rbfnetworkotherbases plot
-% loglog(lamvec,dirvec,lamvec,gqrvec,'r',lamvec,eigvec,'ok','linewidth',2),ylim([.01,.1]),xlabel('\mu'),ylabel('RMS error'),legend('Standard Basis','Stable Basis','Eigenfunction Basis')
-
-GQR_reg.coef = Phi_reg\y;
-yp = gqr_eval(GQR_reg,xx);
-lam0_err = errcompute(yp,yy);
+% Store the error (not the min) for the best GCV
+gcv_min_err = errcompute(gcv_y_best,yy);
 
 % Plot the results
 figure
 plot(x,y,'or')
 hold on
-plot(xx,yy,'linewidth',2)
-plot(xx,y_best,'--k','linewidth',2)
-plot(xx,yp,'-.m','linewidth',2)
+plot(xx,yy,'r','linewidth',2)
+plot(xx,err_y_best,'k','linewidth',2)
+plot(xx,gcv_y_best,'--','linewidth',2)
 hold off
-ylim([-1,2])
-title(sprintf('ep=%g,lam=%g,N=%d,M=%d',ep,lam_best,N,M))
-legend('Data','True',sprintf('lam=%g err=%g',lam_best,err_best),sprintf('lam=0 err=%g',lam0_err))
+ylim([-.5,2])
+title(sprintf('ep=%g,mu=%g,N=%d,M=%d',ep,gcv_mu_best,N,M))
+legend('Data','True',...
+    sprintf('Min Error err=%2.2g',err_min),...
+    sprintf('Min GCV err=%2.2g',gcv_min_err),...
+    'location','northeast')
