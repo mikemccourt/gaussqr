@@ -13,19 +13,19 @@ end
 rbf = @(e,r) exp(-(e*r).^2);
 
 % Choose a shape parameter or range of ep to test
-ep = .05;
-epvec = logspace(-2,2,21);
+ep = .1;
+epvec = logspace(-2,2,31);
 
 % Choose a box constraint or range of bc to test
 box_constraint = .5;
-bcvec = linspace(0.01,10,20);
+bcvec = logspace(-2,2,20);
 
 % Choose the number of cross-validations to compute
 cv_fold = 3;
 
 % Use the low rank matrix multiplication strategy
 low_rank = 0;
-GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .35;
+GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .05;
 
 % Whether or not the user wants the results plotted
 %   0 - study of alpha values in low rank fit
@@ -120,8 +120,8 @@ switch(plot_results)
             SVM = gqr_fitsvm(train_data,train_class,ep,box_constraint,low_rank);
             errvec(k) = sum(test_class ~= SVM.eval(test_data));
             marvec(k) = SVM.margin;
-            k = k + 1;
             fprintf('%d\t%d\t%5.2f\t%d\n',k,sum(SVM.sv_index),ep,SVM.exitflag)
+            k = k + 1;
         end
         [AX,H1,H2] = plotyy(epvec,errvec,epvec,marvec,'semilogx','loglog');
         xlabel('\epsilon')
@@ -133,22 +133,57 @@ switch(plot_results)
         set(H2,'color','r')
         set(H1,'linewidth',2)
         set(H2,'linewidth',2)
+        title(sprintf('C=%g',box_constraint))
     case 3
         % Test a bunch of box_constraint values with a fixed ep to see what the
         % results look like
         errvec = zeros(size(bcvec));
+        marvec = zeros(size(bcvec));
         k = 1;
         for bc=bcvec
             SVM = gqr_fitsvm(train_data,train_class,ep,bc,low_rank);
             errvec(k) = sum(test_class ~= SVM.eval(test_data));
-            k = k + 1;
+            marvec(k) = SVM.margin;
             fprintf('%d\t%d\t%4.2f\t%d\n',k,sum(SVM.sv_index),bc,SVM.exitflag)
+            k = k + 1;
         end
-        plot(bcvec,errvec)
+        [AX,H1,H2] = plotyy(bcvec,errvec,bcvec,marvec,'semilogx','loglog');
+        xlabel('box constraint')
+        ylabel(AX(1),'missed classifications')
+        ylabel(AX(2),'margin')
+        set(AX(2),'ycolor','r')
+        set(AX(1),'ytick',[0,5,10,15,20])
+        set(AX(2),'ytick',[.01,.1,1])
+        set(H2,'color','r')
+        set(H1,'linewidth',2)
+        set(H2,'linewidth',2)
+        title(sprintf('\\epsilon=%4.2g',ep))
     case 4
         % Loops over selected epsilon and box constraint values
         % and records the incorrect classifications for each
         errmat = zeros(length(epvec),length(bcvec));
+        marmat = zeros(length(epvec),length(bcvec));
+        kep = 1;
+        h_waitbar = waitbar(0,'Initiating');pause(.1)
+        for ep=epvec
+            kbc = 1;
+            for bc=bcvec
+                SVM = gqr_fitsvm(train_data,train_class,ep,bc,low_rank);
+                errmat(kep,kbc) = sum(test_class ~= SVM.eval(test_data));
+                marmat(kep,kbc) = SVM.margin;
+                kbc = kbc + 1;
+            end
+            kep = kep + 1;
+            progress = floor(100*kep/length(epvec))/100;
+            waitbar(progress,h_waitbar,'Computing')
+        end
+        waitbar(1,h_waitbar,'Plotting')
+        [E,B] = meshgrid(epvec,bcvec);
+        h = surf(E,B,errmat');
+        set(h,'edgecolor','none')
+        set(gca,'xscale','log')
+        set(gca,'yscale','log')
+        close(h_waitbar)
     case 5
         % Define the objective function and try to find the minimum ep
         % value on an interval
@@ -161,13 +196,13 @@ switch(plot_results)
         semilogx(epvec,errvec)
 %         ep_opt = fminbnd(@(ep)gqr_svmcv(cv_fold,train_data,train_class,ep,box_constraint),1,10);
     case 0
-        K = exp(-ep^2*DistanceMatrix(x,x).^2);
+        K = exp(-ep^2*DistanceMatrix(train_data,train_data).^2);
         alphavec = logspace(0,8,30);
         errvec = zeros(size(alphavec));
         k = 1;
         for alpha=alphavec
-            GQR = gqr_solveprep(1,x,ep,alpha);
-            Phi1 = gqr_phi(GQR,x);
+            GQR = gqr_solveprep(1,train_data,ep,alpha);
+            Phi1 = gqr_phi(GQR,train_data);
             Kpp = Phi1*diag(GQR.eig(GQR.Marr))*Phi1';
             errvec(k) = errcompute(Kpp,K);
             k = k + 1;
