@@ -36,6 +36,18 @@ addpath(sourceDir,gaussqrDir,gqrauxiliaryDir,mqrauxiliaryDir,utilitiesDir,otherD
 % Setup global constants and parameters
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 global GAUSSQR_PARAMETERS
+GAUSSQR_PARAMETERS.BASE_DIRECTORY = thisDir;
+
+% Set this value to '/my/picture/directory' so that the function SaveFig
+% puts images you want to save in that directory
+% Windows Example: 
+% GAUSSQR_PARAMETERS.FIGURE_DIRECTORY = 'C:\Users\ironmike\Documents\fasshauer\book\First Draft\Figures';
+GAUSSQR_PARAMETERS.FIGURE_DIRECTORY = GAUSSQR_PARAMETERS.BASE_DIRECTORY;
+if not(exist(GAUSSQR_PARAMETERS.FIGURE_DIRECTORY,'dir'))
+    warning('Figure directory %s does not exist; reverting to %s',...
+        GAUSSQR_PARAMETERS.FIGURE_DIRECTORY,GAUSSQR_PARAMETERS.BASE_DIRECTORY)
+    GAUSSQR_PARAMETERS.FIGURE_DIRECTORY = GAUSSQR_PARAMETERS.BASE_DIRECTORY
+end
 
 % Check to see if various toolboxes are available
 v = ver;
