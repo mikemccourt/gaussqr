@@ -2,14 +2,32 @@ function savefig(h,fname,style,newBaseDir)
 % function savefig(h,fname,style,newBaseDir)
 %
 % This function saves the plot handle h with the standard book format
-% Input: h     - plot handle (use gcf for current figure)
-%        fname - string for name of the file
+% Input: h - figure number (handle) that you want plotted
+%        fname - string for name of the file (no .eps or .fig)
 %        style - which plotting style to use (see bottom) <default=0>
 %                0 - No Input (use whatever is currently in the figure)
 %                1 - Black and White
 %                2 - Color
 %                3 - Grayscale
 %         newBaseDir - <optional> directory for saving figures
+%
+% You must pass a figure handle, not an axes handle, for this to work
+% Example: h = figure;plot(x,y) --- not --- h = plot(x,y)
+% I honestly can't figure out why Matlab can't make it work with just the
+% axis handle, but it can't and I can't figure out how to extract the
+% necessary information.
+%
+% Example: savefig('book\happy')
+%      Saves in C:\Users\ironmike\Documents\fasshauer\gaussqr\book\test.eps
+%        because the default base directory is the gaussqr main directory
+% Example: savefig('happy',2,'/home/mccomic/Documents')
+%      Saves a color eps (and figure) to /home/mccomic/Documents/happy.eps
+% Example: savefig('Documents/happy',2,'/home/mccomic')
+%      Same output as above
+% Example: savefig('happy',2,'/home/mccomic/Documents')
+%          savefig('sad',3)
+%      Saves color /home/mccomic/Documents/happy.eps and
+%      grayscale /home/mccomic/Documents/sad.eps
 %
 % The idea of newBaseDir is to define the directory for your pitures once
 % and then just pass in different names for the figures you want to save.
@@ -24,6 +42,7 @@ if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
 end
 defaultDir = GAUSSQR_PARAMETERS.FIGURE_DIRECTORY;
+dirSlash = GAUSSQR_PARAMETERS.DIRECTORY_SLASH;
 
 % So that you can pass newBaseDir once at the start of a session
 persistent baseDir
@@ -61,40 +80,88 @@ switch nargin
         error('Incorrent calling sequence')
 end
 
+% Form the directory and file name to save to
+if baseDir(end)~=dirSlash
+    baseDir = strcat(baseDir,dirSlash);
+end
+saveDir = strcat(baseDir,fname);
+epsDir = strcat(saveDir,'.eps');
+
+% Use the appropriate color plotting pattern as requested by the user
+switch style
+    case 0 % Just save the fig/eps of the handle
+        saveas(h,saveDir,'fig')
+        print(h,'-depsc2',epsDir)
+    case {1,2,3}
+        % Font Size 14        
+        % This command should change the axis labels, title
+        set(findall(findobj(h),'Type','text'),'FontSize',14)
+        % This command should change the xticklabels and legend
+        set(get(h,'CurrentAxes'),'FontSize',14)
+
+        % Keep axis limits
+        % I think that this is equivalent to "keep axis limits" in the sense that
+        % the limits will not change unless the user changes them
+        % This I am not sure about though
+        set(get(h,'CurrentAxes'),'XLimMode','manual')
+        set(get(h,'CurrentAxes'),'YLimMode','manual')
+        set(get(h,'CurrentAxes'),'ZLimMode','manual')
+
+        % Custom background color 'w'
+        % This should set the background color to white, which is the default
+        % There may be some difference between this and transparent that I don't
+        % yet fully appreciate
+        set(h,'Color','w')
+
+        % Show uicontrols
+        % I'm not entirely sure what this means, but I don't think it has anything
+        % to do with us because we don't have any GUIs.  Therefore I am not
+        % implementing this right now
+
+        % Lines width 2 points
+        % Changes all line plots to have width 2
+        % The way this is written should omit any non line plots, but we might want
+        % something comparable for surfact or bar plots
+        set(findobj(get(get(h,'CurrentAxes'),'Children'),'type','line'),'linewidth',2)
+        
+        % Save the figure
+        saveas(h,saveDir,'fig')
+        % Save the eps in the desired format
+        switch style
+            case 1 % Black and White
+                % Must change image colors to black lines
+                % Not sure how to handle this for surface plots
+                % Note this won't change the figure, in case you want the
+                % figure to still be in color
+                set(findobj(h,'type', 'line'),'color','k');
+                print(h,'-deps2','-r600',epsDir)
+            case 2 % Color
+                print(h,'-depsc2','-r300','-cmyk',epsDir)
+            case 3 % Grayscale
+                print(h,'-deps2','-r300',epsDir)
+            otherwise
+                error('How on Earth did you reach this point?')
+        end
+    otherwise
+        error('Unacceptable plotting pattern style=%g',style)
+end
+
+% Standards for all plots:
+%   Custom background color 'w'
+%   Keep axis limits
+%   Show uicontrols
+%   Font size 14
+%   Lines width 2 points
 %
 % Black & White
 %   Rendering
 %      Colorspace black and white
-%      Custom color w
 %      Resolution 600
-%      Keep axis limits
-%      Show uicontrols
-%   Fonts
-%      Custom - fixed font size 14
-%      Custom name - Helvetica ?
-%   Lines
-%      Fixed width 2 points
 % Color
 %   Rendering
 %      Colorspace CMYK
-%      Custom color w
 %      Resolution 300
-%      Keep axis limits
-%      Show uicontrols
-%   Fonts
-%      Custom - fixed font size 14
-%      Custom name - Helvetica ?
-%   Lines
-%      Fixed width 2 points
 % Grayscale
 %   Rendering
 %      Colorspace grayscale
-%      Custom color w
 %      Resolution 300
-%      Keep axis limits
-%      Show uicontrols
-%   Fonts
-%      Custom - fixed font size 14
-%      Custom name - Helvetica ?
-%   Lines
-%      Fixed width 2 points

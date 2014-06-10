@@ -37,6 +37,7 @@ addpath(sourceDir,gaussqrDir,gqrauxiliaryDir,mqrauxiliaryDir,utilitiesDir,otherD
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.BASE_DIRECTORY = thisDir;
+GAUSSQR_PARAMETERS.DIRECTORY_SLASH = dirslash;
 
 % Set this value to '/my/picture/directory' so that the function SaveFig
 % puts images you want to save in that directory
