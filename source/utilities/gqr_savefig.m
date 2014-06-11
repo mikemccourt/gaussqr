@@ -1,5 +1,5 @@
-function savefig(h,fname,style,newBaseDir)
-% function savefig(h,fname,style,newBaseDir)
+function gqr_savefig(h,fname,style,newBaseDir)
+% function gqr_savefig(h,fname,style,newBaseDir)
 %
 % This function saves the plot handle h with the standard book format
 % Input: h - figure number (handle) that you want plotted
@@ -16,16 +16,17 @@ function savefig(h,fname,style,newBaseDir)
 % I honestly can't figure out why Matlab can't make it work with just the
 % axis handle, but it can't and I can't figure out how to extract the
 % necessary information.
+% To pass the current figure, use h = gcf
 %
-% Example: savefig('book\happy')
+% Example: gqr_savefig(gcf,'book\happy')
 %      Saves in C:\Users\ironmike\Documents\fasshauer\gaussqr\book\test.eps
 %        because the default base directory is the gaussqr main directory
-% Example: savefig('happy',2,'/home/mccomic/Documents')
+% Example: gqr_savefig(gcf,'happy',2,'/home/mccomic/Documents')
 %      Saves a color eps (and figure) to /home/mccomic/Documents/happy.eps
-% Example: savefig('Documents/happy',2,'/home/mccomic')
+% Example: gqr_savefig(gcf,'Documents/happy',2,'/home/mccomic')
 %      Same output as above
-% Example: savefig('happy',2,'/home/mccomic/Documents')
-%          savefig('sad',3)
+% Example: gqr_savefig(h,'happy',2,'/home/mccomic/Documents')
+%          gqr_savefig(h,'sad',3)
 %      Saves color /home/mccomic/Documents/happy.eps and
 %      grayscale /home/mccomic/Documents/sad.eps
 %

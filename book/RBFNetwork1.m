@@ -49,7 +49,7 @@ err_min = Inf;gcv_min = Inf;loo_min = Inf;
 k = 1;
 for mu=muvec
     % Solve for the newtork weights, here with the standard basis
-    w = VK*((UK'*y)./(SKv+mu./SKv));
+    w = V*((U'*y)./(Sv+mu./Sv));
 
     % Evaluate predictions on the test/plotting points
     % Check the error
@@ -57,13 +57,13 @@ for mu=muvec
     errvec(k) = errcompute(yp,yy);
 
     % Find the projection matrix, used to evaluated the residual
-    P = eye(N) - UK*diag(1./(1+mu./SKv.^2))*UK';
+    P = eye(N) - U*diag(1./(1+mu./Sv.^2))*U';
     Py = P*y;
 
     % Evaluate the parameterization schemes
     % The projection matrix is needed for this as well
     loovec(k) = Py'*diag(1./diag(P).^2)*Py/N;
-    gcvvec(k) = N*Py'*Py/trace(P)^2;
+    gcvvec(k) = N*(Py'*Py)/trace(P)^2;
     if errvec(k)<err_min
         err_min = errvec(k);err_mu_best = mu;err_y_best = yp;
     end
