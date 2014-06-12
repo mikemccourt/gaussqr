@@ -44,6 +44,7 @@ if ~isstruct(GAUSSQR_PARAMETERS)
 end
 defaultDir = GAUSSQR_PARAMETERS.FIGURE_DIRECTORY;
 dirSlash = GAUSSQR_PARAMETERS.DIRECTORY_SLASH;
+alertuser = GAUSSQR_PARAMETERS.WARNINGS_ON;
 
 % So that you can pass newBaseDir once at the start of a session
 persistent baseDir
@@ -65,7 +66,7 @@ switch nargin
                 end
             end
         else
-            if exist(baseDir,'dir')
+            if alertuser && exist(baseDir,'dir')
                 warning('Default figure directory %s does not exist; deleted after calling rbfsetup?\n Using persistent directory %s',defaultDir,baseDir)
             else
                 error('Default figure directory %s does not exist; deleted after calling rbfsetup?\n Pass a newBaseDir to this function (pwd for current directory)',defaultDir)
@@ -135,6 +136,7 @@ switch style
                 % Note this won't change the figure, in case you want the
                 % figure to still be in color
                 set(findobj(h,'type', 'line'),'color','k');
+                set(findobj(findobj(h,'type', 'line'),'-not','MarkerFaceColor','none'),'MarkerFaceColor','k')
                 print(h,'-deps2','-r600',epsDir)
             case 2 % Color
                 print(h,'-depsc2','-r300','-cmyk',epsDir)

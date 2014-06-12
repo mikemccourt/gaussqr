@@ -43,7 +43,7 @@ GAUSSQR_PARAMETERS.DIRECTORY_SLASH = dirslash;
 % puts images you want to save in that directory
 % Windows Example: 
 % GAUSSQR_PARAMETERS.FIGURE_DIRECTORY = 'C:\Users\ironmike\Documents\fasshauer\book\First Draft\Figures';
-GAUSSQR_PARAMETERS.FIGURE_DIRECTORY = GAUSSQR_PARAMETERS.BASE_DIRECTORY;
+GAUSSQR_PARAMETERS.FIGURE_DIRECTORY = 'C:\Users\ironmike\Documents\book\First Draft\Figures';
 if not(exist(GAUSSQR_PARAMETERS.FIGURE_DIRECTORY,'dir'))
     warning('Figure directory %s does not exist; reverting to %s',...
         GAUSSQR_PARAMETERS.FIGURE_DIRECTORY,GAUSSQR_PARAMETERS.BASE_DIRECTORY)

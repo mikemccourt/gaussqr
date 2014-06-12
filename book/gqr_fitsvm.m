@@ -77,7 +77,7 @@ end
 %    .5*x'*H*x + f'x,   x is sol_QP
 % So we can undo that to find x'*H*x which is the margin
 % The sum appears because f_QP is all ones
-SVM.margin = .5/(fval + sum(sol_QP));
+SVM.margin = sqrt(.5/(fval + sum(sol_QP)));
 
 % Create the coefficients and identify the support vectors
 % A fudge factor is created to allow for slightly nonzero values
