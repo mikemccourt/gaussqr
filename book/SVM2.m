@@ -17,15 +17,12 @@ end
 rbf = @(e,r) exp(-(e*r).^2);
 
 % Choose a shape parameter or range of ep to test
-ep = .1;
+% Also, choose a box constraint or range of bc to test
+% The ep and box_constraint values are only needed for plot_results=1
+ep = 1;
 epvec = logspace(-2,2,31);
-
-% Choose a box constraint or range of bc to test
-box_constraint = .6;
-bcvec = logspace(-2,2,20);
-
-% Choose the number of cross-validations to compute
-cv_fold = 3;
+box_constraint = 1;
+bcvec = logspace(-2,8,20);
 
 % Use the low rank matrix multiplication strategy
 low_rank = 0;
@@ -37,8 +34,7 @@ GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .05;
 %   2 - tests range of epsilon values
 %   3 - tests range of box constraint values
 %   4 - 3D plot of both epsilon and box constraint range
-%   5 - evaluate cross-validation error for range of ep values
-plot_results = 3;
+plot_results = 1;
 
 % Define our normal distributions
 grnmean = [1,0];
@@ -143,7 +139,7 @@ switch(plot_results)
             errvec(k) = sum(test_class ~= SVM.eval(test_data));
             marvec(k) = SVM.margin;
             svmvec(k) = sum(SVM.sv_index);
-            fprintf('%d\t%d\t%5.2f\t%d\n',k,svmvec(k),ep,SVM.exitflag)
+            fprintf('%d\t%d\t%5.2f\t%d\n',k,svmvec(k),ep,SVM.bias)
             k = k + 1;
         end
         
@@ -151,6 +147,8 @@ switch(plot_results)
         semilogx(epvec,errvec,'linewidth',2)
         xlabel('\epsilon')
         ylabel('missed classifications')
+        ylim([0,10])
+        set(gca,'ytick',[0,5,10])
         
         h2 = figure;
         [AX,H1,H2] = plotyy(epvec,svmvec,epvec,marvec,'semilogx','loglog');
@@ -159,12 +157,12 @@ switch(plot_results)
         ylabel(AX(2),'margin')
         set(AX(1),'ycolor','k')
         set(AX(2),'ycolor','k')
-        set(AX(1),'ylim',[50,200])
-        set(AX(2),'ylim',[.1,1])
-        set(AX(2),'xlim',[.01,100])
+        set(AX(1),'ylim',[0,200])
+        set(AX(2),'ylim',[.01,1])
+        set(AX(2),'xlim',[min(epvec),max(epvec)])
         set(AX(2),'xticklabel',{})
-        set(AX(1),'ytick',[50,100,150,200])
-        set(AX(2),'ytick',[.1,1])
+        set(AX(1),'ytick',[0,100,200])
+        set(AX(2),'ytick',[.01,.1,1])
         set(H1,'color','k')
         set(H2,'color','k')
         set(H1,'linestyle','--')
@@ -177,40 +175,58 @@ switch(plot_results)
         % results look like
         errvec = zeros(size(bcvec));
         marvec = zeros(size(bcvec));
+        svmvec = zeros(size(bcvec));
         k = 1;
         for bc=bcvec
-            SVM = gqr_fitsvm(train_data,train_class,ep,bc,low_rank);
+            SVM = gqr_fitsvm(train_data,train_class,ep,bc,low_rank);%pause
             errvec(k) = sum(test_class ~= SVM.eval(test_data));
             marvec(k) = SVM.margin;
-            fprintf('%d\t%d\t%4.2f\t%d\n',k,sum(SVM.sv_index),bc,SVM.exitflag)
+            svmvec(k) = sum(SVM.sv_index);
+            fprintf('%d\t%d\t%4.2f\t%d\n',k,svmvec(k),bc,SVM.bias)
             k = k + 1;
         end
         
-        h = figure;
-        [AX,H1,H2] = plotyy(bcvec,errvec,bcvec,marvec,'semilogx','loglog');
-        xlabel('box constraint')
-        ylabel(AX(1),'missed classifications')
+        h1 = figure;
+        semilogx(bcvec,errvec,'linewidth',2)
+        xlabel('C')
+        ylabel('missed classifications')
+        ylim([0,10])
+        set(gca,'ytick',[0,5,10])
+        
+        h2 = figure;
+        [AX,H1,H2] = plotyy(bcvec,svmvec,bcvec,marvec,'semilogx','loglog');
+        xlabel('C')
+        ylabel(AX(1),'support vectors')
         ylabel(AX(2),'margin')
-        set(AX(2),'ycolor','r')
-        set(AX(1),'ytick',[0,5,10,15,20])
-        set(AX(2),'ytick',[.01,.1,1])
-        set(H2,'color','r')
+        set(AX(1),'ycolor','k')
+        set(AX(2),'ycolor','k')
+        set(AX(1),'ylim',[0,200])
+        set(AX(2),'ylim',[1e-5,10])
+        set(AX(2),'xlim',[min(bcvec),max(bcvec)])
+        set(AX(2),'xticklabel',{})
+        set(AX(1),'ytick',[0,100,200])
+        set(H1,'color','k')
+        set(H2,'color','k')
+        set(H1,'linestyle','--')
         set(H1,'linewidth',2)
         set(H2,'linewidth',2)
-        title(sprintf('\\epsilon=%4.2g',ep))
+        title(sprintf('\\epsilon=%g',ep))
+        legend('# SV','Margin','location','northeast')
     case 4
         % Loops over selected epsilon and box constraint values
         % and records the incorrect classifications for each
         errmat = zeros(length(epvec),length(bcvec));
         marmat = zeros(length(epvec),length(bcvec));
+        svmmat = zeros(length(epvec),length(bcvec));
         kep = 1;
-        h_waitbar = waitbar(0,'Initiating');pause(.1)
+        h_waitbar = waitbar(0,'Initializing');
         for ep=epvec
             kbc = 1;
             for bc=bcvec
                 SVM = gqr_fitsvm(train_data,train_class,ep,bc,low_rank);
                 errmat(kep,kbc) = sum(test_class ~= SVM.eval(test_data));
                 marmat(kep,kbc) = SVM.margin;
+                svmmat(kep,kbc) = sum(SVM.sv_index);
                 kbc = kbc + 1;
             end
             kep = kep + 1;
@@ -219,20 +235,22 @@ switch(plot_results)
         end
         waitbar(1,h_waitbar,'Plotting')
         [E,B] = meshgrid(epvec,bcvec);
-        h = surf(E,B,errmat');
-        set(h,'edgecolor','none')
+        
+        h1 = figure;
+        h_err = surf(E,B,errmat');
+        set(h_err,'edgecolor','none')
         set(gca,'xscale','log')
         set(gca,'yscale','log')
+        xlabel('\epsilon')
+        ylabel('C')
+        
+        h2 = figure;
+        h_svm = surf(E,B,svmmat');
+        set(h_svm,'edgecolor','none')
+        set(gca,'xscale','log')
+        set(gca,'yscale','log')
+        xlabel('\epsilon')
+        ylabel('C')
+        
         close(h_waitbar)
-    case 5
-        % Define the objective function and try to find the minimum ep
-        % value on an interval
-        errvec = zeros(size(epvec));
-        k = 1;
-        for ep=epvec
-            errvec(k) = gqr_svmcv(cv_fold,train_data,train_class,ep,box_constraint,low_rank);
-            k = k + 1
-        end
-        semilogx(epvec,errvec)
-%         ep_opt = fminbnd(@(ep)gqr_svmcv(cv_fold,train_data,train_class,ep,box_constraint),1,10);
 end

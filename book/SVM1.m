@@ -106,14 +106,14 @@ h_legend = legend(h_contour,'\epsilon=.2','\epsilon=1','\epsilon=5','location','
 c=get(h_legend,'Children');
 % I don't really know what I'm doing here, but it works
 for k=1:length(epvec)
-    set(get(get(c(2*k-1),'Children'),'Children'),'Marker',ptvec{k});
+    set(get(get(c(2*k-1),'Children'),'Children'),'Marker',ptvec{length(epvec)-k+1});
     set(get(get(c(2*k-1),'Children'),'Children'),'linewidth',2);
 end
 hold off
 
 % First, fix the box constraint and consider 3 ep values
 ep = 1;
-bcvec = [.05 1 20];
+bcvec = [1e-2 1e0 1e5];
 ptvec = {'o','*','none'};
 h3 = figure;
 hold on
@@ -127,13 +127,13 @@ for k=1:length(epvec)
     set(get(h_contour(k),'Children'),'Marker',ptvec{k});
     set(get(h_contour(k),'Children'),'LineStyle','none');
 end
-title(sprintf('\\epsilon=%g',bc));
+title(sprintf('\\epsilon=%g',ep));
 set(h3,'renderer','zbuffer'); % Not sure if this is necessary
-h_legend = legend(h_contour,'C=.05','C=1','C=20','location','southeast');
+h_legend = legend(h_contour,'C=.01','C=1','C=10000','location','southeast');
 c=get(h_legend,'Children');
 % I don't really know what I'm doing here, but it works
 for k=1:length(epvec)
-    set(get(get(c(2*k-1),'Children'),'Children'),'Marker',ptvec{k});
+    set(get(get(c(2*k-1),'Children'),'Children'),'Marker',ptvec{length(bcvec)-k+1});
     set(get(get(c(2*k-1),'Children'),'Children'),'linewidth',2);
 end
 hold off

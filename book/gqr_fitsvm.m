@@ -7,7 +7,9 @@ function SVM = gqr_fitsvm(x,y,ep,bc,low_rank)
 %           bc - box constraint
 %           low_rank - (optional, default=0) use the eigenfunction decomp
 %   Output: SVM - object to classify future data
-%           SVM.eval(x_new) will classify the point x_new
+%           SVM.eval(x_new) - classify the point x_new
+%           SVM.margin - the separation margin from the problem solution
+%           SVM.sv_index - the indices of the support vectors
 
 switch nargin
     case 4
@@ -81,7 +83,7 @@ SVM.margin = sqrt(.5/(fval + sum(sol_QP)));
 
 % Create the coefficients and identify the support vectors
 % A fudge factor is created to allow for slightly nonzero values
-svm_fuzzy_logic = 1e-3*bc;
+svm_fuzzy_logic = min(1e-5,1e-3*bc);
 coef = y.*sol_QP;
 SVM.sv_index = sol_QP>svm_fuzzy_logic;
 
@@ -89,9 +91,19 @@ SVM.sv_index = sol_QP>svm_fuzzy_logic;
 %    b = y_i - sum_j=1^n alpha_i*y_i K(x_i,x_j)
 % but only for i such that 0<alpha_i<C, not <=
 % I take the mean of all such values, but they should all be the same
+bias_find_coef = sol_QP>svm_fuzzy_logic & sol_QP<bc-svm_fuzzy_logic;
 % NOTE: It's possible no such point will exist, maybe
-bias_find_coef = sol_QP>svm_fuzzy_logic & sol_QP<1-svm_fuzzy_logic;
-bias = mean(y(bias_find_coef) - K(bias_find_coef,:)*coef);
+%       If that is the case, set the bias to 0, I guess
+if sum(bias_find_coef)
+    bias = mean(y(bias_find_coef) - K(bias_find_coef,:)*coef);
+else
+    bias = 0;
+end
+
+% These values are returned to the user but should not be used to evaluate
+% the SVM.  Only SVM.eval should be used for that.
+SVM.coef = coef;
+SVM.bias = bias;
 
 % Create a function to evaluate the SVM
-SVM.eval = @(x_new) sign(rbf(ep,DistanceMatrix(x_new,x))*coef + bias);
+SVM.eval = @(x_new) sign(rbf(ep,DistanceMatrix(x_new,x(SVM.sv_index,:)))*coef(SVM.sv_index) + bias);
