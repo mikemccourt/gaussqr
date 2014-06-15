@@ -43,7 +43,7 @@ if low_rank
     N_eig = length(lamvec);
     Phi1 = gqr_phi(GQR,x);
     V = Phi1.*(y*lamvec);
-    H_QP = [eye(N_eig),zeros(N_eig,N);zeros(N,N_eig),zeros(N)];
+    H_QP = sparse(1:N_eig,1:N_eig,ones(1,N_eig),N+N_eig,N+N_eig);
     f_QP = -[zeros(N_eig,1);ones(N,1)];
     A_QP = [];
     b_QP = [];
