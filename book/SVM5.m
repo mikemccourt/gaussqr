@@ -86,7 +86,7 @@ switch test_opt
         % Create random training and test data
         [train_data,train_class] = SVM_setup(1,400,10);
 
-        timemat = zeros(length(epvec),length(bcvec));
+        T = zeros(length(epvec),length(bcvec));
         k_ep = 1;
         h_waitbar = waitbar(0,'Initializing','Visible',plots_on);
         fprintf('  ep   bc  prep setup solve clean\n')
@@ -94,12 +94,12 @@ switch test_opt
             k_bc = 1;
             for bc=bcvec
                 SVM = gqr_fitsvm(train_data,train_class,ep,bc,low_rank);
-                timemat(k_ep,k_bc) = SVM.solve_time;
+                T(k_ep,k_bc) = SVM.solve_time;
                 
                 progress = floor(100*((k_ep-1)*length(bcvec)+k_bc)/(length(epvec)*length(bcvec)))/100;
-                waitbar(progress,h_waitbar,sprintf('compute time=%5.2f, \\epsilon=%5.2f C=%5.2f',timemat(k_ep,k_bc),ep,bc))
+                waitbar(progress,h_waitbar,sprintf('compute time=%5.2f, \\epsilon=%5.2f C=%5.2f',T(k_ep,k_bc),ep,bc))
                 if strcmp(plots_on,'off')
-                    fprintf('%5.2f%% complete, ep=%5.2f C=%5.2f, time=%5.2f\n',progress*100,ep,bc,timemat(k_ep,k_bc))
+                    fprintf('%5.2f%% complete, ep=%5.2f C=%5.2f, time=%5.2f\n',progress*100,ep,bc,T(k_ep,k_bc))
                 else
                     fprintf('%5.2g %5.2g %5.2g %5.2g %5.2g %5.2g\n',...
                         ep,bc,SVM.prep_time,SVM.setup_time,SVM.solve_time,SVM.postsolve_time)
@@ -110,25 +110,33 @@ switch test_opt
         end
         
         waitbar(1,h_waitbar,'Plotting')
+        % Average values, to try to avoid fluctuations
+        T_avg = 1/9*(T(1:end-2,1:end-2) + T(2:end-1,1:end-2) + T(3:end,1:end-2)+...
+                     T(1:end-2,2:end-1) + T(2:end-1,2:end-1) + T(3:end,2:end-1)+...
+                     T(1:end-2,3:end)   + T(2:end-1,3:end)   + T(3:end,3:end));
         [E,B] = meshgrid(epvec,bcvec);
+        E_avg = E(2:end-1,2:end-1);
+        B_avg = B(2:end-1,2:end-1);
         
         h = figure('Visible',plots_on);
-        h_ev = surf(E,B,timemat');
+        h_ev = surf(E_avg,B_avg,T_avg');
         set(h_ev,'edgecolor','none')
         set(gca,'xscale','log')
         set(gca,'yscale','log')
-        set(gca,'ytick',[1e-2,1e1,1e4])
+        set(gca,'xtick',[1e-2,1e1,1e4])
+        set(gca,'ytick',[1e-4,1e0,1e4])
         xlabel('\epsilon')
         ylabel('C')
         zlabel('SVM training time')
         shading interp
         grid off
-        view([-.6,-1,2.4])
+        view([.5,-1,.8])
+        colormap gray
         colorbar
         if strcmp(plots_on,'off')
             gqr_savefig(h,sprintf('SVMtimetests%d',test_opt));
-            plot_command = 'surf(E,B,timemat'')';
-            save(sprintf('SVMtimetests%d',test_opt),'E','B','timemat','plot_command');
+            plot_command = 'surf(E_avg,B_avg,T_avg'')';
+            save(sprintf('SVMtimetests%d',test_opt),'E_avg','B_avg','T_avg','plot_command');
         end
         
         close(h_waitbar)
