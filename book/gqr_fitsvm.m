@@ -19,30 +19,42 @@ switch nargin
         error('Unacceptable arguments: nargin=%d',nargin)
 end
 
-% Because the same data may get used with different ep values, this checks
-% to see if the old DistanceMatrix can be reused
-persistent DM x_old
+N = length(y);
+
+% Define the RBF and GQR alpha parameter as needed
+rbf = @(e,r) exp(-(e*r).^2);
+gqr_alpha = 1e6;
+
+% Because the same data may get used with different ep or bc values,
+% this checks to see if the old DistanceMatrix, K and V can be reused
+persistent ep_old x_old DM K V
+recalc_K = 0;
+if isempty(ep_old) || ep_old~=ep
+    ep_old = ep;
+    recalc_K = 1;
+end
 if isempty(x_old) || any(size(x_old)~=size(x)) || any(any(x_old~=x))
     DM = DistanceMatrix(x,x);
     x_old = x;
+    recalc_K = 1;
 end
-
-N = length(y);
-
-rbf = @(e,r) exp(-(e*r).^2);
-K = rbf(ep,DM);
+if recalc_K
+    K = rbf(ep,DM);
+    K = .5*(K + K'); % To make sure it is symmetric at machine precision
+    if low_rank % Reset the GQR object as needed
+        GQR = gqr_solveprep(1,x,ep,gqr_alpha);
+        lamvec = sqrt(GQR.eig(GQR.Marr));
+        Phi1 = gqr_phi(GQR,x);
+        V = Phi1.*(y*lamvec);
+    end
+end
 
 if low_rank
     % Try to compute with the low-rank approximation to the kernel matrix
     % This requires an extra set of unknowns
     %     sol_QP_gamma = Phi_1'*Lambda_1'*sol_QP_alpha
-    % We don't care what gamma is though, we just want alpha
-    gqr_alpha = 1e6;
-    GQR = gqr_solveprep(1,x,ep,gqr_alpha);
-    lamvec = sqrt(GQR.eig(GQR.Marr));
-    N_eig = length(lamvec);
-    Phi1 = gqr_phi(GQR,x);
-    V = Phi1.*(y*lamvec);
+    % We don't care what gamma is though, we just want the coefficients
+    N_eig = size(V,2);
     H_QP = sparse(1:N_eig,1:N_eig,ones(1,N_eig),N+N_eig,N+N_eig);
     f_QP = -[zeros(N_eig,1);ones(N,1)];
     A_QP = [];
@@ -55,7 +67,6 @@ if low_rank
 else
     % Use the standard quadratic programming formulation
     H_QP = (y*y').*K;
-    H_QP = .5*(H_QP + H_QP'); % To make sure it symmetric at machine precision
     f_QP = -ones(N,1); % quadprog solves the min, not the max problem
     A_QP = [];
     b_QP = [];
