@@ -14,9 +14,13 @@ bcvec = logspace(-2,4,30);
 ep = .01;
 bc = 1;
 
-% Choose whether or not to plot the progress bar, which is a pain if
-% you are running this program through a terminal remotely
-show_progress = 1;
+% Choose whether or not to plot the output, which you may not want to do if
+% running the file remotely or within a batch script
+% Set to 'off' to prevent plotting, 'on' to plot
+% You can see a non-visible figure with handle h using figure(h)
+% If this is 'off', instead of displaying the plot it automatically saves
+% the figure using gqr_savefig
+plots_on = 'on';
 
 % Set the low rank parameter if desired
 low_rank = 0;
@@ -31,33 +35,51 @@ test_opt = 3;
 switch test_opt
     case 1
         % Create random training and test data
-        train_N_vec = round(logspace(1,4,20));
+        train_N_vec = round(logspace(1,4,30));
         
-        timevec = zeros(length(train_N_vec),1);
+        lowvec = zeros(length(train_N_vec),1);
+        fullvec = zeros(length(train_N_vec),1);
         k = 1;
-        if show_progress, h_waitbar = waitbar(0,'Initializing');end
+        h_waitbar = waitbar(0,'Initializing','Visible',plots_on);
         for train_N=train_N_vec
             [train_data,train_class] = SVM_setup(1,train_N,10);
             tic
-            SVM = gqr_fitsvm(train_data,train_class,ep,bc,1);
-            timevec(k_ep,k_bc) = toc;
+            SVMlow = gqr_fitsvm(train_data,train_class,ep,bc,1);
+            lowvec(k) = toc;
+            tic
+            SVMfull = gqr_fitsvm(train_data,train_class,ep,bc,0);
+            fullvec(k) = toc;
+            
+            progress = floor(100*k/length(train_N_vec))/100;
+            waitbar(progress,h_waitbar,sprintf('num points=%d, low rank time=%5.2f, full rank time=%5.2f',train_N,lowvec(k),fullvec(k)))
+            if strcmp(plots_on,'off')
+                fprintf('%5.2f%% complete, num points=%d, low rank time=%5.2f, full rank time=%5.2f\n',progress,train_N,lowvec(k),fullvec(k))
+            end
+            k = k + 1;
         end
         
-        if show_progress, waitbar(1,h_waitbar,'Plotting');end
-        h = figure;
-        loglog(train_N_vec,timevec,'linewidth',2)
+        waitbar(1,h_waitbar,'Plotting')
+        h = figure('Visible',plots_on);
+        loglog(train_N_vec,lowvec,'linewidth',2)
+        hold on
+        loglog(train_N_vec,fullvec,'--','linewidth',2)
         xlabel('number of training points')
         ylabel('training time')
+        legend('Low rank','Full rank','location','southeast')
+        hold off
+        if strcmp(plots_on,'off')
+            gqr_savefig(h,sprintf('SVMtimetests%d',test_opt));
+        end
         
-        if show_progress, close(h_waitbar);end
+        close(h_waitbar)
     case 2
     case 3
         % Create random training and test data
-        [train_data,train_class] = SVM_setup(1,200,10);
+        [train_data,train_class] = SVM_setup(1,100,10);
 
         timemat = zeros(length(epvec),length(bcvec));
         k_ep = 1;
-        if show_progress, h_waitbar = waitbar(0,'Initializing');end
+        h_waitbar = waitbar(0,'Initializing','Visible',plots_on);
         for ep=epvec
             % Run here to set up SVM persistent varaibles
             SVM = gqr_fitsvm(train_data,train_class,ep,bc,low_rank);
@@ -68,20 +90,19 @@ switch test_opt
                 timemat(k_ep,k_bc) = toc;
                 
                 progress = floor(100*((k_ep-1)*length(bcvec)+k_bc)/(length(epvec)*length(bcvec)))/100;
-                if show_progress
-                    waitbar(progress,h_waitbar,sprintf('compute time=%5.2f, \\epsilon=%5.2f C=%5.2f',timemat(k_ep,k_bc),ep,bc))
-                else
-                    fprintf('%5.2f%% complete, \\epsilon=%5.2f C=%5.2f, time=%5.2f\n',progress,ep,bc,timemat(k_ep,k_bc))
+                waitbar(progress,h_waitbar,sprintf('compute time=%5.2f, \\epsilon=%5.2f C=%5.2f',timemat(k_ep,k_bc),ep,bc))
+                if strcmp(plots_on,'off')
+                    fprintf('%5.2f%% complete, ep=%5.2f C=%5.2f, time=%5.2f\n',progress,ep,bc,timemat(k_ep,k_bc))
                 end
                 k_bc = k_bc + 1;
             end
             k_ep = k_ep + 1;
         end
         
-        if show_progress, waitbar(1,h_waitbar,'Plotting');end
+        waitbar(1,h_waitbar,'Plotting')
         [E,B] = meshgrid(epvec,bcvec);
         
-        h = figure;
+        h = figure('Visible',plots_on);
         h_ev = surf(E,B,timemat');
         set(h_ev,'edgecolor','none')
         set(gca,'xscale','log')
@@ -93,8 +114,11 @@ switch test_opt
         shading interp
         grid off
         view([-.7,1,1])
+        if strcmp(plots_on,'off')
+            gqr_savefig(h,sprintf('SVMtimetests%d',test_opt));
+        end
         
-        if show_progress, close(h_waitbar);end
+        close(h_waitbar)
     otherwise
         error('Unacceptable test case test_opt=%d',test_opt)
 end
