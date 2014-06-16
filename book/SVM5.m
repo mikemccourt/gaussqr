@@ -9,8 +9,8 @@ global GAUSSQR_PARAMETERS
 
 % Choose a range of parameters to test over, or fixed parameters if testing
 % over something else
-epvec = logspace(-2,2,31);
-bcvec = logspace(-2,4,30);
+epvec = logspace(-4,2,41);
+bcvec = logspace(-4,4,40);
 ep = .01;
 bc = 1;
 
@@ -28,32 +28,40 @@ GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .1;
 
 % Choose which test you want to run
 % 1 - Fixed parameterization, increasing size, low-rank vs. standard
-% 2 - Range of SV amounts and associated summation cost
-% 3 - Cost of solving optimization problem with various ep and bc values
-test_opt = 3;
+% 2 - Cost of solving optimization problem with various ep and bc values
+test_opt = 2;
 
 switch test_opt
     case 1
         % Create random training and test data
-        train_N_vec = round(logspace(1,4,30));
+        train_N_vec = round(logspace(1,3.5,30));
         
         lowvec = zeros(length(train_N_vec),1);
+        lowvecS = zeros(length(train_N_vec),1);
         fullvec = zeros(length(train_N_vec),1);
+        fullvecS = zeros(length(train_N_vec),1);
         k = 1;
         h_waitbar = waitbar(0,'Initializing','Visible',plots_on);
+        fprintf('LOW\t prep setup solve clean \tFULL\t prep setup solve clean\n')
         for train_N=train_N_vec
             [train_data,train_class] = SVM_setup(1,train_N,10);
-            tic
+            
             SVMlow = gqr_fitsvm(train_data,train_class,ep,bc,1);
-            lowvec(k) = toc;
-            tic
+            lowvec(k) = SVMlow.solve_time;
+            lowvecS(k) = SVMlow.prep_time + SVMlow.setup_time + SVMlow.postsolve_time;
+            
             SVMfull = gqr_fitsvm(train_data,train_class,ep,bc,0);
-            fullvec(k) = toc;
+            fullvec(k) = SVMfull.solve_time;
+            fullvecS(k) = SVMfull.prep_time + SVMfull.setup_time + SVMfull.postsolve_time;
             
             progress = floor(100*k/length(train_N_vec))/100;
             waitbar(progress,h_waitbar,sprintf('num points=%d, low rank time=%5.2f, full rank time=%5.2f',train_N,lowvec(k),fullvec(k)))
             if strcmp(plots_on,'off')
-                fprintf('%5.2f%% complete, num points=%d, low rank time=%5.2f, full rank time=%5.2f\n',progress,train_N,lowvec(k),fullvec(k))
+                fprintf('%5.2f%% complete, num points=%d, low rank time=%5.2f, full rank time=%5.2f\n',progress*100,train_N,lowvec(k),fullvec(k))
+            else
+                fprintf('\t%5.2g %5.2g %5.2g %5.2g \t\t %5.2g %5.2g %5.2g %5.2g\n',...
+                    SVMlow.prep_time,SVMlow.setup_time,SVMlow.solve_time,SVMlow.postsolve_time,...
+                    SVMfull.prep_time,SVMfull.setup_time,SVMfull.solve_time,SVMfull.postsolve_time)
             end
             k = k + 1;
         end
@@ -69,30 +77,32 @@ switch test_opt
         hold off
         if strcmp(plots_on,'off')
             gqr_savefig(h,sprintf('SVMtimetests%d',test_opt));
+            plot_command = 'loglog(train_N_vec,[lowvec,fullvec])';
+            save(sprintf('SVMtimetests%d',test_opt),'train_N_vec','lowvec','fullvec','plot_command');
         end
         
         close(h_waitbar)
     case 2
-    case 3
         % Create random training and test data
-        [train_data,train_class] = SVM_setup(1,100,10);
+        [train_data,train_class] = SVM_setup(1,400,10);
 
         timemat = zeros(length(epvec),length(bcvec));
         k_ep = 1;
         h_waitbar = waitbar(0,'Initializing','Visible',plots_on);
+        fprintf('  ep   bc  prep setup solve clean\n')
         for ep=epvec
-            % Run here to set up SVM persistent varaibles
-            SVM = gqr_fitsvm(train_data,train_class,ep,bc,low_rank);
             k_bc = 1;
             for bc=bcvec
-                tic
                 SVM = gqr_fitsvm(train_data,train_class,ep,bc,low_rank);
-                timemat(k_ep,k_bc) = toc;
+                timemat(k_ep,k_bc) = SVM.solve_time;
                 
                 progress = floor(100*((k_ep-1)*length(bcvec)+k_bc)/(length(epvec)*length(bcvec)))/100;
                 waitbar(progress,h_waitbar,sprintf('compute time=%5.2f, \\epsilon=%5.2f C=%5.2f',timemat(k_ep,k_bc),ep,bc))
                 if strcmp(plots_on,'off')
-                    fprintf('%5.2f%% complete, ep=%5.2f C=%5.2f, time=%5.2f\n',progress,ep,bc,timemat(k_ep,k_bc))
+                    fprintf('%5.2f%% complete, ep=%5.2f C=%5.2f, time=%5.2f\n',progress*100,ep,bc,timemat(k_ep,k_bc))
+                else
+                    fprintf('%5.2g %5.2g %5.2g %5.2g %5.2g %5.2g\n',...
+                        ep,bc,SVM.prep_time,SVM.setup_time,SVM.solve_time,SVM.postsolve_time)
                 end
                 k_bc = k_bc + 1;
             end
@@ -113,9 +123,12 @@ switch test_opt
         zlabel('SVM training time')
         shading interp
         grid off
-        view([-.7,1,1])
+        view([-.6,-1,2.4])
+        colorbar
         if strcmp(plots_on,'off')
             gqr_savefig(h,sprintf('SVMtimetests%d',test_opt));
+            plot_command = 'surf(E,B,timemat'')';
+            save(sprintf('SVMtimetests%d',test_opt),'E','B','timemat','plot_command');
         end
         
         close(h_waitbar)

@@ -16,6 +16,14 @@ function [train_data,train_class,test_data,test_class,fig_handle] = SVM_setup(de
 %                    class=-1 centered at (0,1)
 % design_opt = 2 has class=1  centered at (1,0), (0,1), (2,1)
 %                    class=-1 centered at (0,0), (1,1), (2,0)
+global GAUSSQR_PARAMETERS
+if ~isstruct(GAUSSQR_PARAMETERS)
+    error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
+end
+statsOn = GAUSSQR_PARAMETERS.STATISTICS_TOOLBOX_AVAILABLE;
+if not(statsOn)
+    error('Sorry, but for the moment you need the stats package to run this')
+end
 
 if nargin==3
     rand_seed = 0;
