@@ -94,6 +94,8 @@ switch style
     case 0 % Just save the fig/eps of the handle
         saveas(h,saveDir,'fig')
         print(h,'-depsc2',epsDir)
+        epsDir = strcat(saveDir,'.png');
+        print(h,'-dpng',epsDir)
     case {1,2,3}
         % Font Size 14        
         % This command should change the axis labels, title
