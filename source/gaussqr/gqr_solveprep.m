@@ -138,7 +138,7 @@ switch reg
         end
 
         % All this figures out what an acceptable Marr is
-        if not(exist('M'))
+        if not(exist('M','var'))
             M = zeros(d,1);
             Mlim = Mdefault;
         else
@@ -190,7 +190,7 @@ switch reg
 
         % This needs to get better
         % Specifically it needs to handle people passing weird stuff
-        if not(exist('M'))
+        if not(exist('M','var'))
             M = zeros(d,1);
         else
             [Mr Mc] = size(M);
