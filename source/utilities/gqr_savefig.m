@@ -19,7 +19,7 @@ function gqr_savefig(h,fname,style,newBaseDir)
 % To pass the current figure, use h = gcf
 %
 % Example: gqr_savefig(gcf,'book\happy')
-%      Saves in C:\Users\ironmike\Documents\fasshauer\gaussqr\book\test.eps
+%      Saves in C:\Users\ironmike\Documents\fasshauer\gaussqr\book\happy.eps
 %        because the default base directory is the gaussqr main directory
 % Example: gqr_savefig(gcf,'happy',2,'/home/mccomic/Documents')
 %      Saves a color eps (and figure) to /home/mccomic/Documents/happy.eps

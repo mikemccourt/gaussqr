@@ -39,14 +39,20 @@ global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.BASE_DIRECTORY = thisDir;
 GAUSSQR_PARAMETERS.DIRECTORY_SLASH = dirslash;
 
+% Alert the user if there is an issue during computation
+% Otherwise this info is stored in the GQR object, when possible
+GAUSSQR_PARAMETERS.WARNINGS_ON = false;
+
 % Set this value to '/my/picture/directory' so that the function SaveFig
 % puts images you want to save in that directory
 % Windows Example: 
 % GAUSSQR_PARAMETERS.FIGURE_DIRECTORY = 'C:\Users\ironmike\Documents\fasshauer\book\First Draft\Figures';
 GAUSSQR_PARAMETERS.FIGURE_DIRECTORY = 'C:\Users\ironmike\Documents\book\First Draft\Figures';
 if not(exist(GAUSSQR_PARAMETERS.FIGURE_DIRECTORY,'dir'))
-    warning('Figure directory %s does not exist; reverting to %s',...
-        GAUSSQR_PARAMETERS.FIGURE_DIRECTORY,GAUSSQR_PARAMETERS.BASE_DIRECTORY)
+    if GAUSSQR_PARAMETERS.WARNINGS_ON
+        warning('Figure directory %s does not exist; reverting to %s',...
+            GAUSSQR_PARAMETERS.FIGURE_DIRECTORY,GAUSSQR_PARAMETERS.BASE_DIRECTORY)
+    end
     GAUSSQR_PARAMETERS.FIGURE_DIRECTORY = GAUSSQR_PARAMETERS.BASE_DIRECTORY;
 end
 
@@ -128,10 +134,6 @@ GAUSSQR_PARAMETERS.ALPHA_DEFAULT = sqrt(2);
 % For M < r*N, Sherman-Morrison will be used
 % For M >= r*N, the low-rank portion will be explicitly computed
 GAUSSQR_PARAMETERS.RANKSOLVE_PROPORTION = .75;
-
-% Alert the user if there is an issue during computation
-% Otherwise this info is stored in the rbfqrOBJ
-GAUSSQR_PARAMETERS.WARNINGS_ON = false;
 
 % Default number of functions to use for regression
 % Adding more functions will help the quality of the regression but will
