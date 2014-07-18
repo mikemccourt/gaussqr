@@ -1,9 +1,9 @@
-function [fx,J] = gssfunc(v,gval)
-% function [fx,J] = gssfunc(v,gval)
+function [fx,J] = gssfunc(v,ipcoef)
+% function [fx,J] = gssfunc(v,ipcoef)
 % Inputs: v - vector to evaluate F(v) at
-%         gval - (optional) inner product BC magnifier <default=1>
+%         ipcoef - inner product BC coefficients
 % Outputs: fx - F(v) value for the passed v
-%               NOTE: negative v(5) or v(6) values yield NaN
+%               NOTE: negative v(3) or v(4) values yield NaN
 %          J - J(F)(v) Jacobian evaluated at v
 % NOTE: If this function is called with no inputs, it will return a
 %       optimset options object full of default values for the fsolve
@@ -18,7 +18,13 @@ function [fx,J] = gssfunc(v,gval)
 %       P = d/dx
 %       B = I_[0,1]
 % such that the inner product is
-%   (f,g)_{A,C,P,B} = (f,g)_P + gval*(f,g)_B
+%   (f,g)_{A,C,P,B} = (f,g)_P + ipcoef(1)*f0*g0
+%                             + ipcoef(2)*(f0*g1+f1*g0)
+%                             + ipcoef(3)*f1*g1
+% We have made the assumption that the definition of the boundary inner
+% product is:
+%   (f,g)_partialOmega = f0*g0 + f1*g1
+% although we may consider a more general definition evenutally.
 %
 % The reproducing kernel for this inner product is
 %   K(x,z) = G(x,z) + R(x,z)
@@ -27,26 +33,32 @@ function [fx,J] = gssfunc(v,gval)
 %       BG = 0
 % defines G(x,z) = min(x,z) - x*z and
 %   (P*P)B = 0
-% defines R(x,z) = v(5)*phi_1(x)phi_1(z) + v(6)*phi_2(x)phi_2(z).  The phi
+% defines R(x,z) = v(3)*phi_1(x)phi_1(z) + v(4)*phi_2(x)phi_2(z).  The phi
 % basis functions are defined through the psi basis functions
 %   psi_1(x) = x   &   psi_2(x) = 1-x
 % such that
-%   phi_1 = v(1)psi_1 + v(2)psi_2   &   phi_2 = v(3)psi_1 + v(4)psi_2
-% The psi are designed this way to be orthonormal in the B inner product
+%   phi_1 = v(1)psi_1 + v(2)psi_2   &   phi_2 = -/+v(2)psi_1 +/- v(1)psi_2
+% The psi are designed this way to be orthonormal in the B inner product.
+% The +/- ambiguity in phi_2 goes away in K.
 %
 % The equations we want to solve are the same B-ON equations:
 %    (phi_1,phi_2)_B = 0
 %    (phi_1,phi_1)_B = 1
 %    (phi_2,phi_2)_B = 1
-% as well as the equations created by making the inner product from Qi's
-% paper match the inner product described above.  That matching yields 4
-% equations, but 2 are redundant, so there are 6 equations in 6 unknowns.
-% The terms that are matched are f(0)g(0), f(1)g(1) and f(1)g(0).
+% Some moving content around and cleaning things up allows to enforce only
+% (phi_1,phi_1)_B = 1.  After the user chooses alpha, beta, gamma from
+% above we define the full set of 4 equations as
+%                    (1-v(1)^2)/v(3) + v(1)^2/v(4) - 1 = ipcoef(1)
+%    v(1)*v(2)*(1/v(3)-1/v(4)) - 1 + 8*v(1)^2-8*v(1)^4 = ipcoef(2)
+%                    v(1)^2/v(3) + (1-v(1)^2)/v(4) - 1 = ipcoef(3)
+%                                      v(1)^2 + v(2)^2 = 1
 %
-% To determine these coefficients when gval = 5, you run
-%   gval = 5;
-%   x0 = zeros(6,1);
-%   gss_coef = fsolve(@(x)gssfunc(x,gval),x0);
+% Example:
+% To determine these coefficients when the inner product you want is
+%      (f,g)_{A,C,P,B} = (f,g)_P + 4*f0*g0 + 2*(f0*g1+f1*g0) + 2*f1*g1
+%   ipcoef = [3 -1 1];
+%   [gss_opts,x0] = gssfunc; % Get the optimization options
+%   gss_coef = fsolve(@(x)gssfunc(x,ipcoef),x0,gss_opts);
 
 % If you are just calling this to get the default optimization routine
 % values by calling this with no arguments passed
@@ -59,54 +71,44 @@ if nargin==0
                 'Jacobian','on',...
                 'NonlEqnAlgorithm','lm',...
                 'LineSearchType','cubicpoly');
-    J = ones(6,1);
+    J = ones(4,1);
     return
+elseif nargin~=2
+    error('Incorrect number of arguments passed, nargin=%d',nargin)
 end
 
-% This is the default case
-if not(exist('gval','var'))
-    gval = 1;
-end
-
-% Handle the degenerate cases of 0 values for a_1 & a_2 (v(5) & v(6))
-a = v(1);
-b = v(2);
-c = v(3);
-d = v(4);
-if v(5)<0
-    e = NaN;
-elseif v(5)==0
-    e = Inf;
-else
-    e = v(5);
-end
-if v(6)<0
-    f = NaN;
-elseif v(6)==0
-    f = Inf;
-else
-    f = v(6);
-end
+% Here we store the coefficients in simple form
+% The solution requires a1,a2>0, so we allow the solver to explore negative
+% a1, a2 but always use the absolute value in the function evaluation and
+% in defining the kernel
+c1 = v(1);
+c2 = v(2);
+a1 = abs(v(3));a2 = abs(v(4));
+s1 = sign(v(3));s2 = sign(v(4));
+alpha = ipcoef(1);
+beta = ipcoef(2);
+gamma = ipcoef(3);
+% Eventually, I will need to
+% handle the degenerate cases of 0 values for a_1 & a_2 (v(3) & v(4))
+% I think this will have to be more complicated now since there are
+% different equations when a_1 or a_2 is zero
 
 % We're really solving F(v)=y, so we subtract the constant terms in a
 % separate vector to help me think about things
-fx = [a*c+b*d;
-      a^2+b^2;
-      c^2+d^2;
-      b^2/e+d^2/f-(1-2*a*b)*b^2-(1-2*c*d)*d^2+2*(a*d+b*c)*b*d;
-      a^2/e+c^2/f-(1-2*a*b)*a^2-(1-2*c*d)*c^2+2*(a*d+b*c)*a*c;
-      a*b/e+c*d/f-(1-2*a*b)*a*b-(1-2*c*d)*c*d+(a*d+b*c)^2] ...
-      - [0;1;1;gval;gval;0];
+fx = [(1-c1^2)/a1 + c1^2/a2 - 1
+      c1*c2*(1/a1 - 1/a2) - 1 + 8*c1^2 - 8*c1^4
+      c1^2/a1 + (1-c1^2)/a2 - 1
+      c1^2 + c2^2] ...
+      - [alpha;beta;gamma;1];
 
 % Evaluate the Jacobian as needed
 % I'm not sure how I feel about doing this given the discontinuous
 % derivative in the a_1 & a_2 coefficients (not being present when those
-% values are 0) but we'll see if this works.
+% values are 0) but I guess this is okay for now.
 if nargout>1
-    J = [c,d,a,b,0,0;
-         2*a,2*b,0,0,0,0;
-         0,0,2*c,2*d,0,0;
-         2*b^3+2*b*d^2,2*b/e+6*a*b^2-2*b+4*a*b*d,2*d^3+2*b^2*d,2*d/f+6*c*d^2-2*d+4*a*b*d,-b^2/e^2,-d^2/f^2;
-         2*a/e+6*a^2*b-2*a+4*a*c*d,2*a^3+2*a^2*c,2*c/f+6*c^2*d-2*c+4*a*b*c,2*c^3+2*a^2*c,-a^2/e^2,-c^2/f^2;
-         b/3+4*a*b^2-b+2*(a*d+b*c)*d,a/3+4*a^2*b-a+2*(a*d+b*c)*c,d/f+4*c*d^2-d+2*(a*d+b*c)*b,c/f+4*c^2*d-c+2*(a*d+b*c)*a,-a*b/e^2,-c*d/f^2];
+    J = [-2*c1/a1+2*c1/a2, 0, (c1^2-1)/a1^2, -c1^2/a2^2
+         c2*(1/a1-1/a2)+16*c1-32*c1^3, c1*(1/a1-1/a2), -c1*c2/a1^2, c1*c2/a2^2
+         2*c1/a1 - 2*c1/a2, 0, -c1^2/a1^2, (c1^2-1)/a2^2
+         2*c1, 2*c2, 0, 0];
+    J = J*diag([1,1,s1,s2]); % To account for the absolute value in the a1, a2 def above
 end
