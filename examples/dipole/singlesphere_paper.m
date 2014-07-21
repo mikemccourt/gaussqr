@@ -7,7 +7,7 @@
 %
 
 % Choose the solvers you want to use
-BEM = 1;
+BEM = 0;
 MFS = 1;
 kansa = 1;
 
