@@ -7,7 +7,8 @@
 
 % The Dirichlet boundary condition function
 %v = @(x) 1 + x(:,1) + x(:,2);
-v = @(x) x(:,1) + x(:,2) + 1./((x(:,1)-2).^2 + x(:,2).^2);
+% v = @(x) x(:,1) + x(:,2) + 1./((x(:,1)-2).^2 + x(:,2).^2);
+v = @(x) x(:,1) + x(:,2) + log((x(:,1)-2).^2 + x(:,2).^2);
 
 % The fundamental solution
 fs = @(x,z) log(DistanceMatrix(x,z));
@@ -23,13 +24,13 @@ noise = 0.0001;
 % Fictitious boundary for the inner circle is the average of ro and ri
 ri = .5;
 ro = 1;
-Ro = 2.5;
+Ro = 1.5;
 Ri = .3;
 Rc = .5*(ri+ro);
 
 % Number of collocation and source points and test points
 NN = 100;
-tt = linspace(0,2*pi,NN+1)';tt = tt(1:NN);
+tt = pickpoints(0,2*pi,NN+1,'rand');tt = tt(1:NN);
 xx = [cos(tt),sin(tt)];
 yy = v(xx);
 
@@ -53,6 +54,8 @@ for N=Nvec
     xiI = ri*unit_circle(1:2:end,:);
     xiD = ri*unit_circle(2:2:end,:);
     zi = Rc*unit_circle;
+%     zo = 3*unit_circle;
+%     zi = 2.5*unit_circle;
 
     % Form the linear system, 6 blocks appear in this matrix
     % It takes the shape:
@@ -80,6 +83,6 @@ end
 
 h = figure;
 loglog(Nvec,[errvec;condvec;coefvec],'linewidth',3)
-xlabel('Collocation points')
+xlabel('Boundary collocation points')
 legend('Error','Cond','Coef Norm')
 title('Coupling')
