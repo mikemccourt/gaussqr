@@ -18,7 +18,7 @@ noise = 0.0001;
 % Circle radius
 % Fictitious boundary radius
 r = 1;
-R = 1.5;
+R = 2.5;
 
 % Number of collocation and source points and test points
 NN = 100;
@@ -30,6 +30,7 @@ yy = v(xx);
 Nvec = floor(logspace(1,3,30));
 
 errvec = zeros(size(Nvec));
+errvec_reg = zeros(size(Nvec));
 errvec_noise = zeros(size(Nvec));
 errvec_noise_reg = zeros(size(Nvec));
 coefvec = zeros(size(Nvec));
@@ -52,9 +53,13 @@ for N=Nvec
 
     % Solve the system with and without noise and compute the errors
     yp = K_eval*(K\y);
+    pinvK = pinv(K,1e-10);
+    c_reg = pinvK*y;
+    yp_reg = K_eval*c_reg;
     errvec(k) = errcompute(yp,yy);
+    errvec_reg(k) = errcompute(yp_reg,yy);
     yp_noise = K_eval*(K\y_noise);
-    c_reg = pinv(K)*y_noise;
+    c_noise_reg = pinvK*y_noise;
     yp_noise_reg = K_eval*c_reg;
     coefvec(k) = norm(K\y);
     coefvec_noise(k) = norm(K\y_noise);
@@ -66,11 +71,11 @@ for N=Nvec
 end
 
 h = figure;
-loglog(Nvec,[errvec;errvec_noise;errvec_noise_reg],'linewidth',3)
+loglog(Nvec,[errvec;errvec_reg;errvec_noise;errvec_noise_reg],'linewidth',3)
 xlabel('Collocation/Source points')
 ylabel('Error')
 title(sprintf('Noise = %g',noise))
-legend('noiseless','noisy','noisy pinv','location','southwest')
+legend('noiseless','noiseless pinv','noisy','noisy pinv','location','southwest')
 
 h = figure;
 %loglog(Nvec,[coefvec;coefvec_noise;condvec],'linewidth',3)
