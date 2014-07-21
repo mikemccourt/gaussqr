@@ -8,3 +8,5 @@ syntax: glob
 *.asv
 *.orig
 *.png
+examples/dipole/source/regu/*
+examples/dipole/source/BEM/*
