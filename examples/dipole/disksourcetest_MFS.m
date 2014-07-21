@@ -7,7 +7,7 @@
 
 % The Dirichlet boundary condition function
 v = @(x) 1 + x(:,1) + x(:,2);
-% v = @(x) x(:,1) + x(:,2) + 1./((x(:,1)-2).^2 + x(:,2).^2);
+%v = @(x) x(:,1) + x(:,2) + 1./((x(:,1)-2).^2 + x(:,2).^2);
 
 % The fundamental solution
 fs = @(x,z) log(DistanceMatrix(x,z));
@@ -32,6 +32,8 @@ Nvec = floor(logspace(1,3,30));
 errvec = zeros(size(Nvec));
 errvec_noise = zeros(size(Nvec));
 coefvec = zeros(size(Nvec));
+coefvec_noise = zeros(size(Nvec));
+condvec = zeros(size(Nvec));
 k = 1;
 for N=Nvec
     % Define the collocation and source points, x and z, and test points xx
@@ -50,8 +52,10 @@ for N=Nvec
     yp = K_eval*(K\y);
     errvec(k) = errcompute(yp,yy);
     yp_noise = K_eval*(K\y_noise);
-    coefvec(k) = norm(yp_noise);
+    coefvec(k) = norm(K\y);
+    coefvec_noise(k) = norm(K\y_noise);
     errvec_noise(k) = errcompute(yp_noise,yy);
+    condvec(k) = cond(K);
     k = k + 1;
 end
 
@@ -63,4 +67,12 @@ title(sprintf('Noise = %g',noise))
 legend('noiseless','noisy','location','southwest')
 
 h = figure;
-loglog(Nvec,coefvec)
+%loglog(Nvec,[coefvec;coefvec_noise;condvec],'linewidth',3)
+[AX,H1,H2] = plotyy(Nvec,[coefvec;coefvec_noise],Nvec,condvec,'loglog','loglog','linewidth',3);
+set(H1,'linewidth',3)
+xlabel('Collocation/Source points')
+ylabel('2-norm of coefficient vector')
+set(H2,'linewidth',3)
+ylabel(AX(2),'cond(K)')
+title(sprintf('Noise = %g',noise))
+legend('noiseless','noisy','cond','location','northwest')

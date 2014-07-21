@@ -76,7 +76,7 @@ closest_indices = cell(N_int+N_bcD,1);
 closest_coefs = cell(N_int+N_bcD,1);
 for i=[i_int,i_bcN]
     this_x = x(i,:);
-    [~,sorted_indices] = sort(sum((x-repmat(this_x,N,1)).^2,2));
+    [tmp,sorted_indices] = sort(sum((x-repmat(this_x,N,1)).^2,2));
     closest_indices{i} = sorted_indices(1:n_closest)';
     x_closest = x(closest_indices{i},:);
     

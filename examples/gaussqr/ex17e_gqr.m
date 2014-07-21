@@ -9,13 +9,15 @@ epvec = logspace(-2,1,31);
 %epvec = logspace(-10,0,31);
 %epvec = fliplr(epvec);
 
-N = 15;
+N = 45;N = 13^2;
 NN = 200;
-x = pickpoints(-1,1,N,'cheb');
+x = pickpoints(-1,1,N,'cheb');x = pick2Dpoints([-1 -1],[1 1],round(sqrt(N)),'halton');
 %yf = @(x) x + 1./(1+x.^2);
 %fstring = 'y(x) = x + 1/(1+x^2)';
 yf = @(x) x.^3-3*x.^2+2*x+1 + 1e-10*cos(10*x);
 fstring = 'y(x) = x^3-3x^2+2x+1 + 10^{-10}cos(10x)';
+yf = @(x) log(3+sum(x,2))+2*(1+sum(x,2)).^2+2*cos(2*prod(x,2));
+% yf = @(x) log(3+sum(x,2));
 %yf = @(x) x;% + 0.001*cos(10*x);
 %fstring = 'y(x) = x';% + cos(10x)/1000';
 %yf = @(x) 0.75*exp(-((9*(x+1)/2-2).^2)/4)+0.75*exp(-((9*(x+1)/2+1).^2/49))+0.5*exp(-((9*(x+1)/2-7).^2)/4)-0.2*exp(-((9*(x+1)/2-4).^2));
@@ -25,8 +27,11 @@ fstring = 'y(x) = x^3-3x^2+2x+1 + 10^{-10}cos(10x)';
 
 % Why does this artificial "noise" make things work?
 
+% Add prior beliefs to our objective function
+prior = @(e,b) pdf('Gamma',e,b,1);
+
 y = yf(x);
-xx = pickpoints(-1,1,NN);
+xx = pickpoints(-1,1,NN);xx = pick2Dpoints([-1 -1],[1 1],round(sqrt(N)),'even');
 yy = yf(xx);
 alpha = 1;
 %lamratio = 1e-12;
@@ -78,11 +83,9 @@ for ep=epvec
     diffy(k) = norm((yPhi-yPsi)./yPhi);
     diffPsi(k) = norm(Phi1-Psi);
     
-    beta = (1+(2*ep/alpha)^2)^.25;
-    delta2 = alpha^2/2*(beta^2-1);
-    ead = ep^2 + alpha^2 + delta2;
-    Lambda1 = sqrt(alpha^2/ead)*(ep^2/ead).^(0:N-1)';
-    Lambda2 = sqrt(alpha^2/ead)*(ep^2/ead).^(N:size(GQR.Marr,2)-1)';
+    % Transpose to be the right size
+    Lambda1 = GQR.eig(GQR.Marr(:,1:N))';
+    Lambda2 = GQR.eig(GQR.Marr(:,N+1:end))';
      
     logdetK = logdetPsi + logdetPhi + sum(log(Lambda1));
     

@@ -46,8 +46,8 @@ GAUSSQR_PARAMETERS.WARNINGS_ON = false;
 % Set this value to '/my/picture/directory' so that the function SaveFig
 % puts images you want to save in that directory
 % Windows Example: 
-% GAUSSQR_PARAMETERS.FIGURE_DIRECTORY = 'C:\Users\ironmike\Documents\fasshauer\book\First Draft\Figures';
-GAUSSQR_PARAMETERS.FIGURE_DIRECTORY = 'C:\Users\ironmike\Documents\book\First Draft\Figures';
+GAUSSQR_PARAMETERS.FIGURE_DIRECTORY = 'C:\Users\ironmike\Documents\fasshauer\book\First Draft\Figures';
+% GAUSSQR_PARAMETERS.FIGURE_DIRECTORY = 'C:\Users\ironmike\Documents\book\First Draft\Figures';
 if not(exist(GAUSSQR_PARAMETERS.FIGURE_DIRECTORY,'dir'))
     if GAUSSQR_PARAMETERS.WARNINGS_ON
         warning('Figure directory %s does not exist; reverting to %s',...

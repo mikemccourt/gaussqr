@@ -54,7 +54,7 @@ closest_indices = cell(N_int,1);
 closest_coefs = cell(N_int,1);
 for i=i_int
     this_x = x(i);
-    [~,sorted_indices] = sort(abs(x-this_x));
+    [tmp,sorted_indices] = sort(abs(x-this_x));
     closest_indices{i} = sorted_indices(1:n_closest)';
     x_closest = x(sorted_indices(1:n_closest));
     

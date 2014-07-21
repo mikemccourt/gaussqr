@@ -1,5 +1,4 @@
 % Test studying the leave half out cross-validation
-rbfsetup
 global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.ERROR_STYLE = 2;
 
