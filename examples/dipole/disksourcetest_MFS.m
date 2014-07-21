@@ -34,6 +34,7 @@ errvec_reg = zeros(size(Nvec));
 errvec_noise = zeros(size(Nvec));
 errvec_noise_reg = zeros(size(Nvec));
 coefvec = zeros(size(Nvec));
+coefvec_reg = zeros(size(Nvec));
 coefvec_noise = zeros(size(Nvec));
 coefvec_noise_reg = zeros(size(Nvec));
 condvec = zeros(size(Nvec));
@@ -52,38 +53,44 @@ for N=Nvec
     y_noise = v(x) + noise*randn(N,1);
 
     % Solve the system with and without noise and compute the errors
+    % no noise, no regularization
     yp = K_eval*(K\y);
-    pinvK = pinv(K,1e-10);
+    errvec(k) = errcompute(yp,yy);
+    coefvec(k) = norm(K\y);
+    % no noise, with regularization
+    pinvK = pinv(K);
     c_reg = pinvK*y;
     yp_reg = K_eval*c_reg;
-    errvec(k) = errcompute(yp,yy);
     errvec_reg(k) = errcompute(yp_reg,yy);
+    coefvec_reg(k) = norm(c_reg);
+    % noise, no regularization
     yp_noise = K_eval*(K\y_noise);
-    c_noise_reg = pinvK*y_noise;
-    yp_noise_reg = K_eval*c_reg;
-    coefvec(k) = norm(K\y);
-    coefvec_noise(k) = norm(K\y_noise);
-    coefvec_noise_reg(k) = norm(c_reg);
     errvec_noise(k) = errcompute(yp_noise,yy);
+    coefvec_noise(k) = norm(K\y_noise);
+    % noise, with regularization
+    c_noise_reg = pinvK*y_noise;
+    yp_noise_reg = K_eval*c_noise_reg;
     errvec_noise_reg(k) = errcompute(yp_noise_reg,yy);
+    coefvec_noise_reg(k) = norm(c_noise_reg);
+    % condition number (always the same)
     condvec(k) = cond(K);
     k = k + 1;
 end
 
-h = figure;
+h1 = figure;
 loglog(Nvec,[errvec;errvec_reg;errvec_noise;errvec_noise_reg],'linewidth',3)
 xlabel('Collocation/Source points')
 ylabel('Error')
 title(sprintf('Noise = %g',noise))
 legend('noiseless','noiseless pinv','noisy','noisy pinv','location','southwest')
 
-h = figure;
+h2 = figure;
 %loglog(Nvec,[coefvec;coefvec_noise;condvec],'linewidth',3)
-[AX,H1,H2] = plotyy(Nvec,[coefvec;coefvec_noise;coefvec_noise_reg],Nvec,condvec,'loglog','loglog','linewidth',3);
+[AX,H1,H2] = plotyy(Nvec,[coefvec;coefvec_reg;coefvec_noise;coefvec_noise_reg],Nvec,condvec,'loglog','loglog','linewidth',3);
 set(H1,'linewidth',3)
 xlabel('Collocation/Source points')
 ylabel('2-norm of coefficient vector')
 set(H2,'linewidth',3)
 ylabel(AX(2),'cond(K)')
 title(sprintf('Noise = %g',noise))
-legend('noiseless','noisy','noisy pinv','cond','location','northwest')
+legend('noiseless','noiseless pinv','noisy','noisy pinv','cond','location','northwest')
