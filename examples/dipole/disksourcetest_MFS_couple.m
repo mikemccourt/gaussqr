@@ -17,7 +17,7 @@ fs = @(x,z) log(DistanceMatrix(x,z));
 fsd = @(x,z,dim) DifferenceMatrix(x(:,dim),z(:,dim))./(DistanceMatrix(x,z).^2);
 
 % Choose to use the Neumann BC instead
-neumannBC = 0;
+neumannBC = 1;
 
 % Circle radii
 % We're going to do a coupling between an inner circle and outer ring
@@ -56,32 +56,35 @@ for N=Nvec
     unit_circle = [cos(t),sin(t)];
     xo = ro*unit_circle;
     zo = [Ro*unit_circle(1:2:end,:);Ri*unit_circle(2:2:end,:)];
-    xiI = ri*unit_circle(1:2:end,:);
-    xiD = ri*unit_circle(2:2:end,:);
+    xiD = ri*unit_circle(1:2:end,:);
+    xiN = ri*unit_circle(2:2:end,:);
     zi = Rc*unit_circle;
-%     zo = 3*unit_circle;
-%     zi = 2.5*unit_circle;
+%     zo = 1.7*unit_circle;
+%     zi = 1.3*unit_circle;
 
     % Form the linear system, 6 blocks appear in this matrix
     % It takes the shape:
-    %   [ K(xo,zo)        0    ] [ co ]   [ v ]
-    %   [ K(xiI,zo)  -K(xiI,zi)] [    ] = [ 0 ]
-    %   [GK(xiD,zo) -GK(xiK,zi)] [ ci ] = [ 0 ]
-    % Also needed is the directional derivative in G
+    %   [ K(xoD,zo)       0    ] [ co ]   [ v  ]
+    %   [GK(xoN,zo)       0    ] [    ]   [ Gv ]
+    %   [ K(xiD,zo)  -K(xiD,zi)] [    ] = [ 0  ]
+    %   [GK(xiN,zo) -GK(xiN,zi)] [ ci ] = [ 0  ]
+    % Also needed is the directional derivative in G'
+    % Allow for Neumann BC if requested
     if neumannBC
-        iN = 1:2:N;
-        iD = 2:2:N;
-        H = [[fs(xo(iD,:),zo),zeros(length(iD),N)];
-            [diag(xo(iN,1)/ro)*fsd(xo(iN,:),zo,1)+diag(xo(iN,2)/ro)*fsd(xo(iN,:),zo,2),zeros(length(iN),N)];
-            [fs(xiI,zo),-fs(xiI,zi)];
-            [diag(xiD(:,1)/ri)*fsd(xiD,zo,1)+diag(xiD(:,2)/ri)*fsd(xiD,zo,2),diag(xiD(:,1)/ri)*fsd(xiD,zi,1)+diag(xiD(:,2)/ri)*fsd(xiD,zo,2)]];
-        rhs = [v(xo(iD,:));diag(xo(iN,1)/ro)*vx(xo(iN,:))+diag(xo(iN,2)/ro)*vy(xo(iN,:));zeros(length(xiI),1);zeros(length(xiD),1)];
+        iN = 2:N;
     else
-        H = [[fs(xo,zo),zeros(N)];
-            [fs(xiI,zo),-fs(xiI,zi)];
-            [diag(xiD(:,1)/ri)*fsd(xiD,zo,1)+diag(xiD(:,2)/ri)*fsd(xiD,zo,2),diag(xiD(:,1)/ri)*fsd(xiD,zi,1)+diag(xiD(:,2)/ri)*fsd(xiD,zo,2)]];
-        rhs = [v(xo);zeros(length(xiI),1);zeros(length(xiD),1)];
+        iN = [];
     end
+    iD = setdiff(1:N,iN);
+    
+    H = [[fs(xo(iD,:),zo),zeros(length(iD),N)];
+        [diag(xo(iN,1)/ro)*fsd(xo(iN,:),zo,1)+diag(xo(iN,2)/ro)*fsd(xo(iN,:),zo,2),zeros(length(iN),N)];
+        [fs(xiD,zo),-fs(xiD,zi)];
+        [diag(xiN(:,1)/ri)*fsd(xiN,zo,1)+diag(xiN(:,2)/ri)*fsd(xiN,zo,2),diag(xiN(:,1)/ri)*fsd(xiN,zi,1)+diag(xiN(:,2)/ri)*fsd(xiN,zo,2)]];
+    rhs = [v(xo(iD,:));
+           diag(xo(iN,1)/ro)*vx(xo(iN,:))+diag(xo(iN,2)/ro)*vy(xo(iN,:));
+           zeros(length(xiD),1);
+           zeros(length(xiN),1)];
     K_eval = fs(xx,zo);
 
     % Solve the system and compute the errors
