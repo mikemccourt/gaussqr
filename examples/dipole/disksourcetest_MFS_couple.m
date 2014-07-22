@@ -64,10 +64,10 @@ for N=Nvec
 
     % Form the linear system, 6 blocks appear in this matrix
     % It takes the shape:
-    %   [ K(xoD,zo)       0    ] [ co ]   [ v  ]
-    %   [GK(xoN,zo)       0    ] [    ]   [ Gv ]
-    %   [ K(xiD,zo)  -K(xiD,zi)] [    ] = [ 0  ]
-    %   [GK(xiN,zo) -GK(xiN,zi)] [ ci ] = [ 0  ]
+    %   [  K(xoD,zo)       0    ] [ co ]   [ v  ]
+    %   [ GK(xoN,zo)       0    ] [    ]   [ Gv ]
+    %   [  K(xiD,zo)  -K(xiD,zi)] [    ] = [ 0  ]
+    %   [-GK(xiN,zo)  GK(xiN,zi)] [ ci ] = [ 0  ]
     % Also needed is the directional derivative in G'
     % Allow for Neumann BC if requested
     if neumannBC
@@ -80,7 +80,7 @@ for N=Nvec
     H = [[fs(xo(iD,:),zo),zeros(length(iD),N)];
         [diag(xo(iN,1)/ro)*fsd(xo(iN,:),zo,1)+diag(xo(iN,2)/ro)*fsd(xo(iN,:),zo,2),zeros(length(iN),N)];
         [fs(xiD,zo),-fs(xiD,zi)];
-        [diag(xiN(:,1)/ri)*fsd(xiN,zo,1)+diag(xiN(:,2)/ri)*fsd(xiN,zo,2),diag(xiN(:,1)/ri)*fsd(xiN,zi,1)+diag(xiN(:,2)/ri)*fsd(xiN,zo,2)]];
+        [-diag(xiN(:,1)/ri)*fsd(xiN,zo,1)-diag(xiN(:,2)/ri)*fsd(xiN,zo,2),diag(xiN(:,1)/ri)*fsd(xiN,zi,1)+diag(xiN(:,2)/ri)*fsd(xiN,zi,2)]];
     rhs = [v(xo(iD,:));
            diag(xo(iN,1)/ro)*vx(xo(iN,:))+diag(xo(iN,2)/ro)*vy(xo(iN,:));
            zeros(length(xiD),1);
