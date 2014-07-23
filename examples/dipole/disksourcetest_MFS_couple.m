@@ -16,8 +16,12 @@ vy = @(x) 1 + 2*x(:,2)./((x(:,1)-2).^2 + x(:,2).^2);
 fs = @(x,z) log(DistanceMatrix(x,z));
 fsd = @(x,z,dim) DifferenceMatrix(x(:,dim),z(:,dim))./(DistanceMatrix(x,z).^2);
 
-% Choose to use the Neumann BC instead
+% Choose BC type, 0 for Dirichlet, 1 for Neumann
 neumannBC = 1;
+
+% Choose center location, 1 for some inside, 2 for all outside (but inside
+% singularity), 3 for all outside (but outside singularity)
+ctrlocation = 1;
 
 % Circle radii
 % We're going to do a coupling between an inner circle and outer ring
@@ -59,8 +63,14 @@ for N=Nvec
     xiD = ri*unit_circle(1:2:end,:);
     xiN = ri*unit_circle(2:2:end,:);
     zi = Rc*unit_circle;
-%     zo = 1.7*unit_circle;
-%     zi = 1.3*unit_circle;
+    if ctrlocation == 2
+        zo = 1.3*unit_circle;
+        zi = 1.7*unit_circle;
+    end
+    if ctrlocation == 3
+        zo = 2.5*unit_circle;
+        zi = 3*unit_circle;
+    end
 
     % Form the linear system, 6 blocks appear in this matrix
     % It takes the shape:
