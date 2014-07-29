@@ -49,7 +49,7 @@ function [fx,J] = gssfunc(v,ipcoef)
 % (phi_1,phi_1)_B = 1.  After the user chooses alpha, beta, gamma from
 % above we define the full set of 4 equations as
 %                    (1-v(1)^2)/v(3) + v(1)^2/v(4) - 1 = ipcoef(1)
-%    v(1)*v(2)*(1/v(3)-1/v(4)) - 1 + 8*v(1)^2-8*v(1)^4 = ipcoef(2)
+%                        v(1)*v(2)*(1/v(3)-1/v(4)) + 1 = ipcoef(2)
 %                    v(1)^2/v(3) + (1-v(1)^2)/v(4) - 1 = ipcoef(3)
 %                                      v(1)^2 + v(2)^2 = 1
 %
@@ -96,7 +96,7 @@ gamma = ipcoef(3);
 % We're really solving F(v)=y, so we subtract the constant terms in a
 % separate vector to help me think about things
 fx = [(1-c1^2)/a1 + c1^2/a2 - 1
-      c1*c2*(1/a1 - 1/a2) - 1 + 8*c1^2 - 8*c1^4
+      c1*c2*(1/a1 - 1/a2) + 1
       c1^2/a1 + (1-c1^2)/a2 - 1
       c1^2 + c2^2] ...
       - [alpha;beta;gamma;1];
@@ -107,7 +107,7 @@ fx = [(1-c1^2)/a1 + c1^2/a2 - 1
 % values are 0) but I guess this is okay for now.
 if nargout>1
     J = [-2*c1/a1+2*c1/a2, 0, (c1^2-1)/a1^2, -c1^2/a2^2
-         c2*(1/a1-1/a2)+16*c1-32*c1^3, c1*(1/a1-1/a2), -c1*c2/a1^2, c1*c2/a2^2
+         c2*(1/a1-1/a2), c1*(1/a1-1/a2), -c1*c2/a1^2, c1*c2/a2^2
          2*c1/a1 - 2*c1/a2, 0, -c1^2/a1^2, (c1^2-1)/a2^2
          2*c1, 2*c2, 0, 0];
     J = J*diag([1,1,s1,s2]); % To account for the absolute value in the a1, a2 def above
