@@ -169,7 +169,7 @@ switch reg
 
         Marr = gqr_formMarr(M,[],Mlim);
         GQR.Marr = Marr;
-    case 0
+    case {0,-1} % Create the GQR shell or the whole interpolation object
         % First create Marr
         % We need the eigenvalues for this
         % Only the relative eigenvalue ratio is needed
@@ -185,7 +185,6 @@ switch reg
         end
 
         MarrN = gqr_formMarr(zeros(d,1),[],N);
-        Mlim = ceil(size(MarrN,2)+log(eps)/log(lam));
         Mlim = ceil(N+log(eps)/log(lam));
 
         % This needs to get better
@@ -193,7 +192,7 @@ switch reg
         if not(exist('M','var'))
             M = zeros(d,1);
         else
-            [Mr Mc] = size(M);
+            [Mr,Mc] = size(M);
             if Mr~=d
                 error('Incorrect M size passed, size(M)=%dx%d d=%d',Mr,Mc,d)
             elseif M<N
@@ -207,54 +206,55 @@ switch reg
         Marr = gqr_formMarr(M,Mlim,Mextramax);
         GQR.Marr = Marr;
         
-        % Now we need to create the Rbar matrix
-        phiMat = gqr_phi(GQR,x);
-        [Q,R] = qr(phiMat);
-        R1 = R(:,1:N);
-        R2 = R(:,N+1:end);
-
-        lastwarn('')
-        warning off MATLAB:divideByZero
-        iRdiag = diag(1./diag(R1));
-        [warnmsg,msgid] = lastwarn;
-        if strcmp(msgid,'MATLAB:divideByZero')
-            GQR.warnid = 'GAUSSQR:zeroQRDiagonal';
-            GQR.warnmsg = 'At least one value on the R diagonal was exactly 0';
+        if reg==0 % Stop now if only the shell was requested
+            % Now we need to create the Rbar matrix
+            phiMat = gqr_phi(GQR,x);
+            [Q,R] = qr(phiMat);
+            R1 = R(:,1:N);
+            R2 = R(:,N+1:end);
+            
+            lastwarn('')
+            warning off MATLAB:divideByZero
+            iRdiag = diag(1./diag(R1));
+            [warnmsg,msgid] = lastwarn;
+            if strcmp(msgid,'MATLAB:divideByZero')
+                GQR.warnid = 'GAUSSQR:zeroQRDiagonal';
+                GQR.warnmsg = 'At least one value on the R diagonal was exactly 0';
+            end
+            warning on MATLAB:divideByZero
+            
+            R1s = iRdiag*R1;
+            opts.UT = true;
+            
+            lastwarn('')
+            warning off MATLAB:singularMatrix
+            Rhat = linsolve(R1s,iRdiag*R2,opts);
+            warning on MATLAB:singularMatrix
+            
+            [warnmsg,msgid] = lastwarn;
+            warnid = 'GAUSSQR:singularR1invR2';
+            warnmsg = 'Computing inv(R1)R2 ... R1 singular to working precision';
+            
+            if ~strcmp(GQR.warnid,'GAUSSQR:zeroQRDiagonal') && strcmp(msgid,'MATLAB:singularMatrix')
+                GQR.warnid = warnid;
+                GQR.warnmsg = warnmsg;
+            end
+            
+            % Here we apply the eigenvalue matrices
+            % Note that the -d term in the power goes away because it
+            % appears in both Lambda_2 and Lambda_1^{-1}
+            Ml = size(Marr,2);
+            D = lam.^(repmat(sum(Marr(:,N+1:end),1)',1,N)-repmat(sum(Marr(:,1:N),1),Ml-N,1));
+            Rbar = D.*Rhat';
+            
+            GQR.Rbar = Rbar;
+            if storephi && returnGQR
+                GQR.stored_x = x;
+                GQR.stored_deriv = 0;
+                GQR.stored_phi1 = phiMat(:,1:N);
+                GQR.stored_phi2 = phiMat(:,N+1:end);
+            end
         end
-        warning on MATLAB:divideByZero
-
-        R1s = iRdiag*R1;
-        opts.UT = true;
-
-        lastwarn('')
-        warning off MATLAB:singularMatrix
-        Rhat = linsolve(R1s,iRdiag*R2,opts);
-        warning on MATLAB:singularMatrix
-        
-        [warnmsg,msgid] = lastwarn;
-        warnid = 'GAUSSQR:singularR1invR2';
-        warnmsg = 'Computing inv(R1)R2 ... R1 singular to working precision';
-        
-        if ~strcmp(GQR.warnid,'GAUSSQR:zeroQRDiagonal') & strcmp(msgid,'MATLAB:singularMatrix')
-            GQR.warnid = warnid;
-            GQR.warnmsg = warnmsg;
-        end
-
-        % Here we apply the eigenvalue matrices
-        % Note that the -d term in the power goes away because it
-        % appears in both Lambda_2 and Lambda_1^{-1}
-        Ml = size(Marr,2);
-        D = lam.^(repmat(sum(Marr(:,N+1:end),1)',1,N)-repmat(sum(Marr(:,1:N),1),Ml-N,1));
-        Rbar = D.*Rhat';
-        
-        GQR.Rbar = Rbar;
-        if storephi & returnGQR
-            GQR.stored_x = x;
-            GQR.stored_deriv = 0;
-            GQR.stored_phi1 = phiMat(:,1:N);
-            GQR.stored_phi2 = phiMat(:,N+1:end);
-        end
-    case -1 % Nothing is needed here
     otherwise
         error('reg=%g is unacceptable, 1 for regression, 0 for interpolation, -1 for eigenvalue setup',reg)
 end
