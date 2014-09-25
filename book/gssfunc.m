@@ -3,14 +3,13 @@ function [fx,J] = gssfunc(v,ipcoef)
 % Inputs: v - vector to evaluate F(v) at
 %         ipcoef - inner product BC coefficients
 % Outputs: fx - F(v) value for the passed v
-%               NOTE: negative v(3) or v(4) values yield NaN
+%               NOTE: negative v(3) or v(4) values use absolute value
 %          J - J(F)(v) Jacobian evaluated at v
 % NOTE: If this function is called with no inputs, it will return a
 %       optimset options object full of default values for the fsolve
 %       routine and a default initial guess:
 %            [options,x0] = gssfunc;
-%            gval = 5;
-%            [xsol,...] = fsolve(@(v)gssfunc(v,gval),x0,options);
+%            [xsol,...] = fsolve(@(v)gssfunc(v,ipcoef),x0,options);
 %
 % This function is the F(v) function which should allow us to solve for the
 % coefficients which define the inner product for the Sobolev space
@@ -18,9 +17,9 @@ function [fx,J] = gssfunc(v,ipcoef)
 %       P = d/dx
 %       B = I_[0,1]
 % such that the inner product is
-%   (f,g)_{A,C,P,B} = (f,g)_P + ipcoef(1)*f0*g0
-%                             + ipcoef(2)*(f0*g1+f1*g0)
-%                             + ipcoef(3)*f1*g1
+%   (f,g)_{R,P,B} = (f,g)_P + ipcoef(1)*f0*g0
+%                           + ipcoef(2)*(f0*g1+f1*g0)
+%                           + ipcoef(3)*f1*g1
 % We have made the assumption that the definition of the boundary inner
 % product is:
 %   (f,g)_partialOmega = f0*g0 + f1*g1

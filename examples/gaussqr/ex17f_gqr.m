@@ -1,9 +1,5 @@
 % ex17f_gqr.m
-% This should compute the likelihood function for a set of given data
-% points, but with a fixed coefficient vector b (as in Psi*b=y).
-% Note that the vector y depends on epsilon and therefore changes in each 
-% iteration. One probably needs to work with an adaptive choice of alpha
-% here.
+% This should compute the likelihood function for a set of given data points.
 global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.STORED_PHI_FOR_EVALUATION = 1;
 GAUSSQR_PARAMETERS.ERROR_STYLE = 4;
@@ -40,7 +36,9 @@ for ep=epvec
     % Solve the problem directly
     K = rbf(ep,DM_INT);
     S = svd(K);
+    warning off
     dirvec(k) = N*log(y'*(K\y))+sum(log(S+eps));
+    warning on
     
     % Solve the problem with HS-SVD
     GQR = gqr_solve(x,y,ep,alpha);

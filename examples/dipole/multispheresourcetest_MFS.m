@@ -11,7 +11,7 @@ srcpnts = [0, 0, 0.6*R(1)];
 reference = [0,0,-R(end)];
 
 % Number of evaluation points on the outer sphere
-N_eval = 1000;
+N_eval = 100;
 
 % Number of terms for the series expansion of the semi-analytical solution
 sol_acc = 200;
@@ -41,7 +41,8 @@ GAUSSQR_PARAMETERS.ERROR_STYLE = 3;
 GAUSSQR_PARAMETERS.NORM_TYPE = 2;
 
 % Set random number generator to constant
-rng(0);
+% rng(0);
+rand('state',0);
 
 % Find the sigma value where the dipole is located
 % This is needed to evaluate phi_F and gradphi_F
@@ -63,6 +64,13 @@ phi_true = phi_an - phi_an(1);
 [rbf, dxrbf, dyrbf, dzrbf, Lrbf] = pickRBF('fundamental_3d');
 
 
+errvec = zeros(size(Nvec));
+condvec = zeros(size(Nvec));
+coefvec = zeros(size(Nvec));
+Nvec_true = zeros(size(Nvec));
+oldtest = zeros(N_eval,1);
+newtest = zeros(N_eval,1);
+errdvec = zeros(size(Nvec));
 for k=1:length(Nvec)
     fprintf('k=%d\n',k)
     
@@ -109,13 +117,18 @@ for k=1:length(Nvec)
     N_ctrs = floor(mfs_frac*(N_A_cpl_out+N_B_cpl_in+N_B_cpl_out+N_C_cpl_in+N_C_bdy));
     all_ctrs = SphereSurfGoldPoints(N_ctrs, mfs_sphere*R(end));
     
-    A_ctrs_ind = randperm(N_ctrs,floor(mfs_frac*N_A_cpl_out));
+    ctrs_perm = randperm(N_ctrs);
+    A_ctrs_ind = ctrs_perm(1:floor(mfs_frac*N_A_cpl_out));
+    B_ctrs_ind = ctrs_perm(length(A_ctrs_ind)+1:length(A_ctrs_ind)+floor(mfs_frac*(N_B_cpl_in+N_B_cpl_out)));
+    C_ctrs_ind = ctrs_perm(length(B_ctrs_ind)+1:end);
     
-    BC_ctrs_ind = setdiff(1:N_ctrs,A_ctrs_ind);
-    B_ctrs_ind = randperm(length(BC_ctrs_ind),floor(mfs_frac*(N_B_cpl_in+N_B_cpl_out)));
-    B_ctrs_ind = BC_ctrs_ind(B_ctrs_ind);
-    
-    C_ctrs_ind = setdiff(1:N_ctrs,[A_ctrs_ind B_ctrs_ind]);
+%     A_ctrs_ind = randperm(N_ctrs,floor(mfs_frac*N_A_cpl_out));
+%     
+%     BC_ctrs_ind = setdiff(1:N_ctrs,A_ctrs_ind);
+%     B_ctrs_ind = randperm(length(BC_ctrs_ind),floor(mfs_frac*(N_B_cpl_in+N_B_cpl_out)));
+%     B_ctrs_ind = BC_ctrs_ind(B_ctrs_ind);
+%     
+%     C_ctrs_ind = setdiff(1:N_ctrs,[A_ctrs_ind B_ctrs_ind]);
     
     A_ctrs = all_ctrs(A_ctrs_ind,:);
     B_ctrs = all_ctrs(B_ctrs_ind,:);
@@ -243,10 +256,18 @@ for k=1:length(Nvec)
     
     Nvec_true(k) = N_A_cpl_out + N_B_cpl_in + ...
                    N_B_cpl_out + N_C_cpl_in + N_C_bdy;
+    newtest = phi_comp(:,k);
+    if k>1
+        errdvec(k) = errcompute(oldtest,newtest);
+        if k==2
+            errdvec(1) = errdvec(2);
+        end
+    end
+    oldtest = newtest;
 end
 
 h = figure;
-loglog(Nvec_true,[errvec;condvec;coefvec],'linewidth',3)
+loglog(Nvec_true,[errvec;condvec;coefvec;errdvec],'linewidth',3)
 xlabel('Collocation points')
-legend('Error','Cond','Coef Norm')
+legend('Error','Cond','Coef Norm','Test Diff')
 title('Potential Problem - Dipole in a Three-layered Sphere')
