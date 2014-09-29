@@ -26,6 +26,8 @@ DM_EVAL = DistanceMatrix(xx,x);
 dirvec = zeros(size(epvec));
 gqrvec = zeros(size(epvec));
 errvec = zeros(size(epvec));
+boundvec = zeros(size(epvec));
+correctionvec = zeros(size(epvec));
 
 k = 1;
 h_waitbar = waitbar(0,'Initializing');
@@ -60,7 +62,9 @@ for ep=epvec
     % Mahalanobis Distance
     b = GQR.coef;
     L2P2P1L1invb = (Lambda2.^-.5).*(Rbar*b);
-    mahaldist = b'*(b./Lambda1) + L2P2P1L1invb'*L2P2P1L1invb;
+    boundvec(k) = b'*(b./Lambda1);
+    correctionvec(k) = L2P2P1L1invb'*L2P2P1L1invb;
+    mahaldist = boundvec(k) + correctionvec(k);
     gqrvec(k) = N*log(mahaldist) + logdetK;
 
     progress = floor(100*k/length(epvec))/100;
@@ -69,7 +73,7 @@ for ep=epvec
 end
 
 waitbar(100,h_waitbar,sprintf('Plotting'))
-figure
+h_mle = figure;
 [AX,H1,H2] = plotyy(epvec,[dirvec;gqrvec],epvec,errvec,'semilogx','loglog');
 set(H1,'linewidth',3)
 c = get(AX(1),'Children');
@@ -90,5 +94,33 @@ set(get(AX(1),'ylabel'),'Position',[.08,500,17])
 set(get(AX(2),'ylabel'),'String','Relative error')
 set(get(AX(2),'ylabel'),'Position',[12 3e-014 0])
 hold off
+
+h_bound = figure;
+gapvec = log10(boundvec./correctionvec);
+[AX,H1,H2] = plotyy(epvec,[boundvec;correctionvec],epvec,gapvec,'loglog','semilogx');
+set(H1,'linewidth',3)
+c = get(AX(1),'Children');
+set(c(1),'color',[0 0 0])
+set(c(1),'linestyle','--')
+set(c(2),'color',[1 0 1])
+set(H2,'linewidth',2)
+set(H2,'color','b')
+set(AX(1),'ylim',[1e-5,1e80])
+set(AX(2),'ylim',[-2,3.5])
+set(get(AX(2),'xlabel'),'String','\epsilon')
+set(get(AX(2),'xlabel'),'Position',[3,-2.23,0])
+set(get(H2,'parent'),'ycolor',[0 0 1])
+set(AX(1),'ytick',[1,1e20,1e40,1e60])
+set(AX(2),'ytick',[-1,0,1,2,3])
+legend([H1;H2],'Bound','Correction','Gap','location','southwest')
+hold on
+minep = min(epvec(gapvec<0));
+maxep = max(epvec(gapvec<0));
+plot(minep*[1 1],[1e-5,1e80],':','color',[.6,.6,.6],'linewidth',2)
+plot(maxep*[1 1],[1e-5,1e80],':','color',[.6,.6,.6],'linewidth',2)
+area([minep,maxep],[1e80,1e80],'facecolor',[.9,.9,.9],'basevalue',1e-5)
+hold off
+uistack(H1(1),'top')
+uistack(H1(2),'top') 
 
 close(h_waitbar)
