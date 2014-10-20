@@ -26,7 +26,7 @@ EM = rbf(ep,DM_EVAL);
 yp = EM*(IM\y);
 
 % Compute the standard deviation at all the evaluation locations
-sd = sqrt(rbf(ep,0) - sum((EM/IM).*EM,2));
+sd = real(sqrt(rbf(ep,0) - sum((EM/IM).*EM,2)));
 
 % Plot the results
 h = figure;
