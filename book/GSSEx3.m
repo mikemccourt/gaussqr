@@ -28,13 +28,14 @@ yy = yf(xx);
 
 % Design the MFS problem we need to solve to create the corrector
 % Our centers are z_MFS and our boundary collocation points are x_MFS
-N_MFS = 60;
-N1d = ceil(N_MFS/4);
+N_x_MFS = 200;
+N_z_MFS = 40;
+N1d = ceil(N_x_MFS/4);
 x1d = pickpoints(-1,1,N1d);
 xb = ones(N1d,1);
 x_MFS = unique([[x1d,xb];[xb,x1d];[x1d,-xb];[-xb,x1d]],'rows');
-N_MFS = size(x_MFS,1);
-t_circle = pickpoints(0,2*pi,N_MFS);
+t_circle = pickpoints(0,2*pi,N_z_MFS+1);
+t_circle = t_circle(1:end-1); % So that there is no duplicate center
 z_MFS = 2*[cos(t_circle),sin(t_circle)];
 
 % Identify the collocation points for each component of the problem
@@ -46,9 +47,9 @@ x_ny = x_MFS(3:3:end,:);
 Gbar_d = G(x_d,z_MFS);
 Grhs_d = G(x_d,x);
 Gbar_nx = Gx(x_nx,z_MFS);
-Grhs_nx = G(x_nx,x);
+Grhs_nx = Gx(x_nx,x);
 Gbar_ny = Gy(x_ny,z_MFS);
-Grhs_ny = G(x_ny,x);
+Grhs_ny = Gy(x_ny,x);
 Gbar = [Gbar_d;Gbar_nx;Gbar_ny];
 Grhs = [Grhs_d;Grhs_nx;Grhs_ny];
 
@@ -56,8 +57,8 @@ Grhs = [Grhs_d;Grhs_nx;Grhs_ny];
 coef_MFS = Gbar\Grhs;
 
 % Form the interpolation and evaluation matrix
-K_int  = G(x,x);% - G(x,z_MFS)*coef_MFS + R_func(avec,x,x);
-K_eval = G(xx,x);% - G(xx,z_MFS)*coef_MFS + R_func(avec,xx,x);
+K_int  = G(x,x) - G(x,z_MFS)*coef_MFS + R_func(avec,x,x);
+K_eval = G(xx,x) - G(xx,z_MFS)*coef_MFS + R_func(avec,xx,x);
 
 % Create the interpolant and check the error
 yp = K_eval*(K_int\y);
