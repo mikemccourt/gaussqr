@@ -4,8 +4,17 @@
 %   2011 - U.S. Geological Survey Data Series 595
 % It involves the 90 Animas river locations given in that report
 % Some of the locations are duplicates (I'm not sure why)
-% Where those duplicates occur, only the first listed data is used
-% As a result, only 81 data locations are used here
+% Where those duplicates occur, only the first listed data is used.
+% As a result, only 81 data locations are used here.
+% Plots will include confidence intervals where relevant.
+%
+% This example creates a variety of surfaces for the given data,
+% including different shape as chosen by our parameterization
+% methods (MLE and LOOCV)
+% We also will use this example to demonstrate the difficulty of
+% dealing with multiscale data, where some data is very closely
+% clustered and other data is spread out.
+
 
 % Load the data into memory
 %   latlong - Latitude/Longitude locations
@@ -23,8 +32,8 @@ x = 2*(latlong - ones(N,1)*latlong_shift)./(ones(N,1)*latlong_scale) - 1;
 % Choose a kernel to fit to the data
 % Is DistanceMatrix returning complex numbers?
 ep = 1;
-rbf = @(e,r) exp(-(e*real(r)).^2);
-rbf = @(e,r) exp(-(e*real(r)));
+rbf = @(e,r) exp(-(e*r).^2);
+rbf = @(e,r) exp(-(e*r));
 
 % Choose locations at which to make predictions
 NN = 50;
@@ -42,7 +51,7 @@ X2 = reshape(xx(:,2),NN,NN);
 YP = reshape(yp,NN,NN);
 h = figure;
 hold on
-h_dots = plot3(x(:,1),x(:,2),y,'or'); % The given data
+h_dots = plot3(x(:,1),x(:,2),y,'ok'); % The given data
 h_stuf = surf(X1,X2,YP,'edgecolor','none');
 hold off
 xlabel('latitude')
