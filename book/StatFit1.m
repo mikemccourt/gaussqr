@@ -15,6 +15,8 @@
 % dealing with multiscale data, where some data is very closely
 % clustered and other data is spread out.
 
+% Make some plotting choices if extra output is needed
+aux_plots = 1;
 
 % Load the data into memory
 %   latlong - Latitude/Longitude locations
@@ -40,8 +42,10 @@ NN = 50;
 xx = pick2Dpoints([-1 -1],[1 1],NN*ones(1,2));
 
 % Predict results from the kriging fit
-K = rbf(ep,DistanceMatrix(x,x));
-K_eval = rbf(ep,DistanceMatrix(xx,x));
+DM = DistanceMatrix(x,x);
+K = rbf(ep,DM);
+DM_eval = DistanceMatrix(xx,x);
+K_eval = rbf(ep,DM_eval);
 yp = K_eval*(K\y);
 
 % Plot the results
@@ -57,3 +61,23 @@ hold off
 xlabel('latitude')
 ylabel('longitude')
 zlabel('Ferric Oxide percentage')
+
+% Find the MLE ep
+epvec = logspace(-1,1,40);
+if aux_plots
+    h_mle = figure;
+    mlevec = arrayfun(@(ep)StatFit1_param_func(1,ep,DM,rbf,y),epvec);
+    semilogx(epvec,mlevec)
+end
+ep_MLE = fminbnd(@(ep)StatFit1_param_func(1,ep,DM,rbf,y),.1,10);
+
+% Find the LOOCV ep
+epvec = logspace(-1,1,40);
+if aux_plots
+    h_cv = figure;
+    cvvec = arrayfun(@(ep)StatFit1_param_func(2,ep,DM,rbf,y),epvec);
+    semilogx(epvec,cvvec)
+end
+ep_CV = fminbnd(@(ep)StatFit1_param_func(2,ep,DM,rbf,y),.1,10);
+
+% Find some confidence intervals
