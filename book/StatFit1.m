@@ -38,7 +38,7 @@ rbf = @(e,r) exp(-(e*r).^2);
 rbf = @(e,r) exp(-(e*r));
 
 % Choose locations at which to make predictions
-NN = 50;
+NN = 60;
 xx = pick2Dpoints([-1 -1],[1 1],NN*ones(1,2));
 
 % Predict results from the kriging fit
@@ -56,7 +56,7 @@ YP = reshape(yp,NN,NN);
 h = figure;
 hold on
 h_dots = plot3(x(:,1),x(:,2),y,'ok'); % The given data
-h_stuf = surf(X1,X2,YP,'edgecolor','none');
+h_surf = surf(X1,X2,YP,'edgecolor','none');
 hold off
 xlabel('latitude')
 ylabel('longitude')
@@ -71,13 +71,46 @@ if aux_plots
 end
 ep_MLE = fminbnd(@(ep)StatFit1_param_func(1,ep,DM,rbf,y),.1,10);
 
-% Find the LOOCV ep
-epvec = logspace(-1,1,40);
+% Find the MLE process variance, if needed 
 if aux_plots
     h_cv = figure;
-    cvvec = arrayfun(@(ep)StatFit1_param_func(2,ep,DM,rbf,y),epvec);
+    pvvec = arrayfun(@(ep)StatFit1_param_func(2,ep,DM,rbf,y),epvec);
+    semilogx(epvec,pvvec)
+end
+ep_PV = fminbnd(@(ep)StatFit1_param_func(2,ep,DM,rbf,y),.1,10);
+
+% Find the LOOCV ep
+if aux_plots
+    h_cv = figure;
+    cvvec = arrayfun(@(ep)StatFit1_param_func(3,ep,DM,rbf,y),epvec);
     semilogx(epvec,cvvec)
 end
-ep_CV = fminbnd(@(ep)StatFit1_param_func(2,ep,DM,rbf,y),.1,10);
+ep_CV = fminbnd(@(ep)StatFit1_param_func(3,ep,DM,rbf,y),.1,10);
 
-% Find some confidence intervals
+% Find the average kriging variance at the eval points
+if aux_plots
+    h_cv = figure;
+    kvvec = arrayfun(@(ep)StatFit1_param_func(4,ep,{DM,DM_eval},rbf,y),epvec);
+    plotyy(epvec,kvvec,epvec,pvvec.*kvvec,@semilogx,@semilogx);
+end
+ep_KV = fminbnd(@(ep)StatFit1_param_func(4,ep,{DM,DM_eval},rbf,y),.1,10);
+
+% Find some confidence intervals, primarily for the MLE
+% First we need to compute the process variance associated with the maximum
+% likelihood estimate
+ep = .01
+K = rbf(ep,DM);
+K_eval = rbf(ep,DM_eval);
+% sigma_MLE = 2*y'*(K\y)/N;
+sigma_MLE = 1; % Just skip this for now
+pfunc = sqrt((rbf(ep,0) - sum(K_eval'.*(K\K_eval'))));
+P = reshape(pfunc,NN,NN);
+h_CI = figure;
+hold on
+h_dots = plot3(x(:,1),x(:,2),ones(N,1),'ok'); % Data locations
+h_CI = surf(X1,X2,sigma_MLE*P,'edgecolor','none');
+hold off
+xlabel('latitude')
+ylabel('longitude')
+zlabel('95% CI bound')
+colorbar
