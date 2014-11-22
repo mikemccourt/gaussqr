@@ -22,6 +22,7 @@ if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
 end
 alertuser = GAUSSQR_PARAMETERS.WARNINGS_ON;
+storephi = GAUSSQR_PARAMETERS.STORED_PHI_FOR_EVALUATION;
 
 % Check input stuff, and call solveprep, to create GQR object
 switch nargin
@@ -45,6 +46,10 @@ end
 
 % Form the linear system
 phi = gqr_phi(GQR,x);
+
+if storephi
+    GQR.stored_phi = phi;
+end
 
 % Solve the least squares problem
 lastwarn('')

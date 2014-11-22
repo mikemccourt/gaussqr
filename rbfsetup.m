@@ -39,6 +39,13 @@ global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.BASE_DIRECTORY = thisDir;
 GAUSSQR_PARAMETERS.DIRECTORY_SLASH = dirslash;
 
+% Allow for random number reset based on what the right call is
+if exist('rng','builtin')
+    GAUSSQR_PARAMETERS.RANDOM_SEED = @(rseed) rng(rseed);
+else
+    GAUSSQR_PARAMETERS.RANDOM_SEED = @(rseed) rand('state',rseed);
+end
+
 % Alert the user if there is an issue during computation
 % Otherwise this info is stored in the GQR object, when possible
 GAUSSQR_PARAMETERS.WARNINGS_ON = false;

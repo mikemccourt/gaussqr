@@ -1,45 +1,66 @@
-% StatFit1.m
-% This is the initial example for statistical data fitting
-% The data has been drawn from
-%   2011 - U.S. Geological Survey Data Series 595
-% It involves the 90 Animas river locations given in that report
-% Some of the locations are duplicates (I'm not sure why)
-% Where those duplicates occur, only the first listed data is used.
-% As a result, only 81 data locations are used here.
-% Plots will include confidence intervals where relevant.
+% StatFit2.m
+% This is the second example of statistical data fitting involving
+% topological data from Mt. Eden in New Zealand.  In this example we will
+% study cross-validation schemes and the effect of splitting data into
+% training, validation and test sets on the result of the fitting.
 %
-% This example creates a variety of surfaces for the given data,
-% including different shape as chosen by our parameterization
-% methods (MLE and LOOCV)
-% We also will use this example to demonstrate the difficulty of
-% dealing with multiscale data, where some data is very closely
-% clustered and other data is spread out.
+% The data is drawn from the main R library.  It consists of ground levels
+% (heights) on an 87x61 grid.
+%
+% This is going to use HSSVD to perform the interpolation as needed - it
+% will test first if the standard basis is acceptable and use the stable
+% basis if it needs to.
+
+global GAUSSQR_PARAMETERS
+GAUSSQR_PARAMETERS.RANDOM_SEED(0);
 
 % Make some plotting choices if extra output is needed
 aux_plots = 1;
 
 % Load the data into memory
-%   latlong - Latitude/Longitude locations
-%   FOpct - Ferric Oxide percentage in sample
+%   latlong - Latitude/Longitude locations (scaled into [0,1]^2)
+%   height - ground levels
 load StatFit1_data.mat
-N = size(latlong,1);
-y = FOpct;
-
-% We rescale the data locations to [-1,1] for simplicity
-% This is not required, but helps computation
-latlong_shift = min(latlong);
-latlong_scale = max(latlong) - min(latlong);
-x = 2*(latlong - ones(N,1)*latlong_shift)./(ones(N,1)*latlong_scale) - 1;
+x = latlong;
+y = height;
+N = size(x,1);
 
 % Choose a kernel to fit to the data
-% Is DistanceMatrix returning complex numbers?
-ep = 1;
 rbf = @(e,r) exp(-(e*r).^2);
-rbf = @(e,r) exp(-(e*r));
 
-% Choose locations at which to make predictions
+% Choose locations at which to make predictions for plotting
 NN = 60;
 xx = pick2Dpoints([-1 -1],[1 1],NN*ones(1,2));
+
+% Choose fitting/testing fraction
+% This is the proportion of data that will be used to fit the model
+fitting_fraction = .7;
+
+% Choose training fraction
+% This is the proportion of the fitting data used to train the model
+% This value must always be >=1/2 (leave half out) and <=1 (leave one out)
+% Other fractions will be rounded to as close as possible
+training_fraction = 1/5;
+training_num = round(1/training_fraction);
+clear x_valid y_valid x_train y_train
+for k=1:training_num
+    kth_valid_index = k:training_num:N;
+    x_valid{k} = x(kth_valid_index,:);
+    y_valid{k} = y(kth_valid_index);
+    kth_train_index = setdiff(1:N,kth_valid_index);
+    x_train{k} = x(kth_train_index,:);
+    y_train{k} = y(kth_train_index);
+end
+pause
+
+% Conduct the cross-validation training to choose an optimal kernel
+epvec = logspace(-1,1,40);
+if aux_plots
+    h_mle = figure;
+    cvvec = arrayfun(@(ep)StatFit1_CV_eval(ep,x_valid,y_valid,x_train,y_train),epvec);
+    semilogx(epvec,cvvec)
+end
+ep_MLE = fminbnd(@(ep)StatFit1_CV_eval(ep,x_valid,y_valid,x_train,y_train),.1,10);
 
 % Predict results from the kriging fit
 DM = DistanceMatrix(x,x);
