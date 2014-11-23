@@ -13,7 +13,7 @@ ydirty = MPG;
 x_mean = mean(x);
 
 % Create the surrogate model using a pre-chosen shape parameter
-ep = 4;
+ep = 4;ep = 10;
 rbf = @(e,r) exp(-(e*r).^2);
 K = rbf(ep,DistanceMatrix(x,x));
 coef = K\y;
@@ -44,9 +44,9 @@ end
 
 xstr = {'Acc','Disp','HP','Weight'};
 % Create some parallel coordinate plots
-N1d = 15;
-x1d = pickpoints(-1,1,N);
-[X1,X2,X3,X4] = ndgrid(x1d);
+N = 15;
+x1 = pickpoints(-1,1,N);
+[X1,X2,X3,X4] = ndgrid(x1);
 x4d = [X1(:),X2(:),X3(:),X4(:)];
 yfull = SM_eval(x4d);
 subplot_pc = {[9 14],[14 21],[21 28],[28 55]};
@@ -60,7 +60,56 @@ for k=1:length(subplot_pc)
     parallelcoords(xgood,'Group',groups,'Label',xstr);
     title(sprintf('MPG between %d and %d',this_subplot))
 end
+
+% Try to compute a 2D density over acceleration and horsepower
+xAD = x(:,1:2);
+NAD = size(xAD,1);
+N2d = 15;
+x2d = pick2Dpoints([-1 -1],[1 1],N2d*[1;1]);
+% Sorting may be useful but I haven't figured out why yet
+% [c,i] = sort(sum(x2d - ones(N2d^2,1)*[-1,-1],2));
+% x2d_sorted = x2d(i,:);
+% [c,i] = sort(sum(xAD - ones(NAD,1)*[-1,-1],2));
+% xAD_sorted = xAD(i,:);
+ecdf2d = zeros(N2d^2,1);
+for k=1:N2d^2
+    ecdf2d(k) = sum(all(xADordered<=repmat(x2d(k,:),NAD,1),2))/NAD;
+end
+h_ecdf = figure;
+surf(reshape(x2d(:,1),N2d,N2d),reshape(x2d(:,2),N2d,N2d),reshape(ecdf2d,N2d,N2d))
+
+rbfM2 = @(r) (1+r).*exp(-r);
+ep = [3,3];
+K_cdf = rbfM2(DistanceMatrix(x2d,x2d,ep));
+cdf2d_coef = K_cdf\ecdf2d;
+cdf2d_eval = @(xx) rbfM2(DistanceMatrix(xx,x2d,ep))*cdf2d_coef;
+Neval = 30;
+x2d_eval = pick2Dpoints([-1 -1],[1 1],Neval*[1;1]);
+y_eval = cdf2d_eval(x2d_eval);
+surf(reshape(x2d_eval(:,1),Neval,Neval),reshape(x2d_eval(:,2),Neval,Neval),reshape(y_eval,Neval,Neval))
 pause
+
+% Consider a range of epsilon values over which we study the maximum and
+% minimum values that the surrogate model takes in the region
+% epvec = logspace(0,1,20);
+% maxvec = zeros(size(epvec));
+% minvec = zeros(size(epvec));
+% opt_opts.Display = 'off';
+% k = 1;
+% for ep=epvec
+%     K = rbf(ep,DistanceMatrix(x,x));
+%     coef = K\y;
+%     SM_eval = @(xx) rbf(ep,DistanceMatrix(xx,x))*coef;
+%     yfull = SM_eval(x4d);
+%     [c,minind] = min(yfull)
+%     [xminmpg,minvec(k)] = fmincon(@(x)SM_eval(x'),x4d(minind,:)',zeros(4),zeros(4,1),[],[],-ones(4,1),ones(4,1),[],opt_opts);
+%     [c,maxind] = max(yfull)
+%     [xmaxmpg,maxvec(k)] = fmincon(@(x)-SM_eval(x'),x4d(maxind,:)',zeros(4),zeros(4,1),[],[],-ones(4,1),ones(4,1),[],opt_opts);
+%     k = k + 1;
+% end
+% maxvec = -maxvec;
+% h_mm = figure;
+% semilogx(epvec,[minvec;maxvec])
 
 % Create a sampling strategy for plotting results in 4D
 % Just a tensor product uniform for now
@@ -121,7 +170,10 @@ pause
 % Also, can create a tensor product-ish grid using the AD locations that we
 % were given in the data.
 % This is for computing the averaging over the input data points.
-xAD = x(:,1:2);NAD = size(xAD,1);
+N = 30;
+x1 = pickpoints(-1,1,N);
+xAD = x(:,1:2);
+NAD = size(xAD,1);
 xADv = zeros(NAD*N^2,4);
 for i=1:NAD
     for j=1:N
