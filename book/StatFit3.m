@@ -64,13 +64,15 @@ end
 % Try to compute a 2D density over acceleration and horsepower
 xAD = x(:,1:2);
 NAD = size(xAD,1);
-N2d = 15;
+N2d = 35;
 x2d = pick2Dpoints([-1 -1],[1 1],N2d*[1;1]);
 % Sorting may be useful but I haven't figured out why yet
-% [c,i] = sort(sum(x2d - ones(N2d^2,1)*[-1,-1],2));
-% x2d_sorted = x2d(i,:);
-% [c,i] = sort(sum(xAD - ones(NAD,1)*[-1,-1],2));
-% xAD_sorted = xAD(i,:);
+[c,i] = sort(sum(x2d - ones(N2d^2,1)*[-1,-1],2));
+x2d_sorted = x2d(i,:);
+[c,i] = sort(sum(xAD - ones(NAD,1)*[-1,-1],2));
+xAD_sorted = xAD(i,:);
+h_scatter = figure;
+scatter(xAD_sorted(:,1),xAD_sorted(:,2),exp(3*c))
 ecdf2d = zeros(N2d^2,1);
 for k=1:N2d^2
     ecdf2d(k) = sum(all(xADordered<=repmat(x2d(k,:),NAD,1),2))/NAD;
@@ -79,14 +81,29 @@ h_ecdf = figure;
 surf(reshape(x2d(:,1),N2d,N2d),reshape(x2d(:,2),N2d,N2d),reshape(ecdf2d,N2d,N2d))
 
 rbfM2 = @(r) (1+r).*exp(-r);
+rbfM2dxdy = @(r,dx,dy,ep) prod(ep.^2)*exp(-r).*dx.*dy./(r+eps);
+rbfM4 = @(r) (3+3*r+r.^2).*exp(-r);
+rbfM4dxdy = @(r,dx,dy,ep) prod(ep.^2)*exp(-r).*dx.*dy;
+rbfM6 = @(r) (15+15*r+6*r.^2+r.^3).*exp(-r);
+rbfM6dxdy = @(r,dx,dy,ep) prod(ep.^2)*exp(-r).*dx.*dy.*(1+r);
+rbf = rbfM6;
+rbfdxdy = rbfM6dxdy;
+
 ep = [3,3];
-K_cdf = rbfM2(DistanceMatrix(x2d,x2d,ep));
+K_cdf = rbf(DistanceMatrix(x2d,x2d,ep));
 cdf2d_coef = K_cdf\ecdf2d;
-cdf2d_eval = @(xx) rbfM2(DistanceMatrix(xx,x2d,ep))*cdf2d_coef;
-Neval = 30;
+cdf2d_eval = @(xx) rbf(DistanceMatrix(xx,x2d,ep))*cdf2d_coef;
+pdf2d_eval = @(xx) max(rbfdxdy(DistanceMatrix(xx,x2d,ep),DifferenceMatrix(xx(:,1),x2d(:,1)),...
+                             DifferenceMatrix(xx(:,2),x2d(:,2)),ep)*cdf2d_coef,0);
+Neval = 50;
 x2d_eval = pick2Dpoints([-1 -1],[1 1],Neval*[1;1]);
 y_eval = cdf2d_eval(x2d_eval);
 surf(reshape(x2d_eval(:,1),Neval,Neval),reshape(x2d_eval(:,2),Neval,Neval),reshape(y_eval,Neval,Neval))
+y_eval = pdf2d_eval(x2d_eval);
+surf(reshape(x2d_eval(:,1),Neval,Neval),reshape(x2d_eval(:,2),Neval,Neval),reshape(y_eval,Neval,Neval))
+
+% Consider integrating to a constant 1 if needed
+% dblquad(@(x,y)pdf2d_eval([repmat(x',length(y'),1),repmat(y',length(x'),1)]),-1,1,-1,1,1e-8)
 pause
 
 % Consider a range of epsilon values over which we study the maximum and
