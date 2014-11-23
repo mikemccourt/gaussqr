@@ -101,7 +101,7 @@ switch style
         % This command should change the axis labels, title
         set(findall(findobj(h),'Type','text'),'FontSize',14)
         % This command should change the xticklabels and legend
-        set(get(h,'CurrentAxes'),'FontSize',14)
+        set(get(h,'Children'),'FontSize',14)
 
         % Keep axis limits
         % I think that this is equivalent to "keep axis limits" in the sense that
