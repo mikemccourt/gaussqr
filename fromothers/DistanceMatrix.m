@@ -17,7 +17,7 @@
 %
 % If epvec is passed, instead compute
 %         ||x-z|| = ep1^2*(x1-z1)^2 + ... + epd^2*(xd-zd)^2
-function DM = DistanceMatrix(dsites,ctrs)
+function DM = DistanceMatrix(dsites,ctrs,epvec)
 global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
@@ -55,7 +55,7 @@ if alertuser && negative_values
     warning('Data can yield negative distances because of cancelation')
 end
 
-if negative_values || all(epvec~=ones(1,d))
+if negative_values || any(epvec~=ones(1,d))
     DM = DistanceMatrix_ANISOTROPIC(dsites,ctrs,epvec);
 end
 
