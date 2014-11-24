@@ -11,7 +11,16 @@
 
 N = 200;
 x = randn(N,2);
-Fhat = @(xe,x) reshape(sum(all(repmat(x,[1,1,size(xe,1)])<repmat(reshape(xe,[1,2,size(xe,1)]),[size(x,1),1,1]),2),1),size(xe,1),1)/size(x,1);
+xe = pick2Dpoints(min(x(:))*[1 1],max(x(:))*[1 1],[30;30]);
+Fhat = @(xe,x) reshape(sum(all(repmat(x,[1,1,size(xe,1)])<=repmat(reshape(xe',[1,2,size(xe,1)]),[size(x,1),1,1]),2),1),size(xe,1),1)/size(x,1);
+
+% Load, clean and scale the data
+load carsmall
+xdirty = [Acceleration Displacement Horsepower Weight];
+xstr = {'Acceleration','Displacement','Horsepower','Weight'};
+ydirty = MPG;
+[x,y,shift,scale] = rescale_data(xdirty,ydirty);
+x_mean = mean(x);
 
 % Try to compute a 2D density over acceleration and horsepower
 xAD = x(:,1:2);
@@ -27,7 +36,7 @@ h_scatter = figure;
 scatter(xAD_sorted(:,1),xAD_sorted(:,2),exp(3*c))
 ecdf2d = zeros(N2d^2,1);
 for k=1:N2d^2
-    ecdf2d(k) = sum(all(xADordered<=repmat(x2d(k,:),NAD,1),2))/NAD;
+    ecdf2d(k) = sum(all(xAD<=repmat(x2d(k,:),NAD,1),2))/NAD;
 end
 h_ecdf = figure;
 surf(reshape(x2d(:,1),N2d,N2d),reshape(x2d(:,2),N2d,N2d),reshape(ecdf2d,N2d,N2d))
