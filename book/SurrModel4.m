@@ -29,6 +29,17 @@ rbfM6dxdy = @(r,dx,dy,ep) prod(ep.^2)*exp(-r).*dx.*dy.*(1+r);
 Fhat = @(xe,x) reshape(sum(all(repmat(x,[1,1,size(xe,1)])<=repmat(reshape(xe',[1,size(xe,2),size(xe,1)]),[size(x,1),1,1]),2),1),size(xe,1),1)/size(x,1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Idea - is it possible to solve the choice of mu and epsilon as a
+%%% constrained minimization problem, rather than as a sequence of linear
+%%% solves?  Specifically, I'm wondering if I can use fmincon to minimize
+%%% the, say, CV residual subject to the equality of the kernel
+%%% interpolation system Kc=y.  The reason that might be useful here is
+%%% that I could include a second constraint: that the derivative of the
+%%% interpolant is always positive.  Doing so would guarantee, at least on
+%%% the points where I check it, that the PDF is positive.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Below is a 1D example for creating an EDF response surface
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
