@@ -85,12 +85,30 @@ uFD(:,1) = fic(x1d);
 FDmat = -gallery('tridiag',Nxfd)/delta_x^2;
 FDmat([1,end],:) = zeros(2,size(FDmat,2));
 
+% Choose a time-stepping scheme
+%    1 - backward Euler
+%    2 - 2nd order BDF
+time_scheme = 2;
+
 % Create the backward Euler solution operator
 BEmat = speye(Nxfd,Nxfd) - delta_t*heat_const*FDmat;
 
-% Perform the time stepping with backward Euler
-for k=1:Ntfd
-    uFD(:,k+1) = BEmat\uFD(:,k);
+if time_scheme==1
+    % Perform the time stepping with backward Euler
+    for k=1:Ntfd
+        uFD(:,k+1) = BEmat\uFD(:,k);
+    end
+elseif time_scheme==2
+    % Do one backward Euler step to get going
+    uFD(:,2) = BEmat\uFD(:,1);
+    
+    % Create the 2nd order BDF operator
+    BDFmat = speye(Nxfd,Nxfd) - 2/3*delta_t*heat_const*FDmat;
+    
+    % Perform the time stepping with 2nd order BDF
+    for k=1:Ntfd-1
+        uFD(:,k+2) = BDFmat\(4/3*uFD(:,k+1)-1/3*uFD(:,k));
+    end
 end
 % This is for forward Euler, which is unwise
 %     uFD(:,k+1) = uFD(:,k) + delta_t*heat_const*FDmat*uFD(:,k);
