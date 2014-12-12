@@ -60,8 +60,45 @@ yeval = rbfM2(DistanceMatrix(xeval,x,epvec))*coef;
 % Plot the results
 X = reshape(xeval(:,1),NNx,NNt);
 T = reshape(xeval(:,2),NNx,NNt);
-Y = reshape(yeval,NNx,NNt);
-surf(X,T,Y,'edgecolor','none');
+U = reshape(yeval,NNx,NNt);
+surf(X,T,U,'edgecolor','none');
 xlabel('x')
 ylabel('t')
 zlabel('u')
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Create a "true" solution that is based on finite differences
+% This must be at a significantly finer resolution to work
+FD_res = 50;
+Nxfd = FD_res*Nx;
+delta_x = 1/(Nxfd-1);
+x1d = pickpoints(0,1,Nxfd);
+Ntfd = FD_res*Nt;
+delta_t = 1/Ntfd;
+
+% Initialize data from problem
+uFD = zeros(Nxfd,Ntfd+1);
+uFD(:,1) = fic(x1d);
+
+% Create the finite difference second derivative operator
+% Zero out the first and last rows since they are BC
+FDmat = -gallery('tridiag',Nxfd)/delta_x^2;
+FDmat([1,end],:) = zeros(2,size(FDmat,2));
+
+% Create the backward Euler solution operator
+BEmat = speye(Nxfd,Nxfd) - delta_t*heat_const*FDmat;
+
+% Perform the time stepping with backward Euler
+for k=1:Ntfd
+    uFD(:,k+1) = BEmat\uFD(:,k);
+end
+% This is for forward Euler, which is unwise
+%     uFD(:,k+1) = uFD(:,k) + delta_t*heat_const*FDmat*uFD(:,k);
+
+uFD_final = uFD(:,end);
+
+% Compare the solution from finite differences to the space-time
+% collocation solution
+xtest = [x1d,tmax*ones(size(x1d,1),1)];
+utest = rbfM2(DistanceMatrix(xtest,x,epvec))*coef;
+fprintf('Relative difference, %d RBF, %d FD: %g\n',Nx,Nxfd,errcompute(utest,uFD_final))
