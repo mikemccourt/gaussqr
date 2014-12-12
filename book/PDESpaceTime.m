@@ -55,12 +55,12 @@ rhs = [rhsbc;rhsic;rhsint];
 coef = A\rhs;
 
 % Evaluate at points in the domain
-yeval = rbfM2(DistanceMatrix(xeval,x,epvec))*coef;
+ueval = rbfM2(DistanceMatrix(xeval,x,epvec))*coef;
 
 % Plot the results
 X = reshape(xeval(:,1),NNx,NNt);
 T = reshape(xeval(:,2),NNx,NNt);
-U = reshape(yeval,NNx,NNt);
+U = reshape(ueval,NNx,NNt);
 surf(X,T,U,'edgecolor','none');
 xlabel('x')
 ylabel('t')
@@ -79,6 +79,7 @@ delta_t = 1/Ntfd;
 % Initialize data from problem
 uFD = zeros(Nxfd,Ntfd+1);
 uFD(:,1) = fic(x1d);
+t = 0;
 
 % Create the finite difference second derivative operator
 % Zero out the first and last rows since they are BC
@@ -96,6 +97,7 @@ BEmat = speye(Nxfd,Nxfd) - delta_t*heat_const*FDmat;
 if time_scheme==1
     % Perform the time stepping with backward Euler
     for k=1:Ntfd
+        t = t + delta_t;
         uFD(:,k+1) = BEmat\uFD(:,k);
     end
 elseif time_scheme==2
@@ -107,7 +109,10 @@ elseif time_scheme==2
     
     % Perform the time stepping with 2nd order BDF
     for k=1:Ntfd-1
-        uFD(:,k+2) = BDFmat\(4/3*uFD(:,k+1)-1/3*uFD(:,k));
+        t = t + delta_t;
+        xt = [x1d,t*ones(size(x1d,1),1)];
+        rhs = 4/3*uFD(:,k+1) - 1/3*uFD(:,k) + 2/3*delta_t*fint(xt);
+        uFD(:,k+2) = BDFmat\rhs;
     end
 end
 % This is for forward Euler, which is unwise
