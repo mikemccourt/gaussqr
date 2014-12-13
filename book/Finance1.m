@@ -101,7 +101,7 @@ rbf_choice = 1;
 %            = 'cp_even' has coupling (see below), even interiors
 %            = 'cp_cheb' has coupling (see below), Cheb interiors
 % NOTE: pt_opt may be overwritten below if incompatible with solver
-N = 30;
+N = 121;
 pt_opt = 'cp_cheb';
 
 % Overwrite point selection if the solver is incompatible
@@ -124,8 +124,8 @@ end
 % Possible ideas include exp(-t) or 1-sqrt(t)
 coupling = strcmp(pt_opt(1:3),'cp_');
 pt_opt = pt_opt(end-3:end);
- coupling_decay = @(t) exp(-12*t/T);
-%coupling_decay = @(t) 0*t;
+% coupling_decay = @(t) exp(-12*t/T);
+coupling_decay = @(t) 0*t;
 
 if coupling
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -372,7 +372,7 @@ C_truesol = @(x,t) normcdf(d1_truesol(x,t)).*x - K*normcdf(d2_truesol(x,t)).*exp
 %            =  1 plots the computed solution
 %            =  2 plots the error in the solution
 %            =  3 plots the error in the solution at time t=T
-plot_sol = -1;
+plot_sol = 3;
 
 % Plot the error in the solution
 if plot_sol~=0

@@ -37,7 +37,7 @@ dipmom = [1 0 0];
 load reference_BEM_sol.mat
 
 % MFS solver parameters
-mfs_frac = 0.8;
+% mfs_frac = 0.8; Defined in loop below
 coeff = [1.3 0.85 1.3 0.85 1.3];
 match_couple = 1;
 
@@ -51,6 +51,7 @@ iter_out = 1;
 load eval_points.mat; N_eval = length(evalpnts);
 
 %%%%% MFS solution
+for mfs_frac = [.4 .6 .8]
 phi_MFS = zeros(N_eval,N_Nvec);
 N_rows = zeros(N_Nvec,1); N_ctrs = zeros(N_Nvec,1);
 elapsed_t_MFS = zeros(N_Nvec,1); errvec = zeros(N_Nvec,1);
@@ -267,4 +268,6 @@ for k = 1:N_Nvec
         fprintf('Elapsed time=%d s\n2-norm relative error=%d\n\n',...
                 elapsed_t_MFS(k),errvec(k))
     end
+end
+save(sprintf('dipole_time_tests%s.mat',int2str(floor(10*mfs_frac))),'elapsed_t_MFS','errvec')
 end
