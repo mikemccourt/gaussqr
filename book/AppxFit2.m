@@ -23,7 +23,7 @@ yy = yf(xx);
 % Set up kernels with which to approximate
 % Also choose a smoothing parameter
 ep = 1;
-mu = 1e-14;
+mu = 1e-3;
 rbfM2 = @(e,r) (1+e*r).*exp(-(e*r));
 rbfG = @(e,r) exp(-(e*r).^2);
 
@@ -74,7 +74,7 @@ y_smooth = K_mu\(K*y);
 % Plot the data points
 h = figure;
 subplot(1,3,1)
-plot(xx,f(xx),'k','linewidth',3)
+plot(xx,yf(xx),'k','linewidth',3)
 hold on
 plot(x,y,'or','linewidth',1.5)
 plot(x,y_smooth,'xb','linewidth',3)
