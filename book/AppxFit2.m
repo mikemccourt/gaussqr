@@ -41,7 +41,7 @@ y_smooth = K_mu\(K*y);
 % Plot the data points
 h = figure;
 subplot(1,3,1)
-plot(xx,f(xx),'k','linewidth',3)
+plot(xx,yf(xx),'k','linewidth',3)
 hold on
 plot(x,y,'or','linewidth',1.5)
 plot(x,y_smooth,'xb','linewidth',3)
