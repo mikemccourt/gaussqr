@@ -206,11 +206,11 @@ switch test_opt
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
         % Choose whether or not to display plots
-        plots_on = 'off';
+        plots_on = 'on';
                 
         % Choose an RBF to work with
-        rbf = rbfM4;
-        rbfdx = rbfM4dx;
+        rbf = rbfM2;
+        rbfdx = rbfM2dx;
         
         % Choose generalized pareto parameters
         gp_k = -1/2;
@@ -223,16 +223,20 @@ switch test_opt
         
         % Choose points at which to test the error
         NN = 200;
-        xx = pickpoints(0,1,NN);
+        xx = pickpoints(0,2,NN);
         cdf_true = cdf('gp',xx,gp_k,gp_sigma,gp_theta);
         pdf_true = pdf('gp',xx,gp_k,gp_sigma,gp_theta);
         
         cerrmat = zeros(Nexp,length(Nvec));
         perrmat = zeros(Nexp,length(Nvec));
-        h_waitbar = waitbar(0,'Initializing','Visible',plots_on);
+        if strcmp(plots_on,'on')
+            h_waitbar = waitbar(0,'Initializing','Visible',plots_on);
+        end
         i = 1;
         for N=Nvec
-            waitbar(0,h_waitbar,sprintf('N=%d',N),'Visible',plots_on);
+            if strcmp(plots_on,'on')
+                waitbar(0,h_waitbar,sprintf('N=%d',N));
+            end
             j = 1;
             for Ne=1:Nexp
                 % Create some random samples from a generalized pareto
@@ -241,9 +245,20 @@ switch test_opt
                 % Evaluate the EDF at the given points
                 y = Fhat(x,x);
                 
+                % We need to perform cross-validation to find the optimal
+                % epsilon and mu values
+                % Choose a set of cross-validation indices
+                % We'll hard-wire leave 1/4 out and reevaluate later
+                % We also need to think about the initial guess ...
+                cvind = {1:4:N,2:4:N,3:4:N,4:4:N};
+                optim_opt.Display = 'off';
+                warning off
+                epmu_opt = fminunc(@(epmu)SurrModel4_CV(exp(epmu),rbf,x,y,cvind),log([1;1e-5]),optim_opt);
+                warning on
+                ep = exp(epmu_opt(1));
+                mu = exp(epmu_opt(2));
+                
                 % Create the surrogate model
-                ep = .3;
-                mu = 1e-2;
                 K_cdf = rbf(DistanceMatrix(x,x,ep));
                 cdf_coef = (K_cdf+mu*eye(N))\y;
                 cdf_eval = @(xeval) rbf(DistanceMatrix(xeval,x,ep))*cdf_coef;
@@ -253,16 +268,20 @@ switch test_opt
                 cerrmat(j,i) = errcompute(cdf_eval(xx),cdf_true);
                 perrmat(j,i) = errcompute(pdf_eval(xx),pdf_true);
                 
-                progress = floor(100*Ne/Nexp)/100;
-                waitbar(progress,h_waitbar,sprintf('N=%d, Exp #%d',N,Ne),'Visible',plots_on);
-                if ~strcmp(plots_on,'on')
+                if strcmp(plots_on,'on')
+                    progress = floor(100*Ne/Nexp)/100;
+                    waitbar(progress,h_waitbar,sprintf('N=%d, Exp #%d',N,Ne));
+                else
                     fprintf('%d\t%d\n',i,j)
                 end
                 j = j + 1;
             end
+            pause
             i = i + 1;
         end
-        close(h_waitbar)
+        if strcmp(plots_on,'on')
+            close(h_waitbar)
+        end
         
         % Average the errors computed to smooth out randomness
         cerrvec = mean(cerrmat);
@@ -278,6 +297,7 @@ switch test_opt
         hold on
         loglog(Nvec,perrvec,'r','linewidth',3);
         hold off
+        title(sprintf('ep=%g, mu=%g',ep,mu))
         legend(sprintf('CDF, slope=%3.2f',polyfit_cdf(1)),...
                sprintf('PDF, slope=%3.2f',polyfit_pdf(1)))
         if ~strcmp(plots_on,'on')
