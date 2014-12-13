@@ -86,15 +86,21 @@ end
 if baseDir(end)~=dirSlash
     baseDir = strcat(baseDir,dirSlash);
 end
-saveDir = strcat(baseDir,fname);
-epsDir = strcat(saveDir,'.eps');
+saveDirBase = strcat(baseDir,fname);
+epsDir = strcat(saveDirBase,'.eps');
+
+% Check to make sure that you can write to the directory you want to
+[dirstat,dirinfo] = fileattrib(baseDir);
+if dirstat~=1 || ~dirinfo.UserWrite
+    error('You do not appear to have permission to write to %s\nYou may not have permission, or that may not be a valid directory',baseDir)
+end
 
 % Use the appropriate color plotting pattern as requested by the user
 switch style
     case 0 % Just save the fig/eps of the handle
-        saveas(h,saveDir,'fig')
+        saveas(h,saveDirBase,'fig')
         print(h,'-depsc2',epsDir)
-        epsDir = strcat(saveDir,'.png');
+        epsDir = strcat(saveDirBase,'.png');
         print(h,'-dpng',epsDir)
     case {1,2,3}
         % Font Size 14        
@@ -129,7 +135,7 @@ switch style
         set(findobj(get(get(h,'CurrentAxes'),'Children'),'type','line'),'linewidth',2)
         
         % Save the figure
-        saveas(h,saveDir,'fig')
+        saveas(h,saveDirBase,'fig')
         % Save the eps in the desired format
         switch style
             case 1 % Black and White

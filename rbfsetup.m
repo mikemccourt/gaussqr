@@ -51,8 +51,14 @@ end
 % Otherwise this info is stored in the GQR object, when possible
 GAUSSQR_PARAMETERS.WARNINGS_ON = false;
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%% Start of optional directory checking, management
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Set this value to '/my/picture/directory' so that the function SaveFig
 % puts images you want to save in that directory
+% This will NOT create this directory for you, if it does not exist, it
+% will simply save figures to the gaussqr home directory
+% You have to create the directory yourself
 % Windows Example: 
 GAUSSQR_PARAMETERS.FIGURE_DIRECTORY = 'C:\Users\ironmike\My Documents\book\First Draft\Figures';
 % GAUSSQR_PARAMETERS.FIGURE_DIRECTORY = 'C:\Users\ironmike\Documents\book\First Draft\Figures';
@@ -64,6 +70,30 @@ if not(exist(GAUSSQR_PARAMETERS.FIGURE_DIRECTORY,'dir'))
     GAUSSQR_PARAMETERS.FIGURE_DIRECTORY = GAUSSQR_PARAMETERS.BASE_DIRECTORY;
 end
 
+% Set this value to '/my/data/directory' so that data that needs to be
+% downloaded from GaussQR (or elsewhere) can be stored uniformly
+% By default this location is '/gaussqr/data'
+% This WILL create this directory, if it does not exist
+% Windows Example:
+GAUSSQR_PARAMETERS.DATA_DIRECTORY = strcat(thisDir,dirslash,'data');
+if not(exist(GAUSSQR_PARAMETERS.DATA_DIRECTORY,'dir'))
+    [dir_created,message,messageid] = mkdir(GAUSSQR_PARAMETERS.DATA_DIRECTORY);
+    if not(dir_created)
+        warning('Data directory %s could not be created\nMatlab message %s: %s\nData stored in base GaussQR directory',GAUSSQR_PARAMETERS.DATA_DIRECTORY,messageid,message);
+        GAUSSQR_PARAMETERS.DATA_DIRECTORY = thisDir;
+    end
+end
+addpath(GAUSSQR_PARAMETERS.DATA_DIRECTORY);
+
+dirsToCheck = {thisDir,GAUSSQR_PARAMETERS.FIGURE_DIRECTORY,GAUSSQR_PARAMETERS.DATA_DIRECTORY};
+for k=1:length(dirsToCheck)
+    [dirstat,dirinfo] = fileattrib(dirsToCheck{k});
+    if dirstat~=1 || ~dirinfo.UserWrite
+        warning('You do not appear to have write permissions to %s',dirsToCheck{k})
+    end
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Check to see if various toolboxes are available
 v = ver;
 GAUSSQR_PARAMETERS.CURVEFIT_TOOLBOX_AVAILABLE = any(strcmp('Curve Fitting Toolbox', {v.Name}));
