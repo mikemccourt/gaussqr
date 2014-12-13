@@ -11,6 +11,7 @@ function [x,spacestr] = pick2Dpoints(a,b,N,spaceopt,ep)
 %                      'cheb' - Chebyshev tensor grid
 %                      'inner' - centrally clustered points
 %                      'halton' - Halton quasi-random points
+%                      'rand' - uniform random points
 %                      'wam' - See wamquadrangle
 %           ep - (only for 'inner' points) shape parameter
 %   Outputs: x - 2D points with spaceopt distribution
@@ -70,6 +71,10 @@ switch lower(spaceopt)
         end
             x = (repmat(b,pN,1)-repmat(a,pN,1)).*xh+repmat(a,pN,1);
         spacestr=' Halton points';
+    case {'random','rand'}
+        pN = round(prod(N));
+        x = rand(pN,2)*diag(b-a) + repmat(a,pN,1);
+        spacestr=' uniform random points';
     case 'wam'
         % Here, centered symmetric (actually Chebyshev points), but can be
         % used more flexibly, i.e., arbitrary quadrilateral
