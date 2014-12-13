@@ -21,6 +21,8 @@
 % Standardize the random results
 global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.RANDOM_SEED(0);
+GAUSSQR_PARAMETERS.ERROR_STYLE = 2;
+GAUSSQR_PARAMETERS.NORM_TYPE = inf;
 
 % Define some RBFs for use on this problem
 rbfM2 = @(r) (1+r).*exp(-r);
@@ -41,7 +43,8 @@ Fhat = @(xe,x) reshape(sum(all(repmat(x,[1,1,size(xe,1)])<=repmat(reshape(xe',[1
 %   1 - 1D CDF fit to a generalized Pareto distribution
 %   2 - 2D CDF fit to a normal distribution
 %   3 - 4D CDF fit to carsmall data
-test_opt = 1;
+%   4 - Order of convergence test for Pareto data
+test_opt = 4;
 
 switch test_opt
     case 1
@@ -50,7 +53,6 @@ switch test_opt
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         
         % Create some random samples from a generalized pareto
-        % I'm not totally sure what the parameters mean
         N = 800;
         gp_k = -1/2;
         gp_sigma = 1;
@@ -79,7 +81,7 @@ switch test_opt
         
         % Create the surrogate model
         ep = .3;
-        mu = 1e-4;
+        mu = 1e-2;
         K_cdf = rbf(DistanceMatrix(x,x,ep));
         cdf_coef = (K_cdf+mu*eye(N))\y;
         cdf_eval = @(xeval) rbf(DistanceMatrix(xeval,x,ep))*cdf_coef;
@@ -198,6 +200,91 @@ switch test_opt
         surf(reshape(x2d_eval(:,1),Neval,Neval),reshape(x2d_eval(:,2),Neval,Neval),reshape(y_eval,Neval,Neval))
         y_eval = pdf2d_eval(x2d_eval);
         surf(reshape(x2d_eval(:,1),Neval,Neval),reshape(x2d_eval(:,2),Neval,Neval),reshape(y_eval,Neval,Neval))
+    case 4
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        %%% Below is a convergence test on 1D data
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+        
+        % Choose whether or not to display plots
+        plots_on = 'off';
+                
+        % Choose an RBF to work with
+        rbf = rbfM4;
+        rbfdx = rbfM4dx;
+        
+        % Choose generalized pareto parameters
+        gp_k = -1/2;
+        gp_sigma = 1;
+        gp_theta = 0;
+        
+        % Test over a range of points, and several experiments per point
+        Nvec = floor(logspace(1,3,16));
+        Nexp = 30;
+        
+        % Choose points at which to test the error
+        NN = 200;
+        xx = pickpoints(0,1,NN);
+        cdf_true = cdf('gp',xx,gp_k,gp_sigma,gp_theta);
+        pdf_true = pdf('gp',xx,gp_k,gp_sigma,gp_theta);
+        
+        cerrmat = zeros(Nexp,length(Nvec));
+        perrmat = zeros(Nexp,length(Nvec));
+        h_waitbar = waitbar(0,'Initializing','Visible',plots_on);
+        i = 1;
+        for N=Nvec
+            waitbar(0,h_waitbar,sprintf('N=%d',N),'Visible',plots_on);
+            j = 1;
+            for Ne=1:Nexp
+                % Create some random samples from a generalized pareto
+                x = sort(icdf('gp',rand(N,1),gp_k,gp_sigma,gp_theta));
+                
+                % Evaluate the EDF at the given points
+                y = Fhat(x,x);
+                
+                % Create the surrogate model
+                ep = .3;
+                mu = 1e-2;
+                K_cdf = rbf(DistanceMatrix(x,x,ep));
+                cdf_coef = (K_cdf+mu*eye(N))\y;
+                cdf_eval = @(xeval) rbf(DistanceMatrix(xeval,x,ep))*cdf_coef;
+                pdf_eval = @(xeval) rbfdx(DistanceMatrix(xeval,x,ep),DifferenceMatrix(xeval,x),ep)*cdf_coef;
+                
+                % Evaluate the error in the cdf and pdf
+                cerrmat(j,i) = errcompute(cdf_eval(xx),cdf_true);
+                perrmat(j,i) = errcompute(pdf_eval(xx),pdf_true);
+                
+                progress = floor(100*Ne/Nexp)/100;
+                waitbar(progress,h_waitbar,sprintf('N=%d, Exp #%d',N,Ne),'Visible',plots_on);
+                if ~strcmp(plots_on,'on')
+                    fprintf('%d\t%d\n',i,j)
+                end
+                j = j + 1;
+            end
+            i = i + 1;
+        end
+        close(h_waitbar)
+        
+        % Average the errors computed to smooth out randomness
+        cerrvec = mean(cerrmat);
+        perrvec = mean(perrmat);
+        
+        % Compute the slopes of the convergence behaviors
+        polyfit_cdf = polyfit(log(Nvec),log(cerrvec),1);
+        polyfit_pdf = polyfit(log(Nvec),log(perrvec),1);
+        
+        % Plot the convergence and display the slopes
+        h = figure('Visible',plots_on);
+        loglog(Nvec,cerrvec,'linewidth',3);
+        hold on
+        loglog(Nvec,perrvec,'r','linewidth',3);
+        hold off
+        legend(sprintf('CDF, slope=%3.2f',polyfit_cdf(1)),...
+               sprintf('PDF, slope=%3.2f',polyfit_pdf(1)))
+        if ~strcmp(plots_on,'on')
+            gqr_savefig(h,sprintf('SurrModelEDFtest'));
+            plot_command = 'loglog(Nvec,[cerrvec,perrvec])';
+            save('SurrModelEDFtest','Nvec','cerrvec','perrvec','cerrmat','perrmat','plot_command');
+        end
     otherwise
         error('No such example exists')
 end
