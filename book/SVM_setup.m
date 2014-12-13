@@ -59,7 +59,7 @@ switch design_opt
     case 2
         grnmean = [1,0;0,1;2,1];
         redmean = [0,0;1,1;2,0];
-        covmat = .2*eye(2);
+        covmat = .5*eye(2);
     otherwise
         error('design_opt must be either 1 or 2')
 end

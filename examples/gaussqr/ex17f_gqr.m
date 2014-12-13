@@ -26,7 +26,6 @@ DM_EVAL = DistanceMatrix(xx,x);
 dirvec = zeros(size(epvec));
 gqrvec = zeros(size(epvec));
 errvec = zeros(size(epvec));
-derrvec = zeros(size(epvec));
 boundvec = zeros(size(epvec));
 correctionvec = zeros(size(epvec));
 
@@ -36,12 +35,7 @@ for ep=epvec
     % Solve the problem directly
     K = rbf(ep,DM_INT);
     [U,S,V] = svd(K);
-    c = (V*diag(0*(diag(S)<1e-14)+(1./diag(S)).*(diag(S)>1e-14))*U'*y);
-    K_EVAL = rbf(ep,DM_EVAL);
-    derrvec(k) = errcompute(K_EVAL*c,yy);
-    
-    % Compute the MLE directly
-    Mdist = y'*c;
+    Mdist = y'*(V*diag(0*(diag(S)<1e-14)+(1./diag(S)).*(diag(S)>1e-14))*U'*y);
     logdetK = sum(log(diag(S)+eps));
     dirvec(k) = N*log(Mdist) + logdetK;
     
@@ -80,7 +74,7 @@ end
 
 waitbar(100,h_waitbar,sprintf('Plotting'))
 h_mle = figure;
-[AX,H1,H2] = plotyy(epvec,[gqrvec;dirvec],epvec,[errvec;derrvec],'semilogx','loglog');
+[AX,H1,H2] = plotyy(epvec,[dirvec;gqrvec],epvec,errvec,'semilogx','loglog');
 set(H1,'linewidth',3)
 c = get(AX(1),'Children');
 set(c(1),'color',[1 0 0])
@@ -89,18 +83,17 @@ set(c(2),'color',[0 0 1])
 set(H2,'linewidth',2)
 set(H2,'color','k')
 set(AX,{'ycolor'},{[.5 0 .5];[0 0 0]}) % Set axis color
-set(AX(1),'ylim',[-220,1500])
-set(AX(1),'ytick',[0,1000])
-set(AX(2),'ylim',[1e-18,1])
-set(AX(2),'ytick',[1e-9,1e-5,1e-1])
-legend([H1;H2],'Stable MLE','Standard MLE','Stable Error','Standard Error','location','north')
+set(AX(1),'ylim',[-300,1500])
+set(AX(2),'ylim',[1e-18,1e-2])
+set(AX(2),'ytick',[1e-9,1e-6,1e-3])
+legend([H1;H2],'MLE direct','MLE HS-SVD','Error','location','north')
 xlabel('\epsilon')
 set(get(AX(1),'xlabel'),'Position',[2,-360,0])
 ylabel('Likelihood function')
 set(get(AX(1),'ylabel'),'Position',[.08,500,17])
 set(get(AX(2),'ylabel'),'String','Relative error')
 set(get(AX(2),'ylabel'),'Position',[12 3e-014 0])
-hold off,pause
+hold off
 
 h_bound = figure;
 gapvec = log10(boundvec./correctionvec);

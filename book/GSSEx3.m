@@ -39,24 +39,19 @@ t_circle = t_circle(1:end-1); % So that there is no duplicate center
 z_MFS = 2*[cos(t_circle),sin(t_circle)];
 
 % Identify the collocation points for each component of the problem
-% x_d  = x_MFS(1:3:end,:);
-% x_nx = x_MFS(2:3:end,:);
-% x_ny = x_MFS(3:3:end,:);
-x_d  = x_MFS;
-x_nx = x_MFS(abs(x_MFS(:,1))==1,:);
-x_ny = x_MFS(abs(x_MFS(:,2))==1,:);
+x_d  = x_MFS(1:3:end,:);
+x_nx = x_MFS(2:3:end,:);
+x_ny = x_MFS(3:3:end,:);
 
 % Create the MFS matrices
 Gbar_d = G(x_d,z_MFS);
 Grhs_d = G(x_d,x);
-% Gbar_nx = Gx(x_nx,z_MFS);
-% Grhs_nx = Gx(x_nx,x);
-% Gbar_ny = Gy(x_ny,z_MFS);
-% Grhs_ny = Gy(x_ny,x);
-% Gbar = [Gbar_d;Gbar_nx;Gbar_ny];
-% Grhs = [Grhs_d;Grhs_nx;Grhs_ny];
-Gbar = [Gbar_d];
-Grhs = [Grhs_d];
+Gbar_nx = Gx(x_nx,z_MFS);
+Grhs_nx = Gx(x_nx,x);
+Gbar_ny = Gy(x_ny,z_MFS);
+Grhs_ny = Gy(x_ny,x);
+Gbar = [Gbar_d;Gbar_nx;Gbar_ny];
+Grhs = [Grhs_d;Grhs_nx;Grhs_ny];
 
 % Solve for the MFS coefficients
 coef_MFS = Gbar\Grhs;

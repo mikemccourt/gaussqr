@@ -10,18 +10,16 @@ low_rank = 0;
 GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .05;
 
 % Define the size of the problem
-test_N = 20;
+test_N = 10;
 train_N = 100;
 
 % Create random training and test data
-[train_data,train_class,test_data,test_class,h1] = SVM_setup(2,train_N,test_N);
+[train_data,train_class,test_data,test_class,h1] = SVM_setup(1,train_N,test_N);
 
 % Plot a variety of contours
 d = 0.02;
-% [CD1,CD2] = meshgrid(min(train_data(:,1)):d:max(train_data(:,1)),...
-%     min(train_data(:,2)):d:max(train_data(:,2)));
 [CD1,CD2] = meshgrid(min(train_data(:,1)):d:max(train_data(:,1)),...
-    -1:d:2);
+    min(train_data(:,2)):d:max(train_data(:,2)));
 contour_data_fine = [CD1(:),CD2(:)];
 CD3 = CD1(1:3:end,1:3:end);
 CD4 = CD2(1:3:end,1:3:end);
@@ -29,14 +27,14 @@ contour_data_markers = [CD3(:),CD4(:)];
 
 % First, fix the box constraint and consider 3 ep values
 bc = 1;
-epvec = [.1 1 10];
+epvec = [.2 1 5];
 ptvec = {'o','*','none'};
 h2 = figure;
 hold on
 h_contour = zeros(size(epvec));
 for k=1:length(epvec)
     SVM = gqr_fitsvm(train_data,train_class,epvec(k),bc,low_rank);
-    contour_class = SVM.eval(contour_data_fine);pause
+    contour_class = SVM.eval(contour_data_fine);
     contour(CD1,CD2,reshape(contour_class,size(CD1)),[0 0],'linewidth',2);
     contour_class = SVM.eval(contour_data_markers);
     [tmp,h_contour(k)] = contour(CD3,CD4,reshape(contour_class,size(CD3)),[0 0]);

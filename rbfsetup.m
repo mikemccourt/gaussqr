@@ -40,8 +40,7 @@ GAUSSQR_PARAMETERS.BASE_DIRECTORY = thisDir;
 GAUSSQR_PARAMETERS.DIRECTORY_SLASH = dirslash;
 
 % Allow for random number reset based on what the right call is
-% I'm not sure this is correct ... I feel like rng is builtin
-if exist('rng','file')
+if exist('rng','builtin')
     GAUSSQR_PARAMETERS.RANDOM_SEED = @(rseed) rng(rseed);
 else
     GAUSSQR_PARAMETERS.RANDOM_SEED = @(rseed) rand('state',rseed);
@@ -54,7 +53,7 @@ GAUSSQR_PARAMETERS.WARNINGS_ON = false;
 % Set this value to '/my/picture/directory' so that the function SaveFig
 % puts images you want to save in that directory
 % Windows Example: 
-GAUSSQR_PARAMETERS.FIGURE_DIRECTORY = 'C:\Users\ironmike\My Documents\book\First Draft\Figures';
+GAUSSQR_PARAMETERS.FIGURE_DIRECTORY = 'C:\Users\ironmike\Documents\fasshauer\book\First Draft\Figures';
 % GAUSSQR_PARAMETERS.FIGURE_DIRECTORY = 'C:\Users\ironmike\Documents\book\First Draft\Figures';
 if not(exist(GAUSSQR_PARAMETERS.FIGURE_DIRECTORY,'dir'))
     if GAUSSQR_PARAMETERS.WARNINGS_ON

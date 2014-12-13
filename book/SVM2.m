@@ -9,9 +9,9 @@ global GAUSSQR_PARAMETERS
 % Choose a shape parameter or range of ep to test
 % Also, choose a box constraint or range of bc to test
 % The ep and box_constraint values are only needed for plot_results=1
-ep = 1;
+ep = .01;
 epvec = logspace(-2,2,31);
-box_constraint = 1;
+box_constraint = 10000;
 bcvec = logspace(-2,8,30);
 
 % Use the low rank matrix multiplication strategy
