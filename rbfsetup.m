@@ -38,6 +38,7 @@ addpath(sourceDir,gaussqrDir,gqrauxiliaryDir,mqrauxiliaryDir,utilitiesDir,otherD
 global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.BASE_DIRECTORY = thisDir;
 GAUSSQR_PARAMETERS.DIRECTORY_SLASH = dirslash;
+GAUSSQR_PARAMETERS.WEB_DIRECTORY = 'http://math.iit.edu/~mccomic/gaussqr';
 
 % Allow for random number reset based on what the right call is
 % I'm not sure this is correct ... I feel like rng is builtin

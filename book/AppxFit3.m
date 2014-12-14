@@ -20,13 +20,7 @@ GAUSSQR_PARAMETERS.NORM_TYPE = 2;
 % page on Maximal Determinant point
 %   http://web.maths.unsw.edu.au/~rsw/Sphere/Extremal/New/extremal1.html
 % We thank Dr. Wommersley for his many contributions
-sphereDataFile = strcat(dataDir,dirslash,'sphereMDpts_data.mat');
-if not(exist(sphereDataFile,'file'))
-    [filestr,downloadSuccessful] = urlwrite('http://math.iit.edu/~mccomic/gaussqr/data/sphereMDpts_data.mat',sphereDataFile,'Timeout',20);
-    if ~downloadSuccessful
-        error('Download of data failed or could not be written to %s',filestr)
-    end
-end
+gqr_downloaddata('sphereMDpts_data.mat')
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Once you have the data, load it into memory
@@ -43,11 +37,20 @@ Nvec = cellfun(@length,sphereMDpts);
 % yf = @(x) cos(2*(x(:,1)+1/2).^2 + 3*(x(:,2)+1/2).^2 + 5*(x(:,3)-1/sqrt(2)).^2);
 yf = @(x) (1 + 10*x(:,1).*x(:,2).*x(:,3) + x(:,1).^8 + exp(2*x(:,2).^3) + exp(2*x(:,3).^2))/14;
 
+% Define the distance between points on a sphere
+ZonalDistanceMatrix = @(x,z) sqrt(2)*sqrt(1-x*z');
+
 % Pick our kernel, here just the inverse multiquadrics
 % ep = 2.5 is chosen ad hoc
-ep = 2.5;
-ZonalDistanceMatrix = @(x,z) sqrt(1-x*z');
-zbf = @(e,r) 1./sqrt(1+(e*r).^2);
+ep = 1.75;
+zbf = @(e,r) 1./sqrt(1+(e*r).^2); % Original IMQ
+% To use the "other IMQ" you can solve the equation
+%     gamma/(1-gamma)^2 = ep^2
+% with gamma = fzero(@(gamma) gamma./(1-gamma).^2 = ep^2,.5)
+% There will always be a gamma in [0,1) for any ep in [0,inf)
+% I use gamma above, but this code requires ep
+% ep = 0.568970621283223; % matches ep = 1.75 for Original IMQ
+% zbf = @(e,r) 1./sqrt(1+e^2-e*(2-r.^2)); % Other IMQ
 
 % Could also choose random or Halton test points around the sphere?
 % Choose random angles and convert to x,y,z
