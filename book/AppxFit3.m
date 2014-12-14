@@ -4,9 +4,6 @@
 % It may be possible to consider non-zonal kernels on the sphere, but we
 % will restrict ourselves to the simpler setting here
 global GAUSSQR_PARAMETERS
-GAUSSQR_PARAMETERS.RANDOM_SEED(0);
-dataDir = GAUSSQR_PARAMETERS.DATA_DIRECTORY;
-dirslash = GAUSSQR_PARAMETERS.DIRECTORY_SLASH;
 GAUSSQR_PARAMETERS.ERROR_STYLE = 4;
 GAUSSQR_PARAMETERS.NORM_TYPE = 2;
 
@@ -31,13 +28,16 @@ Nvec = cellfun(@length,sphereMDpts);
 
 % Choose a test function to interpolate
 % First function from Grady Wright at
-%   http://math.boisestate.edu/~wright/montestigliano/index.html
+%   http://math.boisestate.edu/~wright/montestigliano
 % Second function from Fasshauer thesis 
 %   doi: 10.1016/0377-0427(96)00034-9   [Alfeld, Neamtu, Schumaker]
 % yf = @(x) cos(2*(x(:,1)+1/2).^2 + 3*(x(:,2)+1/2).^2 + 5*(x(:,3)-1/sqrt(2)).^2);
 yf = @(x) (1 + 10*x(:,1).*x(:,2).*x(:,3) + x(:,1).^8 + exp(2*x(:,2).^3) + exp(2*x(:,3).^2))/14;
 
 % Define the distance between points on a sphere
+% Note that this is the same as the real Distance Matrix function, it just
+% uses a different formulation specific to the sphere
+% We write this here to explicitly make this comment
 ZonalDistanceMatrix = @(x,z) sqrt(2)*sqrt(1-x*z');
 
 % Pick our kernel, here just the inverse multiquadrics
@@ -52,12 +52,11 @@ zbf = @(e,r) 1./sqrt(1+(e*r).^2); % Original IMQ
 % ep = 0.568970621283223; % matches ep = 1.75 for Original IMQ
 % zbf = @(e,r) 1./sqrt(1+e^2-e*(2-r.^2)); % Other IMQ
 
-% Could also choose random or Halton test points around the sphere?
-% Choose random angles and convert to x,y,z
+% Choose various angles and convert to x,y,z
 % These are not well distributed, but they are easy
 NN = 200;
-[t,testptstr] = pick2Dpoints([0 0],[pi 2*pi],sqrt(NN),'halt');
-xx = [sin(t(:,1)).*cos(t(:,2)),sin(t(:,1)).*sin(t(:,2)),cos(t(:,1))];
+[t,testptstr] = pick2Dpoints([-pi -pi/2],[pi pi/2],sqrt(NN),'halt');
+[xx(:,1),xx(:,2),xx(:,3)] = sph2cart(t(:,1),t(:,2),1);
 yy = yf(xx);
 
 % Study the quality of the interpolation
@@ -75,12 +74,12 @@ for k=1:length(sphereMDpts)
     
     % Perform the interpolation and evaluate the error at the test points
     coef = K\y;
-    yp = Ktest*coef;
-    errvec(k) = errcompute(yp,yy);
+    yeval = Ktest*coef;
+    errvec(k) = errcompute(yeval,yy);
 end
 
 % Create some pretty plots of the answer and error
-Nplot = 55;
+Nplot = 105;
 [X,Y,Z] = sphere(Nplot-1);
 xplot = [X(:),Y(:),Z(:)];
 
