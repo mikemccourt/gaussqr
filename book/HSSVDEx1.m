@@ -87,6 +87,8 @@ for ep=epvec
     if k==1
         yplot = yeval;
         yplotqr = yevalqr;
+        err = errcompute(yeval,yy);
+        errqr = errcompute(yevalqr,yy);
     end
     
     k = k + 1;
