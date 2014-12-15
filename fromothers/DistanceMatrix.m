@@ -48,7 +48,24 @@ negative_values = 0;
 if (M==0 || N==0)
     DM = zeros(N,M);
 elseif all(epvec==ones(1,d)) % Otherwise, compute distance matrix
-    [DM,negative_values] = DistanceMatrix_BASIC(dsites,ctrs);
+    try
+        [DM,negative_values] = DistanceMatrix_BASIC(dsites,ctrs);
+    catch err
+        if strcmp(err.identifier,'MATLAB:nomem')
+            warning('Memory allocation error, attempting less demanding strategy')
+            try
+                DM = DistanceMatrix_ANISOTROPIC(dsites,ctrs,epvec);
+            catch err_safer
+                if strcmp(err_safer.identifier,'MATLAB:nomem')
+                    error('Nope ... that didn''t work either.  You have not enough memory for this matrix.')
+                else
+                    rethrow(err_safer)
+                end
+            end
+        else
+            rethrow(err);
+        end
+    end
 end
 
 if alertuser && negative_values
@@ -87,7 +104,7 @@ end
 %%% Also safe if numerical cancelation was an issue
 %%% Note that this return r.^2, so the sqrt is considered externally
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function DM = DistanceMatrix_ANISOTROPIC(dsites,ctrs,epvec);
+function DM = DistanceMatrix_ANISOTROPIC(dsites,ctrs,epvec)
 [N,d] = size(dsites);
 M = size(ctrs,1);
 DM = zeros(N,M);
@@ -96,7 +113,7 @@ DM = zeros(N,M);
 % Each coordinate is weighted by the epvec
 % Need to convert to bsxfun if it is available
 for k=1:d
-    DM = DM + epvec(k)^2*(repmat(dsites(:,k),1,M)-repmat(ctrs(:,k)',N,1)).^2;
-%     DM = DM + epvec(k)^2*bsxfun(@minus,dsites(:,k),ctrs(:,k)').^2;
+    DM = DM + epvec(k)^2*bsxfun(@minus,dsites(:,k),ctrs(:,k)').^2;
 end
+
 end
