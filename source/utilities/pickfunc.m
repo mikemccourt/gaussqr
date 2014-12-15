@@ -1,5 +1,8 @@
 function [yf,fstr] = pickfunc(fopt,dim)
 % function [yf,fstr] = pickfunc(fopt,dim)
+% For the optics functions in 2D, only consider the domain [-1,1] to get
+% the real problem because the scaling is accounted for within this
+% function.
 
 switch dim
     case 1
@@ -48,13 +51,13 @@ switch dim
                 yf = @(x) franke(x(:,1),x(:,2));
             case 'kxy' % for [-5,5]^2
                 fstr = 'f(x,y) = KXY';
-                yf = @(x) kxy(x);
+                yf = @(x) kxy(5*x);
             case 'ksa1' % for [-1,1]^2
                 fstr = 'f(x,y) = KSA1';
                 yf = @(x) ksa1(x);
             case 'ksa2' % for disk with radius 20
                 fstr = 'f(x,y) = KSA2';
-                yf = @(x) ksa2(x);
+                yf = @(x) ksa2(20*x);
         end
     otherwise
         error('Can only consider 1D and 2D functions')
