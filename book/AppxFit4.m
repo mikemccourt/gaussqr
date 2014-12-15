@@ -102,7 +102,9 @@ for ep=epvec
     % Perform the standard interpolation
     K = rbf(ep,DM);
     Keval = rbf(ep,DMeval);
+    warning('off','MATLAB:nearlySingularMatrix')
     yeval = Keval*(K\y);
+    warning('on','MATLAB:nearlySingularMatrix')
     
     % Eigs are the eigenvalues of the kernel, here stored as a vector since
     % storing them as a diagonal matrix seems unnecessary.

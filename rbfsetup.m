@@ -38,7 +38,19 @@ addpath(sourceDir,gaussqrDir,gqrauxiliaryDir,mqrauxiliaryDir,utilitiesDir,otherD
 global GAUSSQR_PARAMETERS
 GAUSSQR_PARAMETERS.BASE_DIRECTORY = thisDir;
 GAUSSQR_PARAMETERS.DIRECTORY_SLASH = dirslash;
+
+% This provides access to the gaussqr data directory and files needed to
+% run certain examples
+% Programmer's Note: We could write this so that all the data is acquired
+% the first time rbfsetup is run.  Right now, data is only acquired on an
+% as needed basis, which is bad if the user loses internet
+% Programmer's Note: There could be a list posted on the gaussqr website of
+% all the data files that are available to users, and this queries that
+% list when attached to the internet.  That would prevent us from manually
+% updating the list here, or perhaps forgetting to, as new data arises.
 GAUSSQR_PARAMETERS.WEB_DIRECTORY = 'http://math.iit.edu/~mccomic/gaussqr';
+GAUSSQR_PARAMETERS.AVAILABLE_DATA = {'sphereMDpts_data.mat',...
+                                     'coverpainting.png'};
 
 % Allow for random number reset based on what the right call is
 % I'm not sure this is correct ... I feel like rng is builtin

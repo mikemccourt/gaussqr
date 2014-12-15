@@ -1,4 +1,4 @@
-function gaussqr_list = gqr_downloaddata(filestr,webbase,saveloc)
+function retval = gqr_downloaddata(filestr,webbase,saveloc)
 % This function tries to download data from the gaussqr website, or from
 % some other location if one is desired
 % It will store the data in the gaussqr data directory as defined in
@@ -7,13 +7,14 @@ function gaussqr_list = gqr_downloaddata(filestr,webbase,saveloc)
 % want to download an updated version of a file, you must manually delete
 % the existing file
 %
-%    gqr_downloaddata(filestr)
+%    download_occurred = gqr_downloaddata(filestr)
 % Downloads filestr from the GaussQR website into the data directory
 % defined in rbfsetup
 %    Input: filestr - string of file to download
 %                     Ex: 'sphereMDpts.mat'
+%    Output: download_occurred - 1 if the file was downloaded, 0 else
 %
-%    gqr_downloaddata(filestr,webbase,saveloc)
+%    download_occurred = gqr_downloaddata(filestr,webbase,saveloc)
 %    Inputs: webbase - (optional) website from which to download
 %                      <default=http://math.iit.edu/~mccomic/gaussqr>
 %            saveloc - (optional) directory to save to
@@ -22,6 +23,9 @@ function gaussqr_list = gqr_downloaddata(filestr,webbase,saveloc)
 %    gaussqr_list = gqr_downloaddata()
 %    Output: gaussqr_list - returns a list of all the data files
 %                           currently recognized by GaussQR
+% This may now be obsolete since this list is available in
+% GAUSSQR_PARAMETERS, but I'm leaving this here because it doesn't hurt
+% anything.
 %
 % When downloading, this function does not have any return values, it
 % simply throws an error if the desired operation cannot be completed.
@@ -40,13 +44,10 @@ end
 dataDir = GAUSSQR_PARAMETERS.DATA_DIRECTORY;
 dirslash = GAUSSQR_PARAMETERS.DIRECTORY_SLASH;
 gqrwebloc = GAUSSQR_PARAMETERS.WEB_DIRECTORY;
+alertuser = GAUSSQR_PARAMETERS.WARNINGS_ON;
+gaussqr_list = GAUSSQR_PARAMETERS.AVAILABLE_DATA;
 
-% Below is the list of files that are currently recognized as GaussQR
-% supported.  This could become out of date, so please alert me if you
-% notice inconsistencies
-gaussqr_list = {'sphereMDpts_data.mat'};
-
-if nargout==0
+if nargin>0
     % If the user did not pass webbase, the file to be downloaded must be
     % in gaussqr_list or this will throw an error
     if not(exist('webbase','var'))
@@ -78,14 +79,24 @@ if nargout==0
     fullfilename = strcat(saveloc,filestr);
     
     % Check if the file already exists in that directory
-    % If it does, do nothing
+    % If it does, do nothing; otherwise, attempt to download it
+    % There is a rehash here to make sure Matlab knows this new file is in
+    % the path
+    download_occurred = 0;
     if not(exist(fullfilename,'file'))
-        [filestr,downloadSuccessful] = urlwrite(webaddress,fullfilename,'Timeout',20);
-        if ~downloadSuccessful
-            error('Download of data failed or could not be written to %s',filestr)
+        [downstr,download_occurred] = urlwrite(webaddress,fullfilename,'Timeout',20);
+        if ~download_occurred
+            error('Download of data failed or could not be written to %s',downstr)
+        elseif alertuser
+            fprintf('File %s was downloaded to %s\n',filestr,saveloc)
         end
+        rehash
     end
     
-    % To prevent the code from returning a value when one is not desired
-    clear gaussqr_list
+    % Return a value in case the user wants to see but wants alerts off
+    if nargout==1
+        retval = download_occurred;
+    end
+else
+    retval = gaussqr_list;
 end
