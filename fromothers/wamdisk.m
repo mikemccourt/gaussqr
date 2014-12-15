@@ -1,4 +1,4 @@
-function meshD = wamdisk(deg);
+function meshD = wamdisk(deg)
 
 %produces a weakly admissible mesh in the unit disk
 
@@ -27,3 +27,9 @@ j1=(0:1:n1); j2=(0:1:n2-1); [rho,theta]=meshgrid(cos(j1*pi/n1),j2*pi/n2);
 
 meshD=[rho(:).*cos(theta(:)) rho(:).*sin(theta(:))];
 
+% Dump all points at (0,0), which may be duplicates, and then append (0,0)
+% back on to the set
+meshD = meshD(sum(abs(meshD),2)>eps,:);
+if mod(deg,2)==0
+    meshD = [meshD;[0,0]];
+end
