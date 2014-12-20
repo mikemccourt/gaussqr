@@ -33,25 +33,28 @@ x = pick2Dpoints([0 0],[1 1],[nx;ny]);
 % a problem this big
 % I am going to execute this computation in pieces so that I can monitor
 % its progress
-progress_tick = 1/2;
+progress_tick = 1/1;
 progress = 0;
 h_waitbar = waitbar(progress,'Initializing distance matrix');
 
 kstep = ceil(N*progress_tick);
 krange = 1:kstep;
-[Cidx,Cdist] = rangesearch(x,x(krange,:),1/ep);
+tic
+[Cidx,Cdist] = rangesearch(x,x(krange,:),1/ep);toc
 nz_new = sum(cellfun(@length,Cidx));
 % Allocated expected space for the i, j, s vectors which will be used to
 % define the sparse matrix
-% Then fill up those vectors with the 
+% Then fill up those vectors with the
+
+tic
 ivec = zeros(1,nz_new/progress_tick);
 jvec = zeros(1,nz_new/progress_tick);
 svec = zeros(1,nz_new/progress_tick);
 ivec(1:nz_new) = cell2mat(cellfun(@(x,k)k*ones(1,length(x)),Cidx',num2cell(krange),'UniformOutput',false));
 jvec(1:nz_new) = cell2mat(Cidx');
 svec(1:nz_new) = cell2mat(Cdist');
-nnz = nz_new;
-
+nnz = nz_new;toc
+tic
 progress = progress + progress_tick;
 waitbar(progress,h_waitbar,sprintf('Computing distance matrix, nnz=%d',nnz));
 krange = unique(min(krange + kstep,N));
@@ -69,8 +72,9 @@ while progress<1
 end
 % Add something nonzero to avoid the squeeze Matlab would otherwise apply
 svec = svec + eps;
-DM = sparse(ivec(1:nnz),jvec(1:nnz),svec(1:nnz),N,N,nnz);
+DM = sparse(ivec(1:nnz),jvec(1:nnz),svec(1:nnz),N,N,nnz);toc
 close(h_waitbar);
+tic,clear Cidx Cdist ivec jvec svec,toc
 
 % Conduct a regression on the data
 % This is a vector valued function [r g b], so we need to do each
