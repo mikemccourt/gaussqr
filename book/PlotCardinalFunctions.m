@@ -12,7 +12,7 @@ lambdafunc = @(n) ((n*pi).^2+ep^2).^(-beta);
 if beta < 3
     M = 1000;
 else
-    M = ceil(1/pi*sqrt(eps^(-1/beta)*(N^2*pi^2+ep^2)-ep^2));
+    M = ceil(1/pi*sqrt(eps^(-1/beta)*(N^2*pi^2+ep^2)-ep^2))
 end
 %% Mercer series
 N = length(x);
