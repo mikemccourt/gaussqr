@@ -1,5 +1,5 @@
-function [s,M] = cmatern(x,z,L,ep,beta,deriv,Mfix)
-% function [s,M] = cmatern(x,z,L,ep,beta,deriv,Mfix)
+function [s,M] = IBBkernel(x,z,L,ep,beta,deriv,Mfix)
+% function [s,M] = IBBkernel(x,z,L,ep,beta,deriv,Mfix)
 % This function evaluates the kernel defined by:
 %    K_beta(x,z) = sum_1^M lambda_n^beta phi_n(x) phi_n(z)
 % where
