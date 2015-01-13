@@ -73,7 +73,7 @@ GAUSSQR_PARAMETERS.WARNINGS_ON = false;
 % will simply save figures to the gaussqr home directory
 % You have to create the directory yourself
 % Windows Example: 
-GAUSSQR_PARAMETERS.FIGURE_DIRECTORY = 'C:\Users\ironmike\My Documents\book\First Draft\Figures';
+GAUSSQR_PARAMETERS.FIGURE_DIRECTORY = 'C:\Users\ironmike\Documents\book\First Draft\Figures';
 % GAUSSQR_PARAMETERS.FIGURE_DIRECTORY = 'C:\Users\ironmike\Documents\book\First Draft\Figures';
 if not(exist(GAUSSQR_PARAMETERS.FIGURE_DIRECTORY,'dir'))
     if GAUSSQR_PARAMETERS.WARNINGS_ON
