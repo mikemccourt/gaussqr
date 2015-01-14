@@ -113,7 +113,7 @@ GAUSSQR_PARAMETERS.CURVEFIT_TOOLBOX_AVAILABLE = any(strcmp('Curve Fitting Toolbo
 GAUSSQR_PARAMETERS.IMAGEPROC_TOOLBOX_AVAILABLE = any(strcmp('Image Processing Toolbox', {v.Name}));
 GAUSSQR_PARAMETERS.NEURALNETWORK_TOOLBOX_AVAILABLE = any(strcmp('Neural Network Toolbox', {v.Name}));
 GAUSSQR_PARAMETERS.OPTIMIZATION_TOOLBOX_AVAILABLE = any(strcmp('Optimization Toolbox', {v.Name}));
-GAUSSQR_PARAMETERS.STATISTICS_TOOLBOX_AVAILABLE = any(strcmp('Statistics Toolbox', {v.Name}));
+GAUSSQR_PARAMETERS.STATISTICS_TOOLBOX_AVAILABLE = (any(strcmp('Statistics Toolbox', {v.Name})) | any(strcmp('Statistics and Machine Learning Toolbox', {v.Name})));
 GAUSSQR_PARAMETERS.SYMBOLIC_TOOLBOX_AVAILABLE = any(strcmp('Symbolic Math Toolbox', {v.Name}));
 GAUSSQR_PARAMETERS.WAVELET_TOOLBOX_AVAILABLE = any(strcmp('Wavelet Toolbox', {v.Name}));
 

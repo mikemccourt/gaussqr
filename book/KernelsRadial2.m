@@ -13,7 +13,6 @@ X = reshape(x(:,1),N,N);
 Y = reshape(x(:,2),N,N);
 
 % Choose some kernel centers to define the functions to be evaluated
-z = [0 0;.7 -.4;-.6 .2];
 z = [.6 .6;-.6 -.6;.6 -.6;-.6 .6;0 0];
 
 % Compute the distance between the evaluation points and kernel centers
@@ -37,9 +36,9 @@ K2 = reshape(K_iso(:,2),N,N);
 K3 = reshape(K_iso(:,3),N,N);
 K4 = reshape(K_iso(:,4),N,N);
 K5 = reshape(K_iso(:,5),N,N);
-h_iso = figure;
-surf(X,Y,K1,'edgecolor','none')
+% h_iso = figure;
 hold on
+surf(X,Y,K1,'edgecolor','none')
 surf(X,Y,K2,'edgecolor','none')
 surf(X,Y,K3,'edgecolor','none')
 surf(X,Y,K4,'edgecolor','none')
@@ -57,6 +56,8 @@ epvec = [7,2];
 
 % Compute the distance between the evaluation points and kernel centers
 % Here we pass the shape parameter vector in
+% The bug in Distance Matrix prevents me from running this as I should, so
+% it's being run in this relatively dumb way right now.
 DM_aniso = DistanceMatrix(x,z,epvec);
 
 % Define the radial kernel, here the inverse multiquadric
@@ -70,11 +71,15 @@ K_aniso = rbf_aniso(DM_aniso);
 K1 = reshape(K_aniso(:,1),N,N);
 K2 = reshape(K_aniso(:,2),N,N);
 K3 = reshape(K_aniso(:,3),N,N);
+K4 = reshape(K_aniso(:,4),N,N);
+K5 = reshape(K_aniso(:,5),N,N);
 h_aniso = figure;
 surf(X,Y,K1,'edgecolor','none')
 hold on
 surf(X,Y,K2,'edgecolor','none')
 surf(X,Y,K3,'edgecolor','none')
+surf(X,Y,K4,'edgecolor','none')
+surf(X,Y,K5,'edgecolor','none')
 hold off
 colormap jet
 view([-.2 -1 1.3])
