@@ -17,8 +17,9 @@ GAUSSQR_PARAMETERS.NORM_TYPE = 2;
 % As a disclaimer, these points were taken directly from Rob Wommersley's
 % page on Maximal Determinant point
 %   http://web.maths.unsw.edu.au/~rsw/Sphere/Extremal/New/extremal1.html
-% We thank Dr. Wommersley for his many contributions
+% We thank Dr. Wommersley for his many contributions to math
 gqr_downloaddata('sphereMDpts_data.mat')
+load sphereMDpts_data
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Choose a test function to interpolate
