@@ -36,7 +36,7 @@ K2 = reshape(K_iso(:,2),N,N);
 K3 = reshape(K_iso(:,3),N,N);
 K4 = reshape(K_iso(:,4),N,N);
 K5 = reshape(K_iso(:,5),N,N);
-% h_iso = figure;
+h_iso = figure;
 hold on
 surf(X,Y,K1,'edgecolor','none')
 surf(X,Y,K2,'edgecolor','none')
