@@ -56,26 +56,30 @@ KGser = bsxfun(@times,Phix,lamvecG)*Phiz';
 KAser = bsxfun(@times,Phix,lamvecA)*Phiz';
 
 % Study the convergence of the series representation with increasing terms
-% ncheck are the series lengths for which to check the quality
+% Mcheck are the series lengths for which to check the quality
 % Apply the lambda values to the kernel centers first to make the code
 % simpler during the multiple evaluations for different M
 % errcompute is a gaussqr function that returns how off the series is
-ncheck = [1:49,50:50:M];
+Mcheck = [1:49,50:50:M];
 PhizlamG = bsxfun(@times,lamvecG,Phiz);
 PhizlamA = bsxfun(@times,lamvecA,Phiz);
-errvecG = arrayfun(@(n) errcompute(Phix(:,1:n)*PhizlamG(:,1:n)',KGcf),ncheck);
-errvecA = arrayfun(@(n) errcompute(Phix(:,1:n)*PhizlamA(:,1:n)',KAcf),ncheck);
+errvecG = arrayfun(@(n) errcompute(Phix(:,1:n)*PhizlamG(:,1:n)',KGcf),Mcheck);
+errvecA = arrayfun(@(n) errcompute(Phix(:,1:n)*PhizlamA(:,1:n)',KAcf),Mcheck);
 
 % Plot the error results
 h_error = figure;
-loglog(ncheck,errvecA,'linewidth',3)
+loglog(Mcheck,errvecA,'linewidth',3)
 hold on
-loglog(ncheck,errvecG,'--','linewidth',3)
+loglog(Mcheck,errvecG,'--','linewidth',3)
 hold off
 xlabel('summation length')
 ylabel('2-norm series error')
 legend(sprintf('\\beta=1 algebraic decay'),'geometric decay','location','northeast')
 
 % Plot the kernels
-h_kernels = figure;
+h_kernelA = figure;
 plot(x,KAcf)
+ylim([0,1.5])
+h_kernelG = figure;
+plot(x,KGcf)
+ylim([0,1.5])
