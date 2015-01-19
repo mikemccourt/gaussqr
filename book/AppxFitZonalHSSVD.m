@@ -1,11 +1,11 @@
-% AppxFit4.m
+% AppxFitZonalHSSVD.m
 % This script executes the HS-SVD for the spherical harmonics
 % Right now, the spherical harmonics evaluation is really terrible
 % Again, we STRONGLY recommend that you use Grady Wright's spherical RBF
 % introduction http://math.boisestate.edu/~wright/montestigliano if you are
 % actually interested in being good at problems on manifolds
 global GAUSSQR_PARAMETERS
-GAUSSQR_PARAMETERS.ERROR_STYLE = 4;
+GAUSSQR_PARAMETERS.ERROR_STYLE = 2;
 GAUSSQR_PARAMETERS.NORM_TYPE = 2;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -30,17 +30,11 @@ load sphereMDpts_data
 % yf = @(x) cos(2*(x(:,1)+1/2).^2 + 3*(x(:,2)+1/2).^2 + 5*(x(:,3)-1/sqrt(2)).^2);
 yf = @(x) (1 + 10*x(:,1).*x(:,2).*x(:,3) + x(:,1).^8 + exp(2*x(:,2).^3) + exp(2*x(:,3).^2))/14;
 
-% Define the distance between points on a sphere
-% Note that this is the same as the real Distance Matrix function, it just
-% uses a different formulation specific to the sphere
-% We write this here to explicitly make this comment
-ZonalDistanceMatrix = @(x,z) sqrt(2)*sqrt(1-x*z');
-
 % From the data available, use only the N=400 point set for this example
 x = sphereMDpts{3};
 N = size(x,1);
 y = yf(x);
-DM = ZonalDistanceMatrix(x,x);
+DP = x*x';
 
 % Also choose some points at which to evaluate the error
 NN = 2000;
@@ -48,17 +42,17 @@ NN = 2000;
 xeval = zeros(NN,3);
 [xeval(:,1),xeval(:,2),xeval(:,3)] = sph2cart(t(:,1),t(:,2),1);
 yy = yf(xeval);
-DMeval = ZonalDistanceMatrix(xeval,x);
+DPeval = xeval*x';
 
 % The actual RBF in use here is
 %     1/sqrt(1+gamma^2 - 2*gamma*x^Tz)
 % But I am rewriting it in terms of r, the Euclidean distance
 % Note that in this formulation, epsilon is restricted to be within 0 and
 % 1, although you can recover the standard IMQ with any such values
-rbf = @(e,r) 1./sqrt((1-e)^2+e*r.^2);
+zbf = @(g,dp) 1./sqrt(1+g^2-2*g*dp);
 
 % Choose a range of shape parameters to test
-epvec = logspace(-2,-.1,30);
+gammavec = logspace(-2,-.1,30);
 
 % Create the phi matrix, which is full of the first Neig eigenfunctions for
 % this kernel.  Although I use the term eigenfunction here, to match the
@@ -70,24 +64,17 @@ epvec = logspace(-2,-.1,30);
 % really be a more methodical way to execute this.
 %
 % Nlevels is the number of levels of spherical harmonics to consider
-% There are l^2-(l-1)^2 = 2l-1 eigenfunctions in the lth level
+% There are l^2-(l-1)^2 = 2*l-1 eigenfunctions in the lth level
 % I hate using l as a counter because it looks like 1, but I'm doing it to
 % match the notation from various sources
 % eigDegree will be needed later for the eigenfunction evaluation
 Nlevels = ceil(sqrt(N)) + 3;
 Neig = Nlevels^2;
-Phi = zeros(N,Neig);
-Phieval = zeros(NN,Neig);
-eigDegree = zeros(1,Neig);
-k = 1;
-for l=0:Nlevels-1
-    for m=1:2*l+1
-        Phi(:,k) = sphHarm(l,m,x);
-        Phieval(:,k) = sphHarm(l,m,xeval);
-        eigDegree(k) = l;
-        k = k + 1;
-    end
-end
+lrange = 0:Nlevels-1;
+larr = cell2mat(arrayfun(@(l)l*ones(1,2*l+1),lrange,'UniformOutput',0));
+marr = cell2mat(arrayfun(@(l)1:2*l+1,lrange,'UniformOutput',0));
+Phi = cell2mat(arrayfun(@(l,m)sphHarm(l,m,x),larr,marr,'UniformOutput',0));
+Phieval = cell2mat(arrayfun(@(l,m)sphHarm(l,m,xeval),larr,marr,'UniformOutput',0));
 % Break Phi and Phieval into the blocks for the HSSVD
 Phi1 = Phi(:,1:N);
 Phi2 = Phi(:,N+1:Neig);
@@ -97,12 +84,12 @@ Phi2TinvPhi1 = Phi2'/Phi1';
 
 % Perform the interpolation with the range of ep and record the values
 k = 1;
-errvec = zeros(size(epvec));
-errvechs = zeros(size(epvec));
-for ep=epvec
+errvec = zeros(size(gammavec));
+errvechs = zeros(size(gammavec));
+for g=gammavec
     % Perform the standard interpolation
-    K = rbf(ep,DM);
-    Keval = rbf(ep,DMeval);
+    K = zbf(g,DP);
+    Keval = zbf(g,DPeval);
     warning('off','MATLAB:nearlySingularMatrix')
     yeval = Keval*(K\y);
     warning('on','MATLAB:nearlySingularMatrix')
@@ -113,8 +100,8 @@ for ep=epvec
     % it here for completeness
     % We create LamFull which is the matrix that has the effect of both
     % multiplying on the left by Lam_2 and on the right by inv(Lam_1)
-    Eigs = 4*pi*ep.^eigDegree./(2*eigDegree+1);
-    LamFull = repmat(Eigs(N+1:Neig)',1,N)./repmat(Eigs(1:N),Neig-N,1);
+    Eigs = 4*pi*g.^larr./(2*larr+1);
+    LamFull = bsxfun(@rdivide,Eigs(N+1:Neig)',Eigs(1:N));
     Rbar = LamFull.*Phi2TinvPhi1;
     Psi = Phi1 + Phi2*Rbar;
     Psieval = Phieval1 + Phieval2*Rbar;
@@ -127,11 +114,11 @@ end
 
 % Plot the results
 h = figure;
-loglog(epvec,errvechs,'r','linewidth',3)
+loglog(gammavec,errvechs,'r','linewidth',3)
 hold on
-loglog(epvec,errvec,'--','linewidth',2)
+loglog(gammavec,errvec,'--','linewidth',2)
 hold off
-legend('HS-SVD','Standard Basis','location','north')
-xlabel('\epsilon')
-ylabel('RMS relative error')
+legend('HS-SVD','Standard Basis','location','northeast')
+xlabel('\gamma')
+ylabel('2-norm error')
 title(sprintf('N=%d points with IMQ kernel',N))
