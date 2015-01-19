@@ -35,8 +35,9 @@ function retval = gqr_downloaddata(filestr,webbase,saveloc)
 % Developer Note: Allow for cell array filestr so that multiple files can
 % be downloaded from the same place with one function call
 %
-% Developer Note: I'm pretty sure that newer Matlab wants use to use
-% websave instead of urlwrite.  I'll have to look into that at some point
+% Developer Note: websave has been implemented in favor of urlwrite, but it
+% should probably be implemented in a try/catch block to better notice user
+% errors and return helpful error messages.
 global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
@@ -84,10 +85,8 @@ if nargin>0
     % the path
     download_occurred = 0;
     if not(exist(fullfilename,'file'))
-        [downstr,download_occurred] = urlwrite(webaddress,fullfilename,'Timeout',20);
-        if ~download_occurred
-            error('Download of data failed or could not be written to %s',downstr)
-        elseif alertuser
+        websave(fullfilename,webaddress,'Timeout',20);
+        if alertuser
             fprintf('File %s was downloaded to %s\n',filestr,saveloc)
         end
         rehash
