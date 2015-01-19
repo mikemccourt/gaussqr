@@ -23,12 +23,12 @@ K = rbf(ep,DM);
 Keval = rbf(ep,DMeval);
 
 % Evaluate the interpolant at the desired locations
-yinterp = Keval*(K\y);
+seval = Keval*(K\y);
 
 % Plot the data, interpolant, and true solution together
 plot(x,y,'sk','linewidth',6)
 hold on
-plot(xeval,yinterp,'b','linewidth',2)
+plot(xeval,seval,'b','linewidth',2)
 plot(xeval,yeval,'--r','linewidth',3)
 hold off
 legend('Data','Interpolant','True Function','location','north')

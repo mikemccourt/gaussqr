@@ -14,7 +14,7 @@ GAUSSQR_PARAMETERS.NORM_TYPE = 2;
 % I may move this to rbfsetup at some point
 %
 % As a disclaimer, these points were taken directly from Rob Wommersley's
-% page on Maximal Determinant point
+% page on Maximal Determinant points
 %   http://web.maths.unsw.edu.au/~rsw/Sphere/Extremal/New/extremal1.html
 % We thank Dr. Wommersley for his many contributions
 gqr_downloaddata('sphereMDpts_data.mat')

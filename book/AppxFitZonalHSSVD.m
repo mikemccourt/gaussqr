@@ -100,8 +100,8 @@ for g=gammavec
     % it here for completeness
     % We create LamFull which is the matrix that has the effect of both
     % multiplying on the left by Lam_2 and on the right by inv(Lam_1)
-    Eigs = 4*pi*g.^larr./(2*larr+1);
-    LamFull = bsxfun(@rdivide,Eigs(N+1:Neig)',Eigs(1:N));
+    lamvec = 4*pi*g.^larr./(2*larr+1);
+    LamFull = bsxfun(@rdivide,lamvec(N+1:Neig)',lamvec(1:N));
     Rbar = LamFull.*Phi2TinvPhi1;
     Psi = Phi1 + Phi2*Rbar;
     Psieval = Phieval1 + Phieval2*Rbar;
