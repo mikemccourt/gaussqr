@@ -1,4 +1,4 @@
-function [meshQ] = wamquadrangle(deg,Q);
+function [meshQ] = wamquadrangle(deg,Q)
 
 %produces a (weakly) admissible mesh in a quadrangle
 

@@ -12,7 +12,10 @@ function [x,spacestr] = pick2Dpoints(a,b,N,spaceopt,ep)
 %                      'inner' - centrally clustered points
 %                      'halton' - Halton quasi-random points
 %                      'rand' - uniform random points
-%                      'wam' - See wamquadrangle
+%                      'wam' - See wamdisk
+%                      'wamq' - See wamquadrangle
+%                               Only the first value in N is considered for
+%                               the wam options
 %           ep - (only for 'inner' points) shape parameter
 %   Outputs: x - 2D points with spaceopt distribution
 %            spacestr - string explaining your point choice
@@ -20,6 +23,8 @@ function [x,spacestr] = pick2Dpoints(a,b,N,spaceopt,ep)
 % N should be a 2-vector, but if N is scalar, we reset N=[N,N]
 % Note that the Halton points only really need prod(N)
 % Also, the Halton points do NOT include [0,0]
+%
+% PROGRAMMERS NOTE: More of this should be rewritten with bsxfun
 global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
@@ -69,17 +74,20 @@ switch lower(spaceopt)
         else
             xh = haltonseq(pN,2);
         end
-            x = (repmat(b,pN,1)-repmat(a,pN,1)).*xh+repmat(a,pN,1);
+        x = bsxfun(@plus,bsxfun(@times,b-a,xh),a);
         spacestr=' Halton points';
     case {'random','rand'}
         pN = round(prod(N));
-        x = rand(pN,2)*diag(b-a) + repmat(a,pN,1);
+        x = bsxfun(@plus,bsxfun(@times,b-a,rand(pN,2)),a);
         spacestr=' uniform random points';
-    case 'wam'
+    case 'wamq'
         % Here, centered symmetric (actually Chebyshev points), but can be
         % used more flexibly, i.e., arbitrary quadrilateral
         x = wamquadrangle(N(1)-1,[a(1) a(2); b(1) a(2); b(1) b(2); a(1) b(2)]);
         spacestr = ' WAM quadrilateral';
+    case 'wam'
+        x = bsxfun(@plus,bsxfun(@times,(b-a)/2,wamdisk(N(1)-1)),a+(b-a)/2);
+        spacestr = ' WAM disk';
     otherwise
         error('Unrecognized spaceopt=%s',spaceopt)
 end

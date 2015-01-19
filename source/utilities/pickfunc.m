@@ -87,6 +87,7 @@ function y = ksa1(x)
 end
 function y = ksa2(x)
 % used on disk of radius 20 in [Jester/Menke/Urban (2011)]
+% here computes on a disk of radius 1
     r2 = x(:,1).^2+x(:,2).^2;
     rho = -3.87e-2;
     kappa = 0;

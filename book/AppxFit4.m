@@ -1,7 +1,7 @@
 % AppxFit4.m
 % This script executes the HS-SVD for the spherical harmonics
 % Right now, the spherical harmonics evaluation is really terrible
-% I would STRONGLY recommend that you consider Grady Wright's spherical RBF
+% Again, we STRONGLY recommend that you use Grady Wright's spherical RBF
 % introduction http://math.boisestate.edu/~wright/montestigliano if you are
 % actually interested in being good at problems on manifolds
 global GAUSSQR_PARAMETERS
