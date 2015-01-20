@@ -3,6 +3,18 @@ function [yf,fstr] = pickfunc(fopt,dim)
 % For the optics functions in 2D, only consider the domain [-1,1] to get
 % the real problem because the scaling is accounted for within this
 % function.
+%
+% PROGRAMMERS NOTE: It may be better to eliminate/alter the dimension
+% option, as I have tried to do for some of the surrogate models.  Part of
+% what this would require is a dictionary of acceptable functions.
+
+% Prevent any uppercase/lowercase issues from popping up
+fopt = lower(fopt);
+
+% Identify if there are special functions
+if any(strcmp(fopt,{'piston','piston_scaled'}))
+    dim = 7;
+end
 
 switch dim
     case 1
@@ -31,6 +43,8 @@ switch dim
             case 'qian'
                 fstr = 'y(x)=exp((x-1)^2) sin(exp((x-1)^2))';
                 yf = @(x) exp((x-1).^2).*sin(exp((x-1).^2));
+            otherwise
+                error('No such function %s exists in %d dimensions',fopt,dim)
         end
     case 2
         switch lower(fopt)
@@ -58,9 +72,30 @@ switch dim
             case 'ksa2' % for disk with radius 20
                 fstr = 'f(x,y) = KSA2';
                 yf = @(x) ksa2(20*x);
+            otherwise
+                error('No such function %s exists in %d dimensions',fopt,dim)
+        end
+    case 7
+        switch(fopt)
+            case 'piston'
+                fstr = 'f(x7) = piston motion';
+                yf = @(x) piston(x(:,1),x(:,2),x(:,3),x(:,4),x(:,5),x(:,6),x(:,7));
+            case 'piston_scaled'
+                fstr = 'f(x7) = piston motion [0,1]^7';
+                lb = [30,.005,.002,1000,90000 ,290,340];
+                ub = [60,.020,.010,5000,110000,296,360];
+                yf = @(x) piston(x(:,1)*(ub(1)-lb(1)) + lb(1),...
+                                 x(:,2)*(ub(2)-lb(2)) + lb(2),...
+                                 x(:,3)*(ub(3)-lb(3)) + lb(3),...
+                                 x(:,4)*(ub(4)-lb(4)) + lb(4),...
+                                 x(:,5)*(ub(5)-lb(5)) + lb(5),...
+                                 x(:,6)*(ub(6)-lb(6)) + lb(6),...
+                                 x(:,7)*(ub(7)-lb(7)) + lb(7));
+            otherwise
+                error('No such function %s exists in %d dimensions',fopt,dim)
         end
     otherwise
-        error('Can only consider 1D and 2D functions')
+        error('No functions appear in %d dimensions',dim)
 end
 end
 
@@ -101,4 +136,12 @@ f = .75*exp(-.25*((9*x-2).^2+(9*y-2).^2))+ ...
                      .75*exp(-1/49*(9*x+1).^2-.1*(9*y+1).^2)+ ...
                      .5*exp(-.25*((9*x-7).^2+(9*y-3).^2))- ...
                      .2*exp(-(9*x-4).^2-(9*y-7).^2);
+end
+
+function C = piston(W,S,V0,k,P0,Ta,T0)
+% This function is found in [Ben-Ari and Steinberg (2007)]
+A = P0.*S + 19.62*W - k.*V0./S;
+PVTT = P0.*V0.*Ta./T0;
+V = S./(2*k).*(sqrt(A.^2 + 4*k.*PVTT) - A);
+C = 2*pi*sqrt(W./(k+(S./V).^2.*PVTT));
 end
