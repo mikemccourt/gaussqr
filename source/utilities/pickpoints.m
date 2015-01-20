@@ -17,6 +17,9 @@ function [x,spacestr] = pickpoints(a,b,N,spaceopt,ep,alpha)
 %
 % Outputs - x : a column vector of points spaced as you requested
 %           spacestr : a string describing the spacing of the points
+global GAUSSQR_PARAMETERS
+stats_avail = GAUSSQR_PARAMETERS.STATISTICS_TOOLBOX_AVAILABLE;
+
 if nargin<6
     alpha = 1;
     if nargin<5
@@ -41,7 +44,13 @@ switch lower(spaceopt)
         x = -.5*(b-a)*cos(pi*(0:N-1)/(N-1))' + .5*(b+a);
         spacestr=' Chebyshev points';
     case {'halton','halt'}
-        x = (b-a)*haltonseq(N,1) + a;
+        if stats_avail && exist('haltonset','file')
+            point_generator = haltonset(1,'Skip',1);
+            xh = net(point_generator,pN);
+        else
+            xh = haltonseq(pN,1);
+        end
+        x = (b-a)*xh + a;
         spacestr=' halton points';
     case 'rand'
         x = (b-a)*rand(N,1) + a;

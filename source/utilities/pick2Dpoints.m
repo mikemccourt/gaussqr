@@ -68,7 +68,7 @@ switch lower(spaceopt)
     case {'halton','halt'}
         % Add the round in there to make sure an integer is used
         pN = round(prod(N));
-        if exist('haltonset','builtin')
+        if stats_avail && exist('haltonset','file')
             point_generator = haltonset(2,'Skip',1);
             xh = net(point_generator,pN);
         else
