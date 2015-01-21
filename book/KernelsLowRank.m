@@ -2,10 +2,12 @@
 % This example studies the rank of a kernel interpolation matrix as a
 % function of the truncation length of the series used to generate it
 % We consider only the Cinf Chebyshev kernel here
+% For simplicity in computing, we restrict ourselves to the parameters
+%             a = .4, b = .3
 
 % Define the points under consideration
 N = 100;
-x = pickpoints(-1,1,N);
+x = pickpoints(-1,1,N,'cheb');
 
 % Define the closed form of the Cinf kernel
 K = @(x,z) .6 + .56*(.273 -.6*bsxfun(@plus,x.^2,z'.^2) + 1.27*x*z')./...
@@ -17,9 +19,7 @@ K = @(x,z) .6 + .56*(.273 -.6*bsxfun(@plus,x.^2,z'.^2) + 1.27*x*z')./...
 phi = @(n,x) bsxfun(@times,sqrt(2-(n==0)),cos(bsxfun(@times,n,acos(x))));
                 
 % Define the eigenvalues in two different ways
-% We are fixing a = .4, b = .3, beta = 1
-% By fixing beta = 1 we simplify the zeta function
-%  computation to zeta(2) = pi^2/6
+% We are fixing a = .4, b = .3
 lam = @(n) (n==0)*.6 + (n>0).*(.3).^(n-1)*(.4*.7);
 
 % Evaluate the Phix matrix and diagonal of Lambda
