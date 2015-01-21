@@ -1,4 +1,4 @@
-% RBFQRPsivsK
+% HSSVDPsivsK
 % This example demonstrates the computation of the Psi matrix which appears
 % in the HS-SVD and shows how the psi functions are related to the k
 % functions through the eigenfunctions phi and a correction
