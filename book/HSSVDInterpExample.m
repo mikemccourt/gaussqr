@@ -28,7 +28,7 @@ beta = 7;
 % Define the eigenfunctions and eigenvalues
 % lamfunc will return a vector if n is a vector
 phifunc = @(n,x) sqrt(2)*sin(pi*x*n);
-lamfunc = @(e,n) ((pi*n).^2+e^2).^(-beta);
+lamfunc = @(b,e,n) ((pi*n).^2+e^2).^(-b);
 
 % Determine how many eigenfunctions will be needed for accuracy
 % This formula comes from the book
@@ -43,7 +43,7 @@ Phieval1 = phifunc(narr(1:N),xeval);
 Phieval2 = phifunc(narr(N+1:end),xeval);
 
 % Evaluate lamvec for the necessary eigenvalues
-lamvec = lamfunc(ep,narr);
+lamvec = lamfunc(beta,ep,narr);
 lamvec1 = lamvec(1:N);
 lamvec2 = lamvec(N+1:end);
 
@@ -73,7 +73,4 @@ plot(xeval,sevalstandard,'--','linewidth',2)
 hold on
 plot(xeval,seval,'linewidth',2)
 hold off
-legend({sprintf('standard basis, error=%2.1e',standarderr),...
-        sprintf('HS-SVD basis, error=%2.1e',hssvderr)},...
-        'location','northeast')
 legend('standard basis','hssvd basis','location','northeast')
