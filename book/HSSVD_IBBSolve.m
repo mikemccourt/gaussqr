@@ -1,15 +1,15 @@
 % HSSVD_IBBSolve
 % This is a compact version of the HSSVD_IBBSolve code for the book
 
-function yeval = HSSVD_IBBSolve(ep,beta,x,y,xeval)
+function seval = HSSVD_IBBSolve(ep,beta,x,y,xeval)
 % Evaluate the HS-SVD basis IBB interpolant
-% function yeval = HSSVD_IBBSolve_Full(ep,beta,x,y,xeval)
+% function seval = HSSVD_IBBSolve_Full(ep,beta,x,y,xeval)
 %   Inputs:  ep    - shape parameter
 %            beta  - smoothness parameter
 %            x     - data locations
 %            y     - data values
 %            xeval - locations at which to evaluate the interpolant
-%   Outputs: yeval - interpolant values at xeval
+%   Outputs: seval - interpolant values at xeval
 
 phifunc = @(n,x) sqrt(2)*sin(pi*x*n);
 lamfunc = @(b,e,n) ((pi*n).^2+e^2).^(-b);
@@ -31,4 +31,4 @@ c = Psi\y;
 
 Phieval1 = phifunc(narr(1:N),xeval);
 Phieval2 = phifunc(narr(N+1:end),xeval);
-yeval = Phieval1*c + Phieval2*(Rbar*c);
+seval = Phieval1*c + Phieval2*(Rbar*c);

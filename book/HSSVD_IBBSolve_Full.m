@@ -17,6 +17,9 @@ function yeval = HSSVD_IBBSolve_Full(ep,beta,x,y,xeval)
 %            xeval - locations at which to evaluate the interpolant
 %   Outputs: yeval - interpolant values at xeval
 %
+% Note that multiple sets of data values can be passed for simultaneous
+% computation, e.g., y = [y1 y2 y3], seval = [seval1 seval2 seval3]
+%
 %
 %
 % This function can be called a second way, depending on if the user has
@@ -65,9 +68,6 @@ switch nargin
         end
         if size(x,2)==1
             error('The IBB kernel can only handle 1D problems')
-        end
-        if size(y,2)==1
-            error('For right now, we are not considering multiple RHS')
         end
         
         % If we have reached this point, we can form the HSSVD basis
