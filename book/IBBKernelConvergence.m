@@ -26,9 +26,9 @@ for N=Nvec
         % Use the closed form if stable enough
         if beta==1 || beta==2
             K = cell2mat(arrayfun(@(z) ...
-                  IBBkernel(x,z,1,ep,beta),x','UniformOutput',0))';
+                  IBBkernel(x,z,1,ep,beta),x','UniformOutput',0));
             Keval = cell2mat(arrayfun(@(z) ...
-                  IBBkernel(x,z,1,ep,beta),xeval','UniformOutput',0))';
+                  IBBkernel(xeval,z,1,ep,beta),x','UniformOutput',0));
             c = K\y;
             seval = Keval*c;
         else

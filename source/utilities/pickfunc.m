@@ -11,9 +11,10 @@ function [yf,fstr] = pickfunc(fopt,dim)
 % Prevent any uppercase/lowercase issues from popping up
 fopt = lower(fopt);
 
-% Identify if there are special functions
-if any(strcmp(fopt,{'piston','piston_scaled'}))
-    dim = 7;
+% If the user didn't pass a dimension, see if we know
+% If we don't throw an error (within the function call)
+if not(exist('dim','var'))
+    dim = check_regular_functions(fopt);
 end
 
 switch dim
@@ -94,6 +95,26 @@ switch dim
             otherwise
                 error('No such function %s exists in %d dimensions',fopt,dim)
         end
+    case 8
+        switch(fopt)
+            case 'borehole'
+                fstr = 'f(x8) = borehole flow';
+                yf = @(x) borehole(x(:,1),x(:,2),x(:,3),x(:,4),x(:,5),x(:,6),x(:,7),x(:,8));
+            case 'borehole_scaled'
+                fstr = 'f(x8) = piston motion [0,1]^7';
+                lb = [.05,100  ,63070 ,990 ,63.1,700,1120,9855 ];
+                ub = [.15,50000,115600,1110,116 ,820,1680,12045];
+                yf = @(x) borehole(x(:,1)*(ub(1)-lb(1)) + lb(1),...
+                                   x(:,2)*(ub(2)-lb(2)) + lb(2),...
+                                   x(:,3)*(ub(3)-lb(3)) + lb(3),...
+                                   x(:,4)*(ub(4)-lb(4)) + lb(4),...
+                                   x(:,5)*(ub(5)-lb(5)) + lb(5),...
+                                   x(:,6)*(ub(6)-lb(6)) + lb(6),...
+                                   x(:,7)*(ub(7)-lb(7)) + lb(7),...
+                                   x(:,8)*(ub(8)-lb(8)) + lb(8));
+            otherwise
+                error('No such function %s exists in %d dimensions',fopt,dim)
+        end
     otherwise
         error('No functions appear in %d dimensions',dim)
 end
@@ -144,4 +165,42 @@ A = P0.*S + 19.62*W - k.*V0./S;
 PVTT = P0.*V0.*Ta./T0;
 V = S./(2*k).*(sqrt(A.^2 + 4*k.*PVTT) - A);
 C = 2*pi*sqrt(W./(k+(S./V).^2.*PVTT));
+end
+
+function f = borehole(rw,r,Tu,Hu,Tl,Hl,L,Kw)
+% This function is found in [Ben-Ari and Steinberg (2007)]
+logrrw = log(r./rw);
+A = 2*L.*Tu./(logrrw.*rw.^2.*Kw);
+f = 2*pi*Tu.*(Hu - Hl)./(logrrw + A + Tu./Tl);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% This function returns a hash table of all the functions of interest in
+% the pickfunc function.  Specifically, functions that can only be called
+% in one dimension with one particular form
+%
+% Eventually, I'll think about putting this in rbfsetup or as a persistent
+% variable, but it's fine for right now
+function dim = check_regular_functions(fopt)
+
+% Define all the functions that have been registered
+registered_functions = {'piston','piston_scaled', ...
+                        'borehole','borehole_scaled'};
+dimensions = [7,7,8,8];
+
+regular_functions = containers.Map(registered_functions,dimensions);
+
+try
+    dim = regular_functions(fopt);
+catch err
+    if strcmp(err.identifier,'MATLAB:Containers:Map:NoKey')
+        error('The function %s must have a dimension defined',fopt)
+    else
+        rethrow(err)
+    end
+end
+
 end
