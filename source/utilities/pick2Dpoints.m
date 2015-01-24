@@ -24,6 +24,9 @@ function [x,spacestr] = pick2Dpoints(a,b,N,spaceopt,ep)
 % Note that the Halton points only really need prod(N)
 % Also, the Halton points do NOT include [0,0]
 %
+% If you pass scalar a & b, the same value is used in both dimensions:
+%     passing a=1 & b=2 is equivalent to a=[1 1] & b=[2 2]
+%
 % PROGRAMMERS NOTE: More of this should be rewritten with bsxfun
 global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
@@ -40,6 +43,29 @@ end
 
 if length(N)==1
     N=[N,N];
+end
+
+% Orient the input boundaries the way we normally think of them
+a = a(:)';
+b = b(:)';
+Na = length(a);
+Nb = length(b);
+
+% Allow the user to input scalars instead of arrays and use the same value
+% for both points in the array
+if Na==Nb
+    if any(a>b)
+        error('Lower bounds must be less than upper bounds')
+    else
+        if Na==1
+            a = [a a];
+            b = [b b];
+        elseif Na~=2
+            error('Bounds passed in more than 2 dimensions')
+        end
+    end
+else
+    error('Domain boundaries must be passed with same size')
 end
 
 switch lower(spaceopt)
