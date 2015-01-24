@@ -29,7 +29,7 @@ global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
 end
-stats_available = GAUSSQR_PARAMETERS.STATISTICS_TOOLBOX_AVAILABLE;
+stats_avail = GAUSSQR_PARAMETERS.STATISTICS_TOOLBOX_AVAILABLE;
 
 if nargin<5
     ep=0;
