@@ -21,8 +21,8 @@ rbfL = rbfM4L;
 ep = 4;
 
 % Define a function and its Laplacian
-f = @(x,y) (x.^2+y.^4).^(7/2) + x.*y;
-fL = @(x,y) 7*(x.^2+y.^4).^(3/2).* ...
+uf = @(x,y) (x.^2+y.^4).^(7/2) + x.*y;
+ufL = @(x,y) 7*(x.^2+y.^4).^(3/2).* ...
            (6*x.^2.*y.^2+6*x.^2+26*y.^6+y.^4);
 % This is an analytic function if that is preferred
 % f = @(x,y) exp(x.*y);
@@ -32,8 +32,8 @@ fL = @(x,y) 7*(x.^2+y.^4).^(3/2).* ...
 xeval = pick2Dpoints([-1,-1],[1 1],24);
 
 % Evaluate at the chosen locations
-ueval = f(xeval(:,1),xeval(:,2));
-uLeval = fL(xeval(:,1),xeval(:,2));
+ueval = uf(xeval(:,1),xeval(:,2));
+uLeval = ufL(xeval(:,1),xeval(:,2));
 
 % Define a range of N values to test convergence over
 Nvec = [6,10,17,30,50,100];
@@ -46,7 +46,7 @@ k = 1;
 for N = Nvec
     % Create the data with the right amount of points
     x = pick2Dpoints([-1,-1],[1 1],N,'cheb');
-    u = f(x(:,1),x(:,2));
+    u = uf(x(:,1),x(:,2));
     
     % Interpolate and evaluate the interpolant
     DM = DistanceMatrix(x,x);
@@ -55,12 +55,12 @@ for N = Nvec
     Keval = rbf(ep,DMeval);
     KLeval = rbfL(ep,DMeval);
     intcoef = K\u;
-    seval = Keval*intcoef;
-    sLeval = KLeval*intcoef;
+    uhateval = Keval*intcoef;
+    uhatLeval = KLeval*intcoef;
     
     % Record the errors and the fill distance
-    errvec(k) = errcompute(seval,ueval);
-    errvecL(k) = errcompute(sLeval,uLeval);
+    errvec(k) = errcompute(uhateval,ueval);
+    errvecL(k) = errcompute(uhatLeval,uLeval);
     hvec(k) = max(min(DM+2*eye(N^2)));
     k = k + 1;
 end
