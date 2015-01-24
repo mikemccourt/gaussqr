@@ -25,21 +25,35 @@ gp_sigma = 1;
 gp_theta = 0;
 
 % Create the data locations for this problem
-N = 700;
-x = sort(icdf('gp',rand(N,1),gp_k,gp_sigma,gp_theta));
+N = 700;Ncuts = 5; % Make sure N/Ncuts is an integer
+xall = icdf('gp',rand(N,1),gp_k,gp_sigma,gp_theta);
+xcell = arrayfun(@(n)xall((n-1)*N/Ncuts+1:n*N/Ncuts,:),... 
+                     (1:Ncuts)','UniformOutput',0);
 
 % Evaluate the EDF at the given data locations
-y = Fhat(x,x);
+ycell = cellfun(@(x)Fhat(x,x),xcell,'UniformOutput',0);
+
+% Organize into one vector
+[x,isort] = sort(cell2mat(xcell));
+yunsorted = cell2mat(ycell);
+y = yunsorted(isort);
+
+% Conduct the KS test for normality on the difference
+ydiff = y - cdf('gp',x,gp_k,gp_sigma,gp_theta);
+[h,p] = kstest((ydiff-mean(ydiff))/std(ydiff))
 
 % Plot the true CDF for comparison purposes
 Nplot = 500;
 xplot = pickpoints(gp_theta,gp_theta-gp_sigma/gp_k,Nplot);
 h_cdf = figure;
+plot(x,y,'.b');
+hold on
 plot(xplot,cdf('gp',xplot,gp_k,gp_sigma,gp_theta),'r','linewidth',2);
+hold off
 
 % Create the surrogate model
-ep = .3;
-mu = 1e-2;
+ep = .4;
+mu = 3e-3;
 K_cdf = rbf(DistanceMatrix(x,x,ep));
 cdf_coef = (K_cdf+mu*eye(N))\y;
 cdf_eval = @(xeval) rbf(DistanceMatrix(xeval,x,ep))*cdf_coef;
@@ -49,11 +63,11 @@ pdf_eval = @(xeval) rbfx(ep,DistanceMatrix(xeval,x,ep),DifferenceMatrix(xeval,x)
 cplot = cdf_eval(xplot);
 
 h_edf = figure;
-plot(x,y,'linewidth',2)
+plot(x,y,'.','linewidth',2)
 hold on
-plot(xplot,cplot,'--','linewidth',2)
+plot(xplot,cplot,'r','linewidth',2)
 hold off
-legend('EDF','Model','location','southeast')
+legend('EDF data','Model','location','southeast')
 
 % Evaluate and plot the surrogate PDF
 h_pdf = figure;
