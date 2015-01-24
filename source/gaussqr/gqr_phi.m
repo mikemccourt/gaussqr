@@ -53,7 +53,6 @@ global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
 end
-asympttol = GAUSSQR_PARAMETERS.RBFPHI_EXP_TOL;
 fastphi = GAUSSQR_PARAMETERS.FAST_PHI_EVALUATION;
 
 switch nargin
@@ -82,18 +81,18 @@ delta2 = GQR.delta2;
 
 % Here we define: n as the number of data points
 %                 s as the dimension of the data
-[Mr Mc] = size(Marr);
-[n xc] = size(x);
+[Mr,Mc] = size(Marr);
+[n,xc] = size(x);
 if Mr~=xc
-    error(sprintf('dimension mismatch: size(Marr,1)=%d, size(x,2)=%d',Mr,xc))
+    error('dimension mismatch: size(Marr,1)=%d, size(x,2)=%d',Mr,xc)
 else
     s=xc;
 end
 
-if not(exist('deriv'))
+if not(exist('deriv','var'))
     deriv = zeros(1,s); % Default to no derivatives being used
 else
-    [dr dc] = size(deriv);
+    [dr,dc] = size(deriv);
     if dc~=s
         error('dimension mismatch: size(x,2)=%d, size(deriv,2)=%d',s,dc)
     elseif min(deriv)<0
@@ -119,7 +118,7 @@ if fastphi
     elseif deriv>0
         warning('Fast phi eval unavailable for derivatives, using slow eval')
         fastphi = 0;
-    elseif size(Marr,2)<3 | Mc~=Marr(end)
+    elseif size(Marr,2)<3 || Mc~=Marr(end)
         fastphi = 0; % Just pass it on to rbfphi_EVAL
     elseif any(Marr~=1:Mc)
         fastphi = 0; % Indices are out of order
@@ -189,7 +188,7 @@ if ~isstruct(GAUSSQR_PARAMETERS)
 end
 logoption = GAUSSQR_PARAMETERS.RBFPHI_WITH_LOGS;
 
-[n s] = size(x);
+[n,s] = size(x);
 ba = b*a;
 s2 = sqrt(2);
 
