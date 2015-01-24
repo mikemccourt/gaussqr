@@ -46,9 +46,9 @@ switch lower(spaceopt)
     case {'halton','halt'}
         if stats_avail && exist('haltonset','file')
             point_generator = haltonset(1,'Skip',1);
-            xh = net(point_generator,pN);
+            xh = net(point_generator,N);
         else
-            xh = haltonseq(pN,1);
+            xh = haltonseq(N,1);
         end
         x = (b-a)*xh + a;
         spacestr=' halton points';
