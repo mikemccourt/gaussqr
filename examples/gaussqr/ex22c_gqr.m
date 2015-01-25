@@ -125,7 +125,7 @@ for N=Nvec
         yL_appx = A{k}*y;
         errvec{k}(m) = errcompute(yL_appx,yL);
     end
-    m = m + 1;pause
+    m = m + 1;
 end
 
 waitbar(1,h_waitbar,'Plotting')
