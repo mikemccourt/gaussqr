@@ -82,5 +82,5 @@ hHSxx = loglog(epvec,errvecHSxx,'k-+','linewidth',2);
 hold off
 xlabel('$\varepsilon$','interpreter','latex')
 ylabel('absolute max norm error')
-legend([hHS,hHSx,hHSxx],{'values','1 deriv','2 deriv'},...
+legend([hHSxx,hHSx,hHS],{'2 deriv','1 deriv','values'},...
        'location','southeast')

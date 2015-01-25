@@ -45,7 +45,7 @@ errvecL = zeros(size(Nvec));
 k = 1;
 for N = Nvec
     % Create the data with the right amount of points
-    x = pick2Dpoints([-1,-1],[1 1],N,'cheb');
+    x = pick2Dpoints(-1,1,N,'cheb');
     u = uf(x(:,1),x(:,2));
     
     % Interpolate and evaluate the interpolant
