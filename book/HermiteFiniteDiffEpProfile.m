@@ -48,8 +48,8 @@ for ep=epvec
     Psi = GQR.stored_phi1 + GQR.stored_phi2*CbarT;
     Phixy = gqr_phi(GQR,xeval,[1 1]);
     Psixy = Phixy*[eye(Nx);CbarT];
-    FDmat = Psixy/Psi;
-    uhatxyeval = FDmat*u;
+    LFD = Psixy/Psi;
+    uhatxyeval = LFD*u;
     
     % Compute the errors
     errvec(:,k) = abs(uhatxyeval-uxyeval);

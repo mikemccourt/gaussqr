@@ -35,7 +35,7 @@ Nxvec = [5,12,25,50,80,130,200];
 
 % Loop through the stencil sizes
 % Compute and store the finite difference matrices
-A = cell(size(Nxvec));
+LFD = cell(size(Nxvec));
 k = 1;
 for Nx=Nxvec
     % Find the nearest neighbors to the evaluation points
@@ -51,13 +51,13 @@ for Nx=Nxvec
                       num2cell((1:Neval^2)',2),nearest,FDcell,'UniformOutput',0)');
     
 	% Create the sparse matrix from those vectors
-    A{k} = sparse(FDvecs(1,:),FDvecs(2,:),FDvecs(3,:),Neval^2,N^2);
+    LFD{k} = sparse(FDvecs(1,:),FDvecs(2,:),FDvecs(3,:),Neval^2,N^2);
     
     k = k + 1;
 end
 
 % Compute the error of the kernel FD Jacobian
-errvec = cellfun(@(FDmat)errcompute(FDmat*u,uLeval),A);
+errvec = cellfun(@(FDmat)errcompute(FDmat*u,uLeval),LFD);
 
 h = figure;
 loglog(Nxvec,errvec)
