@@ -4,42 +4,38 @@
 % u(x,t) is the solution, which we represent as
 %       u(x,t) = sum_{i=1}^N c_i K([x,t],[x_i,t_i])
 % where [x_i,t_i] are the points in the space-time domain
-% The true solution to this problem is ...
-fbc  = @(x) zeros(size(x,1),1);
-fic  = @(x) x(:,1).*(1-x(:,1));
-fint = @(x) zeros(size(x,1),1);
-heat_const = .5;
 
-% We call x both the time and space points
-Nx = 35;
-Nt = 36;
-tmax = 1;
-xall = pick2Dpoints([0 0],[1 tmax],[Nx,Nt]);
+global GAUSSQR_PARAMETERS
+GAUSSQR_PARAMETERS.ERROR_STYLE = 2;
+GAUSSQR_PARAMETERS.NORM_TYPE = inf;
+
+fbc  = @(x) zeros(size(x,1),1);
+fic  = @(x) 4*x(:,1).*(1-x(:,1));
+fint = @(x) zeros(size(x,1),1);
+heat_const = .25;
+
+% We call xall both the time and space points
+Nx = 15;  Nt = 20;  tmax = 1;
+% Create halton points on the interior, uniform on boundary
+xint = pick2Dpoints([0 0],[1 tmax],[Nx-2,Nt-1],'halt');
+xbc = [kron([0;1],ones(Nt,1)),repmat(pickpoints(tmax/Nt,tmax,Nt),2,1)];
+xic = [pickpoints(0,1,Nx),zeros(Nx,1)];
+xall = [xbc;xic;xint];
 
 % Come up with some evaluation points
 NNx = 50;
 NNt = tmax*NNx;
 xeval = pick2Dpoints([0 0],[1 tmax],[NNx,NNt]);
 
-% Choose an RBF for our problem
+% Choose a kernel for our problem
 % epvec(1) is the x shape parameter, epvec(2) is the t shape parameter
-epvec = [1,1];
+epvec = [.5,1];
 rbfM2 = @(r) (1+r).*exp(-r);
-rbfM2dt = @(r,dt,ep_t) -ep_t^2*exp(-r).*dt;
-rbfM2dxx = @(r,dx,ep_x) ep_x^2*exp(-r).*(ep_x*dx.^2./(r+eps)-1);
-
-% We organize the points so that:
-%     [x=0]
-%     [x=1]
-%     [t=0]
-%     [interior]
-xbc  = [xall(xall(:,1)==0,:);xall(xall(:,1)==1,:)];
-xic  = xall(xall(:,2)==0 & xall(:,1)~=0 & xall(:,1)~=1,:);
-xint = xall(xall(:,2)~=0 & xall(:,1)~=0 & xall(:,1)~=1,:);
-x = [xbc;xic;xint];
+rbfM2dt = @(r,dt,ep_t) -ep_t*exp(-r).*(ep_t*dt);
+rbfM2dxx = @(r,dx,ep_x) ep_x^2*exp(-r).*((ep_x*dx).^2./(r+eps)-1);
 
 % Evaluate the collocation matrix
-Abc  = rbfM2(DistanceMatrix(xbc,x,epvec));
+Abc  = rbfM2(real(DistanceMatrix(xbc,x,epvec)));
 Aic  = rbfM2(DistanceMatrix(xic,x,epvec));
 Aint = rbfM2dt(DistanceMatrix(xint,x,epvec),DifferenceMatrix(xint(:,2),x(:,2)),epvec(2)) - ...
        heat_const*rbfM2dxx(DistanceMatrix(xint,x,epvec),DifferenceMatrix(xint(:,1),x(:,1)),epvec(1));
@@ -65,11 +61,13 @@ surf(X,T,U,'edgecolor','none');
 xlabel('x')
 ylabel('t')
 zlabel('u')
+view([1 1 1])
+zlim([-.002,1])
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Create a "true" solution that is based on finite differences
 % This must be at a significantly finer resolution to work
-FD_res = 50;
+FD_res = 100;
 Nxfd = FD_res*Nx;
 delta_x = 1/(Nxfd-1);
 x1d = pickpoints(0,1,Nxfd);
@@ -125,3 +123,13 @@ uFD_final = uFD(:,end);
 xtest = [x1d,tmax*ones(size(x1d,1),1)];
 utest = rbfM2(DistanceMatrix(xtest,x,epvec))*coef;
 fprintf('Relative difference, %d RBF, %d FD: %g\n',Nx,Nxfd,errcompute(utest,uFD_final))
+
+% Plot the collocation points
+h_pts = figure;
+plot(xint(:,1),xint(:,2),'.r','markersize',10)
+hold on
+plot(xbc(:,1),xbc(:,2),'ob','linewidth',2)
+plot(xic(:,1),xic(:,2),'+k','linewidth',2)
+hold off
+xlabel('x')
+ylabel('t')

@@ -8,6 +8,10 @@ function DiffM = DifferenceMatrix(xcoord,zcoord)
 %
 % You cannot call this with d-dimensional points - you can only call this
 % to compute the difference between a single dimension
+%
+% DEVELOPER'S NOTE: We will need to decide how to handle anisotropic
+% kernels with this function - should the epvec be passed and applied here
+% or outside of this function ...
 
 [N,xd] = size(xcoord);
 [M,zd] = size(zcoord);

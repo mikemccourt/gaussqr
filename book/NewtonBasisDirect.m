@@ -1,48 +1,39 @@
 % NewtonBasisDirect
 % Computes and plots Newton basis functions for 2D RBF interpolation
-% Calls on: DistanceMatrix
-  rbf = @(e,r) exp(-(e*r).^2); ep = 3;
-  %rbf = @(e,r) sqrt(1+(e*r).^2); ep = 5;  % MQ RBF
-  %rbf = @(epsilon,r) exp(-epsilon*r);  ep=1;  % basic Matern
-  N = 25; gridtype = 'u';
-  dsites = CreatePoints(N,2,gridtype);
-  ctrs = dsites;
-  neval = 40; M = neval^2;
-  epoints = CreatePoints(M,2,'u');
-  DM_data = DistanceMatrix(dsites,ctrs);
-  IM = rbf(ep,DM_data);
-  % Better to use regular evaluation matrix. Then
-  DM_B = DistanceMatrix(epoints,ctrs);
-  B = rbf(ep,DM_B);
-  % Find all Newton functions directly without iteration (works only for
-  % positive definite kernels)
-  L = chol(IM,'lower');  % produces lower triangular matrix L
-  beta = L*diag(diag(L)); % scale columns
-  newtonbasis = (beta\B')';
-  %test = (beta\IM')'; % should be lower triangular matrix
-  figure
-  xe = reshape(epoints(:,1),neval,neval);
-  ye = reshape(epoints(:,2),neval,neval);
-  NFplot = surf(xe,ye,reshape(newtonbasis(:,ceil(N/2)),neval,neval));
-  %ctrs(ceil(N/2),:)
-  set(NFplot,'FaceColor','interp','EdgeColor','none')
-  colormap autumn; view([145 45]); camlight; lighting gouraud
-  figure
-  NFplot = surf(xe,ye,reshape(newtonbasis(:,1),neval,neval));
-  %ctrs(1,:)
-  set(NFplot,'FaceColor','interp','EdgeColor','none')
-  colormap autumn; view([145 45]); camlight; lighting gouraud
-  figure
-  NFplot = surf(xe,ye,reshape(newtonbasis(:,ceil(sqrt(N)/2)),neval,neval));
-  %ctrs(ceil(sqrt(N)/2),:)
-  set(NFplot,'FaceColor','interp','EdgeColor','none')
-  colormap autumn; view([145 45]); camlight; lighting gouraud
-  
-%   figure
-%   idx=randi(N,1);
-%   NFplot = surf(xe,ye,reshape(newtonbasis(:,idx),neval,neval));
-%   %ctrs(idx,:)
-%   set(NFplot,'FaceColor','interp','EdgeColor','none')
-%   colormap autumn; view([145 45]); camlight; lighting gouraud
-%   
-  
+
+% Consider the Gaussian RBF
+rbf = @(e,r) exp(-(e*r).^2); ep = 3;
+
+% Create some kernel centers and evaluation points
+Ncenters = 5;
+x = pick2Dpoints(0,1,Ncenters);
+Neval = 40;
+xeval = pick2Dpoints(0,1,Neval);
+
+% Choose which Newton basis functions to plot
+Nplot = [25 7 10];
+
+% Evaluate the kernel matrices
+DM_data = DistanceMatrix(x,x);
+K = rbf(ep,DM_data);
+DM_B = DistanceMatrix(xeval,x);
+Keval = rbf(ep,DM_B);
+
+% Find all Newton functions directly without iteration (works only for
+% positive definite kernels)
+N = chol(K,'lower');  % produces lower triangular matrix L
+newtonbasisplot = Keval/N';
+
+% Reshape the data for surface plotting
+X = reshape(xeval(:,1),Neval,Neval);
+Y = reshape(xeval(:,2),Neval,Neval);
+Nmat = cellfun(@(nvec) reshape(nvec,Neval,Neval), ...
+                      num2cell(newtonbasisplot,1),'UniformOutput',0);
+
+% Create surface plots of the desired newton basis functions
+h_surf = zeros(length(Nplot));
+for k=1:length(Nplot)
+    h_surf(k) = figure;
+    surf(X,Y,Nmat{Nplot(k)},'FaceColor','interp','EdgeColor','none')
+    colormap autumn; camlight; lighting gouraud
+end
