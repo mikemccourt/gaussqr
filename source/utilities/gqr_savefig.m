@@ -38,6 +38,13 @@ function gqr_savefig(h,fname,style,newBaseDir)
 % pass the directory in newBaseDir.  That variable is set as persistent, so
 % if you pass it once at the beginning of a session you won't have to pass
 % it again.  If you reset your Matlab session, you will have to start over.
+%
+% DEVELOPER'S NOTE: Better work needs to be done to handle surface plots
+% with colorbars and colors on the surface: example
+% a = get(gcf,'Children')
+% a(3)
+% set(a(3),'fontsize',14)
+
 global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')

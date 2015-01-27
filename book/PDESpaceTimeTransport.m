@@ -32,7 +32,7 @@ xall = [X(:),T(:)];
 % Come up with some evaluation points
 Nevalx = 50;
 Nevalt = tmax*Nevalx;
-xeval = pick2Dpoints([0 0],[1 tmax],Nevalx);
+xeval = pick2Dpoints([0 0],[1 tmax],[Nevalx,Nevalt]);
 
 % Choose to evaluate error at evaluation points or collocation points
 %      1 - evaluation points
@@ -55,20 +55,19 @@ KCAdx = @(b,x,z) (1-b)* ...
          ((1-b^2)^2 + 4*b*(b*bsxfun(@plus,x.^2,z.^2')-(1+b^2)*x*z')).^2;
 % Scale the Chebyshev kernels to the [-1,1] they love so much
 % Don't forget the chain rule
-KCAs = @(b,x,z) KCA(b,x*2/tmax-1,z*2/tmax-1);
-KCAsdx = @(b,x,z) 2/tmax*KCAdx(b,x*2/tmax-1,z*2/tmax-1);
+KCAs = @(e,s,t) KCA(e,s*2/tmax-1,t*2/tmax-1);
+KCAsdt = @(e,s,t) 2/tmax*KCAdx(e,s*2/tmax-1,t*2/tmax-1);
 % C2 IBB Kernel
 KI2 = @(e,x,z) ibb(x,z,e,2);
 KI2dx = @(e,x,z) ibb(x,z,e,2,1);
 % Form the tensor kernel
 Kcell = {KI2,KCAs};
 Kdxcell = {KI2dx,KCAs};
-Kdtcell = {KI2,KCAsdx};
+Kdtcell = {KI2,KCAsdt};
 Kf = @(Kc,e,x,z) prod(cell2mat(reshape( ...
          cellfun(@(K,e,x,z) K(e,x,z), ...
-         Kc,num2cell(epvec),num2cell(x,1), ...
-         num2cell(z,1),'UniformOutput',0), ...
-                            [1,1,length(epvec)])),3);
+                 Kc,num2cell(e),num2cell(x,1),num2cell(z,1), ...
+         'UniformOutput',0),   [1,1,length(e)])),3);
 %%%%%%%%%%%%%%%%%%%%% Problem section
 % There may be some issues with using below ... some sort of limit
 % exists...
@@ -149,7 +148,19 @@ Udiff = reshape(udiff,Nxtest,Nttest);
 surf(X,T,Udiff,'edgecolor','none')
 xlabel('x')
 ylabel('t')
-zlabel('relative error')
+zlabel('space-time PDE error')
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%    Create a surface plot with the errors on it
+h_errs = figure;
+surf(X,T,U,Udiff,'edgecolor','none');
+xlabel('x')
+ylabel('t')
+zlabel('u')
+zlim([-5e-3,1])
+h_color = colorbar;
+set(get(h_color,'label'),'string','error')
+shading interp
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%% Separate interpolation test

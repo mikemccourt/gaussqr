@@ -7,7 +7,11 @@
 % We approximate u(x,t) as
 %       u(x,t) = sum_{i=1}^N c_i K([x,t],[x_i,t_i])
 % where [x_i,t_i] are the points in the space-time domain
-move_const = 2;
+global GAUSSQR_PARAMETERS
+GAUSSQR_PARAMETERS.ERROR_STYLE = 2;
+GAUSSQR_PARAMETERS.NORM_TYPE = inf;
+
+move_const = .5;
 fbc  = @(x) zeros(size(x,1),1);
 fic  = @(x) (64*(-x(:,1)).^3.*(1+(x(:,1))).^3).*(x(:,1)<=0);
 true_sol  = @(x) (64*(-(x(:,1)-move_const*x(:,2))).^3.*(1+(x(:,1)-move_const*x(:,2))).^3).*(abs(x(:,1)-move_const*x(:,2)+.5)<=.5);
@@ -28,18 +32,17 @@ xeval = pick2Dpoints([-1 0],[1 tmax],[NNx,NNt]);
 %      2 - collocation points
 err_eval = 1;
 
-% Choose an RBF for our problem
+% Choose a kernel for our problem
 % epvec(1) is the x shape parameter, epvec(2) is the t shape parameter
 % Note rbfM2dt and rbfM2dx are the same, I am just distinguishing for
 % clarity because I don't want to make a silly mistake
 epvec = [1,1];
-rbfM2 = @(r) (1+r).*exp(-r);
-rbfM2dt = @(r,dt,ep_t) -ep_t^2*exp(-r).*dt;
-rbfM2dx = @(r,dx,ep_x) -ep_x^2*exp(-r).*dx;
+rbfM4 = @(r) (1+r+r.^2/3).*exp(-r);
+rbfM4dt = @(r,dt,ep_t) -ep_t^2*exp(-r).*(1+r).*dt;
+rbfM4dx = @(r,dx,ep_x) -ep_x^2*exp(-r).*(1+r).*dx;
 
 % We organize the points so that:
-%     [x=0]
-%     [x=1]
+%     [x=-1]
 %     [t=0]
 %     [interior]
 xbc  = xall(xall(:,1)==-1,:);
@@ -48,10 +51,10 @@ xint = xall(xall(:,2)~=0 & xall(:,1)~=-1,:);
 x = [xbc;xic;xint];
 
 % Evaluate the collocation matrix
-Abc  = rbfM2(DistanceMatrix(xbc,x,epvec));
-Aic  = rbfM2(DistanceMatrix(xic,x,epvec));
-Aint = rbfM2dt(DistanceMatrix(xint,x,epvec),DifferenceMatrix(xint(:,2),x(:,2)),epvec(2)) + ...
-       move_const*rbfM2dx(DistanceMatrix(xint,x,epvec),DifferenceMatrix(xint(:,1),x(:,1)),epvec(1));
+Abc  = rbfM4(DistanceMatrix(xbc,x,epvec));
+Aic  = rbfM4(DistanceMatrix(xic,x,epvec));
+Aint = rbfM4dt(DistanceMatrix(xint,x,epvec),DifferenceMatrix(xint(:,2),x(:,2)),epvec(2)) + ...
+       move_const*rbfM4dx(DistanceMatrix(xint,x,epvec),DifferenceMatrix(xint(:,1),x(:,1)),epvec(1));
 A = [Abc;Aic;Aint];
 
 % Evaluate the RHS
@@ -64,7 +67,7 @@ rhs = [rhsbc;rhsic;rhsint];
 coef = A\rhs;
 
 % Evaluate at points in the domain
-ueval = rbfM2(DistanceMatrix(xeval,x,epvec))*coef;
+ueval = rbfM4(DistanceMatrix(xeval,x,epvec))*coef;
 
 % Plot the results
 h = figure;
@@ -89,9 +92,9 @@ else
 end
 
 % Compare this solution to the true solution at all the collocation points
-utest = rbfM2(DistanceMatrix(xtest,x,epvec))*coef;
+utest = rbfM4(DistanceMatrix(xtest,x,epvec))*coef;
 utrue = true_sol(xtest);
-title(sprintf('Relative error %g',errcompute(utest,utrue)))
+title(sprintf('absolute max norm error %g',errcompute(utest,utrue)))
 
 % Plot the difference between the collocation and
 % Normalize it against the norm of the initial condition
@@ -107,8 +110,8 @@ zlabel('relative error')
 
 % Compare to the best possible error that could occur, which would occur
 % for the interpolation without any PDE stuff at all
-coef_int = rbfM2(DistanceMatrix(x,x,epvec))\true_sol(x);
-uint = rbfM2(DistanceMatrix(xtest,x,epvec))*coef_int;
+coef_int = rbfM4(DistanceMatrix(x,x,epvec))\true_sol(x);
+uint = rbfM4(DistanceMatrix(xtest,x,epvec))*coef_int;
 
 h_int = figure;
 subplot(1,2,1)
@@ -117,7 +120,7 @@ surf(X,T,Uint,'edgecolor','none')
 xlabel('x')
 ylabel('t')
 zlabel('interpolation solution')
-title(sprintf('Relative error %g',errcompute(uint,utrue)))
+title(sprintf('absolute max norm error %g',errcompute(uint,utrue)))
 
 subplot(1,2,2)
 uintdiff = abs(uint-utrue)/norm(utrue(:,1));
