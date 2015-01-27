@@ -51,7 +51,7 @@ rhsic  = fic(xic);
 rhsint = fint(xint);
 rhs = [rhsbc;rhsic;rhsint];
 
-% Solve the system to find the coefficients
+% Solve the system to find the solution coefficients
 coef = A\rhs;
 
 % Evaluate at points in the domain

@@ -4,8 +4,9 @@
 %                        c(x) = .2 + sin(x-1)^2
 %                        u(x,0) = exp(-100*(x-1)^2)
 % We consider N=400 uniform discretization points and use ode45 to conduct
-% the time stepping explicitly.  There aren't really any boundary
-% conditions needed for this problem, so we specify none.
+% the time stepping explicitly.  This problem was originally phrased as a
+% problem with periodic boundaries but I've adjusted it to a 0 boundary
+% condition for simplicity.
 
 % Choose our physical discretization: just a uniform grid although it could
 % be scattered if we wanted it to be.  Note that these points are also the
