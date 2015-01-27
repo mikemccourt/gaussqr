@@ -1,4 +1,4 @@
-function [L,ep,beta,M,Rbar] = mqr_solveprep(x,L,ep,beta)
+function [L,ep,beta,M,CbarT] = mqr_solveprep(x,L,ep,beta)
 % function [L,ep,beta,M,Rbar] = mqr_solveprep(x,L,ep,beta)
 %
 % This function takes all the stuff needed to do a MaternQR problem and
@@ -45,7 +45,11 @@ else
     if nargout==1
         returnMQR = 1;
     end
+    
     [N,d] = size(x);
+    if d>1
+        error('IBB kernels only work in 1D right now, but size(x)=[%d %d]',size(x))
+    end
 
     % Checks to make sure that the ep and beta values are acceptable
     if length(ep)>1
@@ -137,14 +141,14 @@ else
     
     % Compute the eigenvalue matrix
     lambda = lamfunc(Marr,L,ep,beta);
-    D1 = repmat(lambda(1:N),M-N,1);
-    D2 = repmat(lambda(N+1:end)',1,N);
+    lamvec1 = lambda(1:N);
+    lamvec2 = lambda(N+1:end);
     
     % Form the Rbar matrix
-    Rbar = D2.*Rhat'./D1;
+    CbarT = bsxfun(@rdivide,lamvec2',lamvec1).*Rhat';
     
     MQR.Marr  = Marr;
-    MQR.Rbar  = Rbar;
+    MQR.Rbar  = CbarT;
     
     if storephi
         MQR.stored_x = x;
