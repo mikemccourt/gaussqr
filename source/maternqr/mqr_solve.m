@@ -23,7 +23,9 @@ storephi = GAUSSQR_PARAMETERS.STORED_PHI_FOR_EVALUATION;
 switch nargin
     case 5
         [N,d] = size(x);
-        if sum(N~=size(y,1))
+        if d>1
+            error('IBB kernels only work in 1D right now, but size(x)=[%d %d]',size(x))
+        elseif sum(N~=size(y,1))
             error('Different number of input and output points (x and y)')
         elseif size(y,2)~=1
             error('You can only pass a 1D output vector y')
@@ -35,13 +37,13 @@ end
 
 % Create eigenfunction basis, or recall from previous comptuations
 if storephi
-    A = MQR.stored_phi1 + MQR.stored_phi2*MQR.Rbar;
+    Psi = MQR.stored_phi1 + MQR.stored_phi2*MQR.Rbar;
 else
-    A = mqr_phi(MQR,x)*[eye(N);MQR.Rbar];
+    Psi = mqr_phi(MQR,x)*[eye(N);MQR.Rbar];
 end
 
 % Solve in the stable basis
-[coef,recipcond] = linsolve(A,y);
+[coef,recipcond] = linsolve(Psi,y);
 if (recipcond<eps || isnan(recipcond)) && strcmp(MQR.warnid,'')
     MQR.warnid = 'GAUSSQR:illConditionedRanksolve';
     MQR.warnmsg = sprintf('ranksolve encountered an ill-conditioned system, rcond=%g',recipcond);

@@ -38,6 +38,9 @@ function [s,M] = cmatern(x,z,L,ep,beta,deriv,Mfix)
 % Note that if you pass an x value too long, this probably will crash
 % because it will run out of memory.  If that happens, please call it in
 % chunks, which will allow it to evaluate successfully
+%
+% PROGRAMMER'S NOTE: We might be able to do this with the full kernel form
+% rather than with x and z as vectors without too much difficulty
 global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')
@@ -66,38 +69,38 @@ end
 
 if rx~=rz
     error('dimension mismatch, size(x,1)=%d, size(z,1)=%d',rx,rz)
-elseif cx~=1 | cz~=1
+elseif cx~=1 || cz~=1
     error('only column vectors for x and z allowed, size(x,2)=%d, size(z,2)=%d',cx,cz)
-elseif L<=0 | length(L)~=1 | imag(L)~=0
+elseif L<=0 || length(L)~=1 || imag(L)~=0
     error('unacceptable length value L=%g',L)
-elseif ep<0 | length(ep)~=1 | imag(ep)~=0
+elseif ep<0 || length(ep)~=1 || imag(ep)~=0
     error('unacceptable peakedness parameter ep=%g',ep)
 elseif ep==0
     error('For ep=0, calls should be made to ppsplinekernel')
 end
 
-if min(x)<0 | max(x)>L
+if min(x)<0 || max(x)>L
     error('This function can only be evaluated on [0,L], min(x)=%g, max(x)=%g',min(x),max(x))
-elseif min(z)<0 | max(z)>L
+elseif min(z)<0 || max(z)>L
     error('This function must have centers in [0,L], min(z)=%g, max(z)=%g',min(z),max(z))
 end
 
-if beta<1 | length(beta)~=1 | imag(beta)~=0 | floor(beta)~=beta
+if beta<1 || length(beta)~=1 || imag(beta)~=0 || floor(beta)~=beta
     warning('unacceptable order beta=%g, reset to 1',beta)
 end
-if deriv<0 | deriv>4 | length(deriv)~=1 | imag(deriv)~=0 | floor(deriv)~=deriv
+if deriv<0 || deriv>4 || length(deriv)~=1 || imag(deriv)~=0 || floor(deriv)~=deriv
     warning('unacceptable derivative deriv=%g, reset to 0',deriv)
     deriv = 0;
 end
-if Mfix<0 | length(Mfix)~=1 | imag(Mfix)~=0 | floor(Mfix)~=Mfix
+if Mfix<0 || length(Mfix)~=1 || imag(Mfix)~=0 || floor(Mfix)~=Mfix
     warning('unacceptable length Mfix=%g, choosing internally',Mfix)
     Mfix = 0;
 end
 
-if deriv>0 & beta==1
+if deriv>0 && beta==1
     error('First order kernel is not differentiable, deriv=%d, beta=%d',deriv,beta)
-elseif deriv>2 & beta==2
-    error('Second order kernel can have at most 2 derivatives, deriv=%d, beta=%d',deriv,beta)
+elseif deriv>1 && beta==2
+    error('Second order kernel has only 1 derivative for now, deriv=%d, beta=%d',deriv,beta)
 end
 
 % These are the eigenvalues of the series
@@ -114,7 +117,7 @@ end
 if beta==1 && Mfix==0
     s = sinh(ep*min(x,z)).*sinh(ep*(L-max(x,z)))./(ep*sinh(L*ep));
 elseif beta==2 && Mfix==0
-    % The closed form for beta=2 is still unstable, see below    
+    % The closed form for beta=2 is still unstable, see below
     minvals = min(x,z);
     maxvals = max(x,z);
     % The kernel function below is piecewise-defined, with two pieces; one
@@ -153,11 +156,26 @@ elseif beta==2 && Mfix==0
 %             exp(2*ep*max(x,z)).*(-ep*abs(x-z)+1) + ...
 %             exp(2*ep*(min(x,z)+L)).*(ep*abs(x-z)-2*L*ep+1) - ...
 %             exp(2*ep*(max(x,z)+L)).*(-ep*abs(x-z)+2*L*ep+1) );
-    % GF: This is equivalent - and ultimately the version in the book    
-    s = 1/(2*ep^3*sinh(ep)) * ...
-        (   ep*min(x,z).*cosh(ep*min(x,z)).*sinh(ep*(1-max(x,z))) + ...
-            ep*(1-max(x,z)).*sinh(ep*min(x,z)).*cosh(ep*(max(x,z)-1)) + ...
-            (ep*coth(ep)+1)*sinh(ep*min(x,z)).*sinh(ep*(max(x,z)-1))  );
+    % GF: This is equivalent - and ultimately the version in the book
+    if deriv==0
+    s = -1/(2*ep^3*sinh(ep)) * ...
+        (  -ep*min(x,z).*cosh(ep*min(x,z)).*sinh(ep*(max(x,z)-1)) ...
+           -ep*(max(x,z)-1).*sinh(ep*min(x,z)).*cosh(ep*(max(x,z)-1)) ...
+           +(ep*coth(ep)+1)*sinh(ep*min(x,z)).*sinh(ep*(max(x,z)-1))  );
+    else
+        mi = min(x,z);
+        ma = max(x,z)-1;
+        cem = cosh(ep*mi);
+        sem = sinh(ep*mi);
+        ceM = cosh(ep*ma);
+        seM = sinh(ep*ma);
+        s = -1/(2*ep^3*sinh(ep)) * (...
+            (x<=z).*(-ep*cem.*seM - ep^2.*mi.*sem.*seM - ep^2*ma.*cem.*ceM + (ep*coth(ep)+1)*ep*cem.*seM ...
+                    ) + ...
+            (x>z).*(-ep*sem.*ceM - ep^2.*ma.*sem.*seM - ep^2*mi.*cem.*ceM + (ep*coth(ep)+1)*ep*sem.*ceM ...
+                   ) ...
+                                    );
+    end
 else
     % Should come up with a way to automate this so that it will check for
     % allocation issues and work around it.  Maybe it could be optimized to
