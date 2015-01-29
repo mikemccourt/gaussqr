@@ -1,4 +1,4 @@
-function [x_clean,y_clean,shift,scale,bad_ind] = rescale_data(x,y);
+function [x_clean,y_clean,shift,scale,bad_ind] = rescale_data(x,y)
 % function [x_clean,y_clean,shift,scale,bad_ind] = rescale_data(x,y)
 % This function accepts in x data and rescales it to [-1,1]^d
 % It also removes any NaN or Inf data
@@ -11,6 +11,18 @@ function [x_clean,y_clean,shift,scale,bad_ind] = rescale_data(x,y);
 % 
 % To recover the original data points (minus any NaN or Inf),
 %    x = scale*(x_scaled+1)/2 + shift;
+%
+% You can call this with just x locations and it will scale just the
+% locations to [-1,1]^d:
+% function x_in_minus1_plus1 = rescale_data(x)
+
+if not(exist('y','var'))
+    if nargout>1
+        error('No y value was passed, no y value can be returned')
+    else
+        y = ones(size(x,1),1);
+    end
+end
 
 % Find any troubling values and remove them
 good_ind = not(or(isnan(sum([x,y],2)),isinf(sum([x,y],2))));
