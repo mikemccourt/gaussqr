@@ -67,8 +67,8 @@ N = size(y,1);
 switch nargin
     case 2
         GQR = x;
-        if size(GQR.Rbar,2)~=N
-            error('GQR dimensions mismatch y: expected %d, but got %d',size(GQR.Rbar,2),size(y,1))
+        if size(GQR.CbarT,2)~=N
+            error('GQR dimensions mismatch y: expected %d, but got %d',size(GQR.CbarT,2),size(y,1))
         end
     case {3,4,5}
         if N~=size(x,1)
@@ -89,9 +89,9 @@ end
 
 % Create eigenfunction basis, or recall from previous comptuations
 if storephi
-    A = GQR.stored_phi1 + GQR.stored_phi2*GQR.Rbar;
+    A = GQR.stored_phi1 + GQR.stored_phi2*GQR.CbarT;
 else
-    A = gqr_phi(GQR,x)*[eye(N);GQR.Rbar];
+    A = gqr_phi(GQR,x)*[eye(N);GQR.CbarT];
 end
 
 % Solve in the stable basis

@@ -36,18 +36,18 @@ GH_int = ...
 w_SVDbasis = GH_int(:,2);
 
 % Create data for this study
-x = GH_int(:,1);
+x = GH_int(:,1); x = pickpoints(-1,1,20);
 N = length(x);
 Neval = 100;
 xeval = pickpoints(min(x),max(x),Neval);
 
 % Choose an analytic function to study
-yf = @(x) cos(x);
+yf = @(x) cos(x);yf = @(x) cos(3*pi*x);
 y = yf(x);
 yeval = yf(xeval);
 
 % Choose a range of shape parameters
-epvec = logspace(-2,1,20);
+epvec = logspace(-1,1,20);
 errvec = zeros(size(epvec));
 errvecN = zeros(size(epvec));
 errvecS = zeros(size(epvec));
@@ -74,33 +74,38 @@ for ep=epvec
     
     % Form the SVD basis with weights 1
     % Note the application of the diagonal matrices is similar to HS-SVD
-    whalfvec = sqrt(w_SVDbasis);
-    [Q,Sigma2] = svd(bsxfun(@times,whalfvec,whalfvec').*K);
-    sigmavec = sqrt(diag(Sigma2));
-    Smat = Q.*bsxfun(@ldivide,whalfvec,sigmavec');
-    Seval = Keval*(Q.*bsxfun(@rdivide,whalfvec,sigmavec'));
-    warning('off','MATLAB:nearlySingularMatrix')
-    errvecS(k) = errcompute(Seval*(Smat\y),yeval);
-    warning('on','MATLAB:nearlySingularMatrix')
+%     whalfvec = sqrt(w_SVDbasis);
+%     whalfvec = ones(size(y));
+%     [Q,Sigma2] = svd(bsxfun(@times,whalfvec,whalfvec').*K);
+%     sigmavec = sqrt(diag(Sigma2));
+%     Smat = Q.*bsxfun(@ldivide,whalfvec,sigmavec');
+%     Seval = Keval*(Q.*bsxfun(@rdivide,whalfvec,sigmavec'));
+%     warning('off','MATLAB:nearlySingularMatrix')
+%     errvecS(k) = errcompute(Seval*(Smat\y),yeval);
+%     warning('on','MATLAB:nearlySingularMatrix')
     
-    % Form the eigenfunction basis with half the eigenfunctions
-    GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = 1;
-    errvecE(k) = errcompute(gqr_eval(gqr_rsolve(x,y,ep,.2),xeval),yeval);
+    % Form the eigenfunction basis with all N eigenfunctions
+    gqr_alpha = 3;
+    errvecE(k) = errcompute(gqr_eval(gqr_rsolve(x,y,ep,gqr_alpha,N),xeval),yeval);
     
     % Solve with the HS-SVD basis
-    errvecH(k) = errcompute(gqr_eval(gqr_solve(x,y,ep,.2),xeval),yeval);
+    errvecH(k) = errcompute(gqr_eval(gqr_solve(x,y,ep,gqr_alpha),xeval),yeval);
     
     k = k + 1;
 end
+
+errpoly = errcompute(polyval(polyfit(x,y,N-1),xeval),yeval);
 
 h = figure;
 loglog(epvec,errvec,'--k','linewidth',2)
 hold on
 loglog(epvec,errvecN,'-sr','linewidth',2)
-loglog(epvec,errvecS,'-^m','linewidth',2)
-loglog(epvec,errvecE,'-+g','linewidth',2)
-loglog(epvec,errvecH,'-b','linewidth',2)
+% loglog(epvec,errvecS,'-^m','linewidth',2)
+loglog(epvec,errvecE,'-g','linewidth',2)
+loglog(epvec,errvecH,'-+b','linewidth',2)
+loglog(epvec,ones(size(epvec))*errpoly,':k','linewidth',2)
 hold off
 xlabel('$\varepsilon$','interpreter','latex')
 ylabel('max norm error')
-ylim([1e-11,1e5])
+ylim([1e-8,1e4])
+legend('standard','newton','eigenvalue','HS-SVD','polynomial','location','north')

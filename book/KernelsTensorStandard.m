@@ -34,3 +34,11 @@ Kf = @(e,x,z) prod(cell2mat(reshape( ...
          Kcell,num2cell(e),num2cell(x,1), ...
          num2cell(z,1),'UniformOutput',0), ...
                             [1,1,length(e)])),3);
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        

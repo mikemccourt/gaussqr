@@ -1,4 +1,4 @@
-function [ep,alpha,Marr,Rbar] = gqr_solveprep(reg,x,ep,alpha,M)
+function [ep,alpha,Marr,CbarT] = gqr_solveprep(reg,x,ep,alpha,M)
 % This function takes all the stuff needed to do a GaussQR problem and
 % preps it before the problem starts.  The reason for this is so that I can
 % get some meta-info without calling the whole solve routine.  Also,
@@ -24,11 +24,11 @@ function [ep,alpha,Marr,Rbar] = gqr_solveprep(reg,x,ep,alpha,M)
 %     If you want to pass an M, but not an alpha, use
 %          GQR = gqr_solveprep(reg,x,ep,[],M)
 %
-% function [ep,alpha,Marr,Rbar] = gqr_solveprep(0,...)
+% function [ep,alpha,Marr,CbarT] = gqr_solveprep(0,...)
 % Outputs : ep - the acceptable shape parameter
 %           alpha - the acceptable scale parameter
 %           Marr - the GQR index list for interpolation
-%           Rbar - the matrix such that psi = gqr_phi*[I;Rbar]
+%           CbarT - the matrix such that psi = gqr_phi*[I;CbarT]
 %
 % function [ep,alpha,Marr] = gqr_solveprep(1,...)
 % Outputs : ep - the acceptable shape parameter
@@ -52,7 +52,7 @@ switch nargin
     case 3
         computealpha = 1;
     case {4,5}
-        if length(alpha)==0;
+        if isempty(alpha)
             computealpha = 1;
         end
     otherwise
@@ -88,22 +88,22 @@ end
 % Checks to make sure that the ep and alpha values are acceptable
 if length(ep)>1
     ep = abs(real(ep(1)));
-    warning(sprintf('Multiple epsilon values not allowed; using epsilon=%g',ep))
+    warning('Multiple epsilon values not allowed; using epsilon=%g',ep)
 end
 if length(alpha)>1
     alpha = abs(real(alpha(1)));
-    warning(sprintf('Multiple alpha values not allowed; using alpha=%g',alpha))
+    warning('Multiple alpha values not allowed; using alpha=%g',alpha)
 end
 if abs(real(ep))~=ep
     ep = abs(real(ep));
-    warning(sprintf('Only real, positive epsilon allowed; using epsilon=%g',ep))
+    warning('Only real, positive epsilon allowed; using epsilon=%g',ep)
 end
 if abs(real(alpha))~=alpha
     alpha = abs(real(alpha));
-    warning(sprintf('Only real, positive alpha allowed; using alpha=%g',alpha))
+    warning('Only real, positive alpha allowed; using alpha=%g',alpha)
 end
 if ep==0 || alpha==0
-    error(sprintf('Parameters cannot be zero: epsilon=%g, alpha=%g',ep,alpha))
+    error('Parameters cannot be zero: epsilon=%g, alpha=%g',ep,alpha)
 end
 
 % Evaluate auxiliary parameters
@@ -207,7 +207,7 @@ switch reg
         GQR.Marr = Marr;
         
         if reg==0 % Stop now if only the shell was requested
-            % Now we need to create the Rbar matrix
+            % Now we need to create the CbarT matrix
             phiMat = gqr_phi(GQR,x);
             [Q,R] = qr(phiMat);
             R1 = R(:,1:N);
@@ -245,9 +245,11 @@ switch reg
             % appears in both Lambda_2 and Lambda_1^{-1}
             Ml = size(Marr,2);
             D = lam.^(repmat(sum(Marr(:,N+1:end),1)',1,N)-repmat(sum(Marr(:,1:N),1),Ml-N,1));
-            Rbar = D.*Rhat';
+            CbarT = D.*Rhat';
             
-            GQR.Rbar = Rbar;
+            GQR.CbarT = CbarT;
+            % This is for legacy purposes and will be removed soon.
+            GQR.Rbar = CbarT;
             if storephi && returnGQR
                 GQR.stored_x = x;
                 GQR.stored_deriv = 0;

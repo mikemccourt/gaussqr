@@ -68,8 +68,8 @@ switch GQR.reg
         end
         y = phiEval*GQR.coef;
     case 0
-        Rbar = GQR.Rbar;
-        N = size(Rbar,2);
+        CbarT = GQR.CbarT;
+        N = size(CbarT,2);
         if recompute
             phiEval = gqr_phi(GQR,x,deriv);
             phiEval1 = phiEval(:,1:N);
@@ -82,7 +82,7 @@ switch GQR.reg
             phiEval1 = GQR.stored_phi1;
             phiEval2 = GQR.stored_phi2;
         end
-        y = phiEval1*GQR.coef + phiEval2*Rbar*GQR.coef;
+        y = phiEval1*GQR.coef + phiEval2*CbarT*GQR.coef;
     otherwise
         error('reg=%g unacceptable, 0 for interpolation, 1 for regression',reg)
 end
