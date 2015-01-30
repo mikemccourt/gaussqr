@@ -5,6 +5,7 @@
 %       Lap(u) = 2                (x,y,z) in (-1,1)^3
 %       u_y    = 2/3                 y = 1
 %       u      = (x^2+y^2+z^2)/3    Boundary except y = 1
+% which has been adapted from [Chen, Fu, Chen (2014)]
 
 % Define the necessary functions
 fint = @(x) 2*ones(size(x,1),1);
