@@ -1,3 +1,6 @@
+% KernelsInterpExample
+% This example demonstrates basic interpolation in Matlab
+
 global GAUSSQR_PARAMETERS;
 GAUSSQR_PARAMETERS.RANDOM_SEED(0);
 
