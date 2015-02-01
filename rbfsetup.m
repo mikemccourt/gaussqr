@@ -51,7 +51,8 @@ GAUSSQR_PARAMETERS.DIRECTORY_SLASH = dirslash;
 GAUSSQR_PARAMETERS.WEB_DIRECTORY = 'http://math.iit.edu/~mccomic/gaussqr';
 GAUSSQR_PARAMETERS.AVAILABLE_DATA = {'sphereMDpts_data.mat',...
                                      'coverpainting.png',...
-                                     'AnimasRiver_data.mat'};
+                                     'AnimasRiver_data.mat',...
+                                     'volcano_data.mat'};
 
 % Allow for random number reset based on what the right call is
 % I'm not sure this is correct ... I feel like rng is builtin
