@@ -5,6 +5,8 @@
 % Because we have so much data, we are going to use a C2 Wendland kernel
 % We will allow it to be anisotropic
 
+h_waitbar = waitbar(0,'Initializing Volcano data');
+
 % Load the data in from the repository as needed
 % This data comes with sizes Nx and Ny where length(x) = Nx*Ny
 gqr_downloaddata('volcano_data.mat')
@@ -27,7 +29,7 @@ xeval = pick2Dpoints(0,1,10);
 rbf = @(r) max(1-r,0).^4.*(4*r+1);
 
 % Consider a range of epsilon values to compute the kriging variance
-epvec = [.05,.1,.25,.5,1:20];epvec = 1;
+epvec = [.05,.1,.25,.5,1:20];
 
 % Choose a cutoff point, beyond which we work with dense matrices
 dense_cutoff = .2;
@@ -39,6 +41,7 @@ DMtimevec = zeros(size(epvec));
 solvetimevec = zeros(size(epvec));
 k = 1;
 for ep=epvec
+    waitbar(k/length(epvec),h_waitbar,sprintf('\\epsilon=%g',ep));
     % Compute the kernel matrix
     [K,DMtimevec(k)] = DistanceMatrix(x,x,ep,rbf);
     densevec(k) = length(find(K))/N^2;
@@ -74,9 +77,11 @@ for ep=epvec
     
     solvetimevec(k) = toc - evaltime;
     DMtimevec(k) = DMtimevec(k) + evaltime;
-    gwvec(k) = hsnorm*pow;return
+    gwvec(k) = hsnorm*pow;
     k = k + 1;
 end
+
+waitbar(1,h_waitbar,'Plotting')
 
 h_yy = figure;
 [AX,h1,h2] = plotyy(epvec,gwvec,epvec,densevec,'loglog','semilogx');
@@ -100,3 +105,5 @@ xlim([.01,1])
 xlabel('density')
 ylabel('time')
 legend('distance matrix','C_{GW} evaluation','sparse-dense transition','location','northwest')
+
+close(h_waitbar)
