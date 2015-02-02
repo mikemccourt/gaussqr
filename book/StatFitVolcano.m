@@ -29,13 +29,15 @@ xeval = pick2Dpoints(0,1,10);
 rbf = @(r) max(1-r,0).^4.*(4*r+1);
 
 % Consider a range of epsilon values to compute the kriging variance
-epvec = [.05,.1,.25,.5,1:20];
+epvec = [.01,.025,.05,.1,.25,.5,1:20];
+% epvec = linspace(.5,1.5,24);
 
 % Choose a cutoff point, beyond which we work with dense matrices
 dense_cutoff = .2;
 
 % Loop through the epsilon values
 gwvec = zeros(size(epvec));
+mplevec = zeros(size(epvec));
 densevec = zeros(size(epvec));
 DMtimevec = zeros(size(epvec));
 solvetimevec = zeros(size(epvec));
@@ -45,6 +47,8 @@ for ep=epvec
     % Compute the kernel matrix
     [K,DMtimevec(k)] = DistanceMatrix(x,x,ep,rbf);
     densevec(k) = length(find(K))/N^2;
+%     K = rbf(DistanceMatrix(x,x,ep));
+%     densevec(k) = 1;
     if densevec(k)>dense_cutoff
         K = full(K);
         p = 1:N;
@@ -65,6 +69,9 @@ for ep=epvec
     % Compute the Hilbert space norm
     hsnorm = sqrt(c'*h);
     
+    % Compute the log(det(K))
+    logdetK = 2*sum(log(full(diag(Lp))));
+    
     % Compute the power function
     if densevec(k)>dense_cutoff
         tic
@@ -73,27 +80,34 @@ for ep=epvec
     else
         [Keval,evaltime] = DistanceMatrix(xeval,x,ep,rbf);
     end
-    pow = sqrt(norm(1 - sum(full(Keval(:,p)/Lp').^2,2),'inf'));
+    pow = norm(sqrt(1 - sum(full(Keval(:,p)/Lp').^2,2)),'inf');
     
     solvetimevec(k) = toc - evaltime;
     DMtimevec(k) = DMtimevec(k) + evaltime;
     gwvec(k) = hsnorm*pow;
+    mplevec(k) = 2*N*log(hsnorm) + logdetK;
     k = k + 1;
 end
 
 waitbar(1,h_waitbar,'Plotting')
 
 h_yy = figure;
-[AX,h1,h2] = plotyy(epvec,gwvec,epvec,densevec,'loglog','semilogx');
+[AX,h1,h2] = plotyy(epvec,gwvec,epvec,mplevec,'loglog','semilogx');
 set(get(AX(1),'xlabel'),'string','$\varepsilon$','interpreter','latex')
 set(get(AX(1),'ylabel'),'string','$C_{GW}(\varepsilon,\infty)$','interpreter','latex')
-set(get(AX(2),'ylabel'),'string','density')
+set(get(AX(2),'ylabel'),'string','$C_{MPLE}(\varepsilon)$','interpreter','latex')
 set(h1,'linewidth',2,'linestyle','--')
 set(h2,'linewidth',2)
-legend([h1 h2],'GW criterion','density','location','west')
+legend([h1 h2],'GW criterion','MPLE criterion','location','northwest')
 set(AX,'xlim',[min(epvec),max(epvec)])
 % Makes the axes black, for the book
 % set(AX,{'ycolor'},{'k';'k'})
+
+h_dense = figure;
+semilogx(epvec,densevec,'linewidth',2)
+xlabel('$\varepsilon$','interpreter','latex')
+ylabel('density')
+xlim([min(epvec),max(epvec)])
 
 h_time = figure;
 loglog(densevec,DMtimevec,'linewidth',2)
@@ -104,6 +118,6 @@ hold off
 xlim([.01,1])
 xlabel('density')
 ylabel('time')
-legend('distance matrix','C_{GW} evaluation','sparse-dense transition','location','northwest')
+legend('distance matrix','C_{GW},C_{LW} evaluation','sparse-dense transition','location','northwest')
 
 close(h_waitbar)
