@@ -1,14 +1,9 @@
-% RBFNetwork1
-% This first example considers Tikhonov Regularization for fixed centers
-% and shape parameters
+% RBFNetworkOtherBases
+% Here, we reconsider the experiments from RBFNetworkBasic with the use of
+% different bases in the RBF Network
 
-% Initial example for support-vector machines
-if exist('rng','builtin')
-    rng(0);
-else
-    rand('state',0);
-    randn('state',0);
-end
+global GAUSSQR_PARAMETERS
+GAUSSQR_PARAMETERS.RANDOM_SEED(5);
 
 % Testing data
 N = 50;
@@ -54,10 +49,11 @@ Phi_reg = gqr_phi(GQR_reg,x);
 [UPhi,SPhi,VPhi] = svd(Phi_reg,0);SPhiv = diag(SPhi);
 
 % Conduct the loop over the regularization values
-dirvec = [];gqrvec = [];eigvec = [];
-loovec = [];loevec = [];
-gcdvec = [];gcevec = [];
-eig_err_best = Inf;dir_err_best = Inf;gce_err_best = Inf;gcd_err_best = [];
+dirvec = zeros(size(muvec));
+gqrvec = dirvec;eigvec = dirvec;
+loovec = dirvec;loevec = dirvec;lodvec = dirvec;
+gcdvec = dirvec;gcevec = dirvec;
+eig_err_best = Inf;dir_err_best = Inf;gce_err_best = Inf;gcd_err_best = Inf;
 k = 1;
 for mu=muvec
     % Solve for the newtork weights, here with the standard basis
@@ -75,7 +71,7 @@ for mu=muvec
     % Evaluate the parameterization schemes
     % The projection matrix is needed for this as well
     lodvec(k) = Py'*diag(1./diag(P).^2)*Py/N;
-    gcdvec(k) = N*Py'*Py/trace(P)^2;
+    gcdvec(k) = N*(Py'*Py)/trace(P)^2;
     
     % Compute instead the coefficients for the HS-SVD method
     % We will first compute with the stable basis
@@ -89,7 +85,7 @@ for mu=muvec
     GQR_reg.coef = VPhi*((UPhi'*y)./(SPhiv+mu./SPhiv));
     P = eye(N) - UPhi*diag(1./(1+mu./SPhiv.^2))*UPhi';
     Py = P*y;
-    gcevec(k) = N*Py'*Py/trace(P)^2;
+    gcevec(k) = N*(Py'*Py)/trace(P)^2;
     loevec(k) = Py'*diag(1./diag(P).^2)*Py/N;
     yp = gqr_eval(GQR_reg,xx);
     eigvec(k) = errcompute(yp,yy);
@@ -109,10 +105,10 @@ for mu=muvec
     k = k + 1;
 end
 
-[tmp,id] = min(dirvec);
-[tmp,ig] = min(gcdvec);
-[tmp,ie] = min(eigvec);
-[tmp,ic] = min(gcevec);
+[~,id] = min(dirvec);
+[~,ig] = min(gcdvec);
+[~,ie] = min(eigvec);
+[~,ic] = min(gcevec);
 figure
 handles(1) = loglog(muvec,dirvec,'linewidth',3);
 hold on
@@ -131,8 +127,7 @@ legend(handles,'Standard Basis','Standard GCV',...
        'Stable Basis','location','northwest')
 hold off
 
-% This can compute the mu=0 error, which I guess should be mu now that
-% I think about it
+% This can compute the mu=0 error
 GQR_reg.coef = Phi_reg\y;
 yp = gqr_eval(GQR_reg,xx);
 mu0_err = errcompute(yp,yy);

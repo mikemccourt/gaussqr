@@ -1,15 +1,9 @@
-% RBFNetwork2
-% This example considers a fixed number of basis functions and studies the
-% effect of varying ep and lam values
-% Specifically, this is studying the GCV value
+% RBFNetworkEpMuProfile
+% We study the effect of different parameterization techniques over a two
+% dimensional region of epsilon and mu values
 
-% Initial example for support-vector machines
-if exist('rng','builtin')
-    rng(0);
-else
-    rand('state',0);
-    randn('state',0);
-end
+global GAUSSQR_PARAMETERS
+GAUSSQR_PARAMETERS.RANDOM_SEED(0);
 
 N = 50;
 M = 15;
