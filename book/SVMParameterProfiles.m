@@ -1,7 +1,6 @@
-% This tests the support vector machine content that appears in the book
-% After running this, h will contain the figure handle of the plot that is
-% created.  If two plots are created, h1 and h2 are the figure handles.
-% Several options, described in plot_results, are available here
+% SVMParameterProfiles
+% This example has a variety of possible tests that can be run to
+% understand the predictive aspects of SVM with differen ep and bc values
 
 % To allow for the low-rank expansion parameter to be set
 global GAUSSQR_PARAMETERS
@@ -199,7 +198,7 @@ switch(plot_results)
         
         h1 = figure;
         h_err = surf(E,B,errmat');
-        set(h_err,'edgecolor','none')
+        set(h_err,'edgealpha','.5')
         set(gca,'xscale','log')
         set(gca,'yscale','log')
         xlabel('\epsilon')
@@ -209,7 +208,7 @@ switch(plot_results)
         
         h2 = figure;
         h_svm = surf(E,B,svmmat');
-        set(h_svm,'edgecolor','none')
+        set(h_svm,'edgealpha','.5')
         set(gca,'xscale','log')
         set(gca,'yscale','log')
         xlabel('\epsilon')

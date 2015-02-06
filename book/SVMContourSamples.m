@@ -1,6 +1,7 @@
-% This tests the simple SVM results in the book.
+% SVMContourSamples
+% This tests simple SVM results for fixed values of ep and bc.
 % Only the basic plots of the input data and a few contours are provided
-% here.  h1, h2, and h3 are the associated figure handles.
+% here.
 
 % To allow for the low-rank expansion parameter to be set
 global GAUSSQR_PARAMETERS
@@ -14,7 +15,7 @@ test_N = 10;
 train_N = 100;
 
 % Create random training and test data
-[train_data,train_class,test_data,test_class,h1] = SVM_setup(1,train_N,test_N);
+[train_data,train_class,test_data,test_class,h1] = SVM_setup(1,train_N,test_N,1);
 
 % Plot a variety of contours
 d = 0.02;

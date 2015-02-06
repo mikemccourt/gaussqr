@@ -1,5 +1,5 @@
 function [train_data,train_class,test_data,test_class,fig_handle] = SVM_setup(design_opt,train_N,test_N,rand_seed)
-% function [train_data,test_data,train_class,test_class,fig_handle] = SVM_setup(design_opt,train_N,test_N)
+% function [train_data,test_data,train_class,test_class,fig_handle] = SVM_setup(design_opt,train_N,test_N,rand_seed)
 % This function sets up the SVM examples
 % Inputs: design_opt   - 1 for linearly separable, 2 for nonseparable
 %         train_N      - number of training points per population
@@ -38,17 +38,18 @@ end
 
 % This allows us to control the results
 % Some older versions of Matlab are handled with this block
-if exist('rng','builtin')
-    rng(rand_seed);
-else
-    rand('state',rand_seed);
-    randn('state',rand_seed);
-    if not(exist('randi','builtin'))
-        randi = @(n,r,c) ceil(n*rand(r,c));
-    end
-end
-% This shouldn't be necessary, but seems to be.
-randi = @(n,r,c) ceil(n*rand(r,c));
+GAUSSQR_PARAMETERS.RANDOM_SEED(rand_seed);
+% if exist('rng','builtin')
+%     rng(rand_seed);
+% else
+%     rand('state',rand_seed);
+%     randn('state',rand_seed);
+%     if not(exist('randi','builtin'))
+%         randi = @(n,r,c) ceil(n*rand(r,c));
+%     end
+% end
+% % This shouldn't be necessary, but seems to be.
+% randi = @(n,r,c) ceil(n*rand(r,c));
 
 % Set up the data points based on what the user requests
 switch design_opt

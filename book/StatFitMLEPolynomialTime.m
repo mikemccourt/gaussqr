@@ -13,7 +13,7 @@ xplot = pick2Dpoints(-1,1,Nplot);
 X = reshape(xplot(:,1),Nplot,Nplot);
 Y = reshape(xplot(:,2),Nplot,Nplot);
 
-% Define the anisotropic C3 missing Wendland kernel in dense form
+% Define an anisotropic missing Wendland kernel in dense form
 rbf = @(r) (1-7*r.^2-81/4*r.^4).*sqrt(1-r.^2) - ...
            15/4*r.^4.*(6+r.^2).*log(r./(1+sqrt(1-r.^2)) + eps);
 
