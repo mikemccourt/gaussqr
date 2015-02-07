@@ -18,8 +18,8 @@ x = pickpoints(0,3.5,N);
 y = yf(x) + sigma^2*randn(N,1);
 
 % Set up evaluation points at which to study the answer
-NN = 400;
-xeval = pickpoints(0,3.5,NN);
+Neval = 400;
+xeval = pickpoints(0,3.5,Neval);
 yeval = yf(xeval);
 
 % Set up kernels with which to approximate
