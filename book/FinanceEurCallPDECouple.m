@@ -62,48 +62,86 @@ rbfGxx = @(e,r) 2*e^2*(2*(e*r).^2-1).*exp(-(e*r).^2);
 
 % Pick a specific kernel to solve with
 % rbf = rbfM6;  rbfx = rbfM6x;  rbfxx = rbfM6xx;
-% rbf = rbfM4;  rbfx = rbfM4x;  rbfxx = rbfM4xx;
-rbf = rbfM2;  rbfx = rbfM2x;  rbfxx = rbfM2xx;
+rbf = rbfM4;  rbfx = rbfM4x;  rbfxx = rbfM4xx;
+% rbf = rbfM2;  rbfx = rbfM2x;  rbfxx = rbfM2xx;
 ep = 2;
 
 % Choose a range of point values to consider for this problem
-Nvec = ceil(logspace(1,2,12));
+Nvec = 6:3:21;
+pt_opt = 'cheb';
 
 errvec = zeros(size(Nvec));
 k = 1;
 for N=Nvec
-    % Create the points we want to work with
-    xall = pickpoints(0,4*K,N);
-    xbc = xall(xall==0 | xall==4*K); Nbc = length(xbc);
-    xint = xall(xall~=0 & xall~=4*K); Nint = length(xint);
-    iint = 1:Nint;
-    ibc = Nint+1:Nint+Nbc;
-    x = [xint;xbc];
+    % Create points in both domains
+    x1all = pickpoints(0,K,N,pt_opt);
+    x1bc = x1all(x1all==0);  N1bc = length(x1bc);
+    x1cc = x1all(x1all==K);  N1cc = length(x1cc);
+    x1int = x1all(x1all~=0 & x1all~=K);  N1int = length(x1int);
+    i1int = 1:N1int;
+    i1bc = N1int+1:N1int+N1bc;
+    i1cc = N1int+N1bc+1:N1int+N1bc+N1cc;
+    x1 = [x1int;x1bc;x1cc];  N1 = length(x1);
     
-    % Create the necessary differentiation matrices
-    DM = DistanceMatrix(x,x);
-    DMint = DistanceMatrix(xint,x);
-    DiffMint = DifferenceMatrix(xint,x);
-    V = rbf(ep,DM);
-    Vxint = rbfx(ep,DMint,DiffMint);
-    Vxxint = rbfxx(ep,DMint);
-    VxintVinv = Vxint/V;
-    VxxintVinv = Vxxint/V;
+    DM1 = DistanceMatrix(x1,x1);
+    DM1int = DistanceMatrix(x1int,x1);
+    DiffM1int = DifferenceMatrix(x1int,x1);
+    DM1cc = DistanceMatrix(x1cc,x1);
+    DiffM1cc = DifferenceMatrix(x1cc,x1);
+    V1 = rbf(ep,DM1);
+    Vx1int = rbfx(ep,DM1int,DiffM1int);
+    Vxx1int = rbfxx(ep,DM1int);
+    Vx1cc = rbfx(ep,DM1cc,DiffM1cc);
+    Vxx1cc = rbfxx(ep,DM1cc);
+    Vx1intV1inv = Vx1int/V1;
+    Vxx1intV1inv = Vxx1int/V1;
+    Vx1ccV1inv = Vx1cc/V1;
     
-    % Form the functions for the ODE solver
-    odeint = @(u) r*xint.*(VxintVinv*u) + ...
-                  .5*S^2*xint.^2.*(VxxintVinv*u) - ...
-                  r*u(iint);
-	odebc  = @(t,u) u(ibc)-bc(xbc,t);
-    odefun = @(t,u) [odeint(u);odebc(t,u)];
+    x2all = pickpoints(K,4*K,3*N,pt_opt);
+    x2bc = x2all(x2all==4*K);  N2bc = length(x2bc);
+    x2cc = x2all(x2all==K);  N2cc = length(x2cc);
+    x2int = x2all(x2all~=K & x2all~=4*K);  N2int = length(x2int);
+    i2int = 1:N2int;
+    i2bc = N2int+1:N2int+N2bc;
+    i2cc = N2int+N2bc+1:N2int+N2bc+N2cc;
+    x2 = [x2int;x2bc;x2cc];   N2 = length(x2);
+    
+    DM2 = DistanceMatrix(x2,x2);
+    DM2int = DistanceMatrix(x2int,x2);
+    DiffM2int = DifferenceMatrix(x2int,x2);
+    DM2cc = DistanceMatrix(x2cc,x2);
+    DiffM2cc = DifferenceMatrix(x2cc,x2);
+    V2 = rbf(ep,DM2);
+    Vx2int = rbfx(ep,DM2int,DiffM2int);
+    Vxx2int = rbfxx(ep,DM2int);
+    Vx2cc = rbfx(ep,DM2cc,DiffM2cc);
+    Vxx2cc = rbfxx(ep,DM2cc);
+    Vx2intV2inv = Vx2int/V2;
+    Vxx2intV2inv = Vxx2int/V2;
+    Vx2ccV2inv = Vx2cc/V2;
+    
+    % Form the full problem
+    x = [x1;x2];
+    i1 = 1:N1;
+    i2 = N1+1:N1+N2;
+    
+    odeint1 = @(u) r*x1int.*(Vx1intV1inv*u(i1)) + ...
+                   .5*S^2*x1int.^2.*(Vxx1intV1inv*u(i1)) - ...
+                   r*u(i1int);
+    odeint2 = @(u) r*x2int.*(Vx2intV2inv*u(i2)) + ...
+                   .5*S^2*x2int.^2.*(Vxx2intV2inv*u(i2)) - ...
+                   r*u(N1+i2int);
+	odebc1  = @(t,u) u(i1bc)-bc(x1bc,t);
+	odebc2  = @(t,u) u(N1+i2bc)-bc(x2bc,t);
+    odecc1  = @(u) u(i1cc) - u(N1+i2cc);
+    odecc2  = @(t,u) Vx1ccV1inv*u(i1) - Vx2ccV2inv*u(i2) + exp(-100000*t);
+    odefun = @(t,u) [odeint1(u);odebc1(t,u);odecc1(u); ...
+                     odeint2(u);odebc2(t,u);odecc2(t,u)];
     
     % Prepare the ODE solve
-    Mass = sparse([eye(Nint),zeros(Nint,Nbc);zeros(Nbc,N)]);
-    Jac = [.5*S^2*bsxfun(@times,xint.^2,VxxintVinv) + ...
-                    r*bsxfun(@times,xint,VxintVinv) - ...
-                       [r*eye(Nint),zeros(Nint,Nbc)]; ...
-           [zeros(Nbc,Nint),eye(Nbc)]                      ];
-    odeopt = odeset('Jacobian',Jac,'Mass',Mass,...
+    Mass = sparse([[eye(N1int),zeros(N1int,N1bc+N1cc+N2);zeros(N1bc+N1cc,N1+N2)]; ...
+                   zeros(N2,N1),[eye(N2int),zeros(N2int,N2bc+N2cc);zeros(N2bc+N2cc,N2)]]);
+    odeopt = odeset('Mass',Mass,...
         'MStateDependence','none','MassSingular','yes');
     Pinit = payout(x);
     [tsol,Psol] = ode15s(odefun,[0,T],Pinit,odeopt);
@@ -113,12 +151,12 @@ for N=Nvec
 end
 
 h = figure;
-loglog(Nvec,errvec)
+loglog(4*Nvec,errvec)
 xlabel('number of collocation points')
 ylabel('absolute max norm error')
 
 h_sol = figure;
-iplot = [ibc(1),iint,ibc(end)];
+iplot = [i1bc,i1int,i1cc,i2int+N1,i2bc+N1];
 plot(x(iplot),Psol(1,iplot)','linewidth',2)
 hold on
 plot(x(iplot),Psol(end,iplot)','--','linewidth',2)
@@ -129,14 +167,12 @@ xlabel('spot price')
 ylabel('expected payoff')
 
 h_err = figure;
-surf(tsol,x(iplot),abs(Psol(:,iplot)' - bsxfun(@(xe,te)Ptrue(xe,te),x(iplot),tsol')))
+surf(tsol,x(iplot),abs(Psol(:,iplot)' - bsxfun(@(xe,te)Ptrue(xe,te),x(iplot),tsol')),'edgealpha',.2)
 xlabel('time to expiry')
 ylabel('spot price')
 zlabel('option value error')
-view([-56 32])
-colormap(gray);C = colormap;colormap(flipud(C)),colormap white
-set(get(gca,'children'),'edgealpha',.8)
-set(get(gca,'children'),'edgecolor',[1 1 1]*.5)
+view([-70 6])
+colormap(gray);C = colormap;colormap(flipud(C))
 
 % For plotting multiple results on the same axes
 % loglog(Nvec,errvecM2,'linewidth',2)
