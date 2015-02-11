@@ -1,4 +1,5 @@
 function [s,M] = ibb(x,z,ep,beta,deriv,Mfix)
+% Need to merge IBBkernel into this function
 global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')

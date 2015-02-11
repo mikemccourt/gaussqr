@@ -25,7 +25,7 @@
 %   E[X] is the expected value of X
 %   We compute this with an integral
 
-% E is the scaled exercise price
+% E is the exercise price
 E = 1;
 
 % T is the exercise time
@@ -79,8 +79,11 @@ pQMC = polyfit(log(Nvec),log(QMCvec),1);
 h = figure;
 loglog(Nvec,MCvec,'--','linewidth',2)
 hold on
-loglog(Nvec,1.5*exp(pMC(2))*Nvec.^pMC(1),':k')
+% loglog(Nvec,1.5*exp(pMC(2))*Nvec.^pMC(1),':k')
 loglog(Nvec,QMCvec,'linewidth',2)
-loglog(Nvec,.75*exp(pQMC(2))*Nvec.^pQMC(1),':k')
+% loglog(Nvec,.75*exp(pQMC(2))*Nvec.^pQMC(1),':k')
 hold off
 ylim([1e-4 1e-1])
+xlabel('number of quadrature points')
+ylabel('quadrature absolute error')
+legend('standard Monte Carlo','quasi-Monte Carlo','location','southwest')
