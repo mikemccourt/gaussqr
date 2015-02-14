@@ -42,6 +42,7 @@ rbfIM = @(r) 1./(1+r.^2);
 ep = [1.6 .8 .4 .2 .1 .05 .025];
 ep = [  1  1  1  1  1   1    1]/5;
 ep = 2.^(2:-1:-4);
+ep = 2.^(2:-.5:-1);
 
 % Choose points at which to study the surrogate model
 % Also, choose a number of points at which to test the error

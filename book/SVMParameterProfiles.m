@@ -8,9 +8,9 @@ global GAUSSQR_PARAMETERS
 % Choose a shape parameter or range of ep to test
 % Also, choose a box constraint or range of bc to test
 % The ep and box_constraint values are only needed for plot_results=1
-ep = .01;
+ep = 1;
 epvec = logspace(-2,2,31);
-box_constraint = 10000;
+box_constraint = 10000;box_constraint = .6;
 bcvec = logspace(-2,8,30);
 
 % Use the low rank matrix multiplication strategy
@@ -23,7 +23,7 @@ GAUSSQR_PARAMETERS.DEFAULT_REGRESSION_FUNC = .1;
 %   2 - tests range of epsilon values
 %   3 - tests range of box constraint values
 %   4 - 3D plot of both epsilon and box constraint range
-plot_results = 1;
+plot_results = 2;
 
 % Define the size of the problem
 test_N = 10;
@@ -105,14 +105,14 @@ switch(plot_results)
         
         h1 = figure;
         semilogx(epvec,errvec,'linewidth',2)
-        xlabel('\epsilon')
+        xlabel('$\varepsilon$','interpreter','latex')
         ylabel('missed classifications')
         ylim([0,10])
         set(gca,'ytick',[0,5,10])
         
         h2 = figure;
         [AX,H1,H2] = plotyy(epvec,svmvec,epvec,marvec,'semilogx','loglog');
-        xlabel('\epsilon')
+        xlabel('$\varepsilon$','interpreter','latex')
         ylabel(AX(1),'support vectors')
         ylabel(AX(2),'margin')
         set(AX(1),'ycolor','k')
@@ -128,8 +128,8 @@ switch(plot_results)
         set(H1,'linestyle','--')
         set(H1,'linewidth',2)
         set(H2,'linewidth',2)
-        title(sprintf('C=%g',box_constraint))
-        legend('# SV','Margin','location','east')
+%         title(sprintf('C=%g',box_constraint))
+        legend('# SV','Margin','location','southeast')
     case 3
         % Test a bunch of box_constraint values with a fixed ep to see what the
         % results look like

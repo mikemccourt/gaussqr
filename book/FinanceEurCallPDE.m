@@ -61,19 +61,20 @@ rbfGx = @(e,r,dx) -2*e^2*dx.*exp(-(e*r).^2);
 rbfGxx = @(e,r) 2*e^2*(2*(e*r).^2-1).*exp(-(e*r).^2);
 
 % Pick a specific kernel to solve with
-% rbf = rbfM6;  rbfx = rbfM6x;  rbfxx = rbfM6xx;
+rbf = rbfM6;  rbfx = rbfM6x;  rbfxx = rbfM6xx;
 % rbf = rbfM4;  rbfx = rbfM4x;  rbfxx = rbfM4xx;
-rbf = rbfM2;  rbfx = rbfM2x;  rbfxx = rbfM2xx;
+% rbf = rbfM2;  rbfx = rbfM2x;  rbfxx = rbfM2xx;
 ep = 2;
 
 % Choose a range of point values to consider for this problem
-Nvec = ceil(logspace(1,2,12));
+Nvec = ceil(logspace(1,2,12));Nvec = 12;
 
 errvec = zeros(size(Nvec));
 k = 1;
 for N=Nvec
     % Create the points we want to work with
     xall = pickpoints(0,4*K,N);
+    xall = unique([pickpoints(0,K,N,'cheb');pickpoints(K,4*K,3*N,'cheb')]);
     xbc = xall(xall==0 | xall==4*K); Nbc = length(xbc);
     xint = xall(xall~=0 & xall~=4*K); Nint = length(xint);
     iint = 1:Nint;
@@ -98,7 +99,7 @@ for N=Nvec
     odefun = @(t,u) [odeint(u);odebc(t,u)];
     
     % Prepare the ODE solve
-    Mass = sparse([eye(Nint),zeros(Nint,Nbc);zeros(Nbc,N)]);
+    Mass = sparse([eye(Nint),zeros(Nint,Nbc);zeros(Nbc,Nint+Nbc)]);
     Jac = [.5*S^2*bsxfun(@times,xint.^2,VxxintVinv) + ...
                     r*bsxfun(@times,xint,VxintVinv) - ...
                        [r*eye(Nint),zeros(Nint,Nbc)]; ...
@@ -137,6 +138,7 @@ view([-56 32])
 colormap(gray);C = colormap;colormap(flipud(C)),colormap white
 set(get(gca,'children'),'edgealpha',.8)
 set(get(gca,'children'),'edgecolor',[1 1 1]*.5)
+title(sprintf('error=%g',errvec(1)))
 
 % For plotting multiple results on the same axes
 % loglog(Nvec,errvecM2,'linewidth',2)

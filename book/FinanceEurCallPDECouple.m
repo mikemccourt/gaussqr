@@ -42,8 +42,8 @@ payout = @(x) max(x-K,0);
 bc = @(x,t) K*(4-exp(-r*t))*(x==4*K);
 
 % Define the true solution
-d1 = @(x,t) 1./(B*sqrt(t)).*(log(x/K)+(r+B^2/2)*t);
-d2 = @(x,t) d1(x,t) - B*sqrt(t);
+d1 = @(x,t) 1./(S*sqrt(t)).*(log(x/K)+(r+S^2/2)*t);
+d2 = @(x,t) d1(x,t) - S*sqrt(t);
 Ptrue = @(x,t) normcdf(d1(x,t)).*x - K*normcdf(d2(x,t)).*exp(-r*t);
 
 % Define the possible kernels for this problem
@@ -61,14 +61,15 @@ rbfGx = @(e,r,dx) -2*e^2*dx.*exp(-(e*r).^2);
 rbfGxx = @(e,r) 2*e^2*(2*(e*r).^2-1).*exp(-(e*r).^2);
 
 % Pick a specific kernel to solve with
-% rbf = rbfM6;  rbfx = rbfM6x;  rbfxx = rbfM6xx;
-rbf = rbfM4;  rbfx = rbfM4x;  rbfxx = rbfM4xx;
+rbf = rbfM6;  rbfx = rbfM6x;  rbfxx = rbfM6xx;
+% rbf = rbfM4;  rbfx = rbfM4x;  rbfxx = rbfM4xx;
 % rbf = rbfM2;  rbfx = rbfM2x;  rbfxx = rbfM2xx;
 ep = 2;
 
 % Choose a range of point values to consider for this problem
-Nvec = 6:3:21;
+Nvec = 3:3:24;Nvec = 12;
 pt_opt = 'cheb';
+couplefix = @(t) exp(-100000*t);
 
 errvec = zeros(size(Nvec));
 k = 1;
@@ -134,7 +135,7 @@ for N=Nvec
 	odebc1  = @(t,u) u(i1bc)-bc(x1bc,t);
 	odebc2  = @(t,u) u(N1+i2bc)-bc(x2bc,t);
     odecc1  = @(u) u(i1cc) - u(N1+i2cc);
-    odecc2  = @(t,u) Vx1ccV1inv*u(i1) - Vx2ccV2inv*u(i2) + exp(-100000*t);
+    odecc2  = @(t,u) Vx1ccV1inv*u(i1) - Vx2ccV2inv*u(i2) + couplefix(t);
     odefun = @(t,u) [odeint1(u);odebc1(t,u);odecc1(u); ...
                      odeint2(u);odebc2(t,u);odecc2(t,u)];
     
@@ -171,14 +172,28 @@ surf(tsol,x(iplot),abs(Psol(:,iplot)' - bsxfun(@(xe,te)Ptrue(xe,te),x(iplot),tso
 xlabel('time to expiry')
 ylabel('spot price')
 zlabel('option value error')
-view([-70 6])
+view([-56 32])
 colormap(gray);C = colormap;colormap(flipud(C))
+title(sprintf('error=%g',errvec(1)))
+
+% For plotting the point distribution
+h_pt = figure;
+plot(x,.66*ones(size(x)),'or')
+hold on
+xu = pickpoints(0,4*K,length(x)-1);
+plot(xu,.33*ones(size(xu)),'+b')
+hold off
+ylim([0,1])
+xlabel('spot price')
+set(gca,'ytick',[])
+legend('coupled points','uniform points','location','north')
 
 % For plotting multiple results on the same axes
-% loglog(Nvec,errvecM2,'linewidth',2)
+% h_conv = figure;
+% loglog(4*Nvec,errvecM2,'linewidth',2)
 % hold on
-% loglog(Nvec,errvecM4,'--','linewidth',2)
-% loglog(Nvec,errvecM6,'-.','linewidth',2)
+% loglog(4*Nvec,errvecM4,'--','linewidth',2)
+% loglog(4*Nvec,errvecM6,'-.','linewidth',2)
 % hold off
 % legend('C^2 Matern','C^4 Matern','C^6 Matern','location','southwest')
 % xlabel('number of collocation points')

@@ -13,7 +13,7 @@ ydirty = MPG;
 x_mean = mean(x);
 
 % Create the surrogate model using a pre-chosen shape parameter
-ep = 4;ep = 10;
+ep = 4;
 rbf = @(e,r) exp(-(e*r).^2);
 K = rbf(ep,DistanceMatrix(x,x));
 coef = K\y;

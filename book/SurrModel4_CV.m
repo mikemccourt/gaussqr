@@ -32,7 +32,7 @@ function [ret1,ret2] = SurrModel4_CV(par,rbf,x,y,cvind)
 %             -sign(k(x)^T(K+mu*I)y), at xtest for CDF>0
 %             
 %               
-%      ceq - The inequality constraint, not used for this method
+%      ceq - The equality constraint, not used for this method
 %                this will always return 0
 
 ep = par(1);

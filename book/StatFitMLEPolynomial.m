@@ -18,7 +18,7 @@ xplot = pick2Dpoints(-1,1,Nplot);
 X = reshape(xplot(:,1),Nplot,Nplot);
 Y = reshape(xplot(:,2),Nplot,Nplot);
 
-% Define the anisotropic C3 missing Wendland kernel in dense form
+% Define an anisotropic missing Wendland kernel in dense form
 rbf = @(r) (1-7*r.^2-81/4*r.^4).*sqrt(1-r.^2) - ...
            15/4*r.^4.*(6+r.^2).*log(r./(1+sqrt(1-r.^2)) + eps);
 % Interesting side note: the following code produces complex results
@@ -28,15 +28,15 @@ rbf = @(r) (1-7*r.^2-81/4*r.^4).*sqrt(1-r.^2) - ...
 
 % Define a shape parameter vector
 % We will fix this here and consider different polynomials
-ep = [6 5];ep = [8 11];ep = [16 14];ep = [22 23];
+ep = [5 4];ep = [8 11];ep = [16 14];ep = [20 21];
 
 % Prepare the Kriging matrix for use in choosing a polynomial
-K = DistanceMatrix(x,x,ep,rbf);
+K = DistanceMatrix(x,x,ep,rbf);return
 [Lp,~,p] = chol(K,'lower','vector');
 logdetK = 2*sum(log(full(diag(Lp))));
 
 % Choose a variety of polynomial degrees to test
-pd2dvec = gqr_formMarr([6;6]) - 1;
+% pd2dvec = gqr_formMarr([6;6]) - 1;
 pd1dvec = 0:8;
 [P1,P2] = meshgrid(pd1dvec,pd1dvec);
 pd2dvec = [P1(:)';P2(:)'];
@@ -71,6 +71,30 @@ for pd=pd2dvec
     k = k + 1;
 end
 
+% These plot commands only work for a 9x9 polynomial testing
 h_mple = figure;
-plot3(pd2dvec(1,:),pd2dvec(2,:),mplevec,'or')
+h_bar = bar3(pd1dvec,reshape(mplevec,size(P1)));
+zlim([9e4,1.4e5])
+xlim([0,10])
+ylim([-1,9])
+xlabel('2nd dimension degree')
+ylabel('1st dimension degree')
+zlabel('C_{MPLE}')
+view([37.5 20])
+h_submple = get(h_mple,'children');
+set(h_submple,'xtick',[1 3 5 7 9])
+set(h_submple,'ytick',[0 2 4 6 8])
+set(h_submple,'xticklabel',{'0' '2' '4' '6' '8'})
+arrayfun(@(n) set(h_bar(n),'facecolor',[.7 .7 .7]),1:9);
 
+% Plot the final kriging prediction
+h_pred = figure;
+splot = sf(xplot);
+S = reshape(splot,size(X));
+S(not(inpolygon(X,Y,x(cind,1),x(cind,2)))) = NaN;
+surf(X,Y,S,'edgealpha',.5)
+zlim([1200 2100])
+xlim([-1 1])
+ylim([-1 1])
+view([31 38])
+colormap gray;C = colormap;colormap(flipud(C));

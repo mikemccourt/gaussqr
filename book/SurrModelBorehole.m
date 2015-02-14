@@ -44,9 +44,9 @@ errs = (seval - yeval)/norm(yeval)*sqrt(Neval);
 % To do this, we are required to sample at a regular grid
 % We smooth out our interpolant to make the plots easier to see
 % We could also use griddata or scatteredInterpolant
-mu = 1e-2;  ep = 2;
+muSS = 1e-2;  epSS = 2;
 rbfM4 = @(r) (1+r+r.^2/3).*exp(-r);
-Npx = 34;  Npy = 35;
+Npx = 22;  Npy = 21;
 xinterp = pick2Dpoints([0 0],[1 1],[Npx Npy]);
 
 % Roll through the dimensions and create the contour plots
@@ -65,9 +65,9 @@ C = colormap('gray');
 for i=1:7
     for j=i:7
         dims = [i,j+1];
-        Kdata = rbfM4(DistanceMatrix(xeval(:,dims),xeval(:,dims),ep));
-        Kinterp = rbfM4(DistanceMatrix(xinterp,xeval(:,dims),ep));
-        zinterp = Kinterp*((Kdata + mu*eye(Neval))\errs);
+        Kdata = rbfM4(DistanceMatrix(xeval(:,dims),xeval(:,dims),epSS));
+        Kinterp = rbfM4(DistanceMatrix(xinterp,xeval(:,dims),epSS));
+        zinterp = Kinterp*((Kdata + muSS*eye(Neval))\errs);
         
         X = reshape(xinterp(:,1),Npx,Npy);
         Y = reshape(xinterp(:,2),Npx,Npy);

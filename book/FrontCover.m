@@ -33,7 +33,7 @@ x = pick2Dpoints([0 0],[1 1],[nx;ny]);
 % a problem this big
 % I am going to execute this computation in pieces so that I can monitor
 % its progress
-progress_tick = 1/1;
+progress_tick = 1/20;
 progress = 0;
 h_waitbar = waitbar(progress,'Initializing distance matrix');
 
@@ -83,3 +83,36 @@ Xr = zeros(size(Xs));
 for k=1:3
     
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Another book cover idea
+% yf = pickfunc('borehole_scaled');
+% point_generator = haltonset(8,'Skip',1);
+% haltpts8D = @(N) net(point_generator,N);
+% rbfIM = @(r) 1./(1+r.^2);
+% ep = logspace(1,-1,8);
+% N = 2000;  Neval = 500;
+% xtot = haltpts8D(N+Neval);
+% xeval = xtot(1:Neval,:);  yeval = yf(xeval);
+% x = xtot(Neval+1:end,:);  y = yf(x);
+% 
+% K = rbfIM(DistanceMatrix(x,x,ep));
+% Keval = rbfIM(DistanceMatrix(xeval,x,ep));
+% seval = Keval*(K\y);
+% errs = abs(seval - yeval)/norm(yeval)*sqrt(Neval);
+% 
+% ep = 2;mu = 1e-16;
+% rbfM4 = @(r) (1+r+r.^2/3).*exp(-r);
+% Npx = 34;  Npy = 35;
+% xinterp = pick2Dpoints([0 0],[1 1],[Npx Npy]);
+% 
+% Kdata = rbfM4(DistanceMatrix(xeval(:,[1,2]),xeval(:,[1,2]),ep));
+% Kinterp = rbfM4(DistanceMatrix(xinterp,xeval(:,[1,2]),ep));
+% zinterp = Kinterp*((Kdata + mu*eye(Neval))\errs);
+% 
+% X = reshape(xinterp(:,1),Npx,Npy);
+% Y = reshape(xinterp(:,2),Npx,Npy);
+% Z = reshape(zinterp,Npx,Npy);
+% contourf(X,Y,Z,[0,.05,.1,.15,.2],'linewidth',3)
+% colormap(.3+C*.7)
