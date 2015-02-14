@@ -32,7 +32,7 @@ GAUSSQR_PARAMETERS.NORM_TYPE = inf;
 % Define parameters of the PDE
 K = 1;
 T = 1;
-S = .3;
+B = .3;
 r = .05;
 
 % Define the payout, used as the initial condition
@@ -93,14 +93,14 @@ for N=Nvec
     
     % Form the functions for the ODE solver
     odeint = @(u) r*xint.*(VxintVinv*u) + ...
-                  .5*S^2*xint.^2.*(VxxintVinv*u) - ...
+                  .5*B^2*xint.^2.*(VxxintVinv*u) - ...
                   r*u(iint);
 	odebc  = @(t,u) u(ibc)-bc(xbc,t);
     odefun = @(t,u) [odeint(u);odebc(t,u)];
     
     % Prepare the ODE solve
     Mass = sparse([eye(Nint),zeros(Nint,Nbc);zeros(Nbc,Nint+Nbc)]);
-    Jac = [.5*S^2*bsxfun(@times,xint.^2,VxxintVinv) + ...
+    Jac = [.5*B^2*bsxfun(@times,xint.^2,VxxintVinv) + ...
                     r*bsxfun(@times,xint,VxintVinv) - ...
                        [r*eye(Nint),zeros(Nint,Nbc)]; ...
            [zeros(Nbc,Nint),eye(Nbc)]                      ];
