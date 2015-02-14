@@ -56,10 +56,13 @@ alertuser = GAUSSQR_PARAMETERS.WARNINGS_ON;
 % So that you can pass newBaseDir once at the start of a session
 persistent baseDir
 
+defaultFS = 14;
+
 % This switch statement assigns the appropriate value to baseDir
 % Either the persistent value, the default value or the new value
 switch nargin
     case {2,3} % Handle default baseDir choice
+        fs = defaultFS;
         if nargin==2 % Default style value
             style = 0;
         end
@@ -80,10 +83,16 @@ switch nargin
             end
         end
     case 4
-        if exist(newBaseDir,'dir')
-            baseDir = newBaseDir;
+        if ~ischar(newBaseDir)
+            fs = newBaseDir;
+            baseDir = defaultDir;
         else
-            error('Requested directory %s does not exist',newBaseDir)
+            if exist(newBaseDir,'dir')
+                baseDir = newBaseDir;
+            else
+                error('Requested directory %s does not exist',newBaseDir)
+            end
+            fs = defaultFS;
         end
     otherwise
         error('Incorrent calling sequence')
@@ -112,9 +121,11 @@ switch style
     case {1,2,3}
         % Font Size 14        
         % This command should change the axis labels, title
-        set(findall(findobj(h),'Type','text'),'FontSize',14)
+        set(findall(findobj(h),'Type','text'),'FontSize',fs)
         % This command should change the xticklabels and legend
-        set(get(h,'Children'),'FontSize',14)
+        c = get(h,'Children');
+%         set(c(isgraphics(c,'axes')),'FontSize',fs)
+        set(c(isprop(c,'fontsize')),'FontSize',fs)
 
         % Keep axis limits
         % I think that this is equivalent to "keep axis limits" in the sense that
