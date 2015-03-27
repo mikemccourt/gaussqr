@@ -61,7 +61,7 @@ xinterp = pick2Dpoints([0 0],[1 1],[Npx Npy]);
 varnames = {'r_w','r','T_u','H_u','T_\ell','H_\ell','L','K_w'};
 h_contour = figure;
 hmat = zeros(7);
-C = colormap('gray');C = colormap('jet');
+C = colormap('gray');
 for i=1:7
     for j=i:7
         dims = [i,j+1];

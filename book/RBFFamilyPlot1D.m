@@ -78,15 +78,15 @@ basisfunction2 = rbf2(3,DM_eval);
 
 % Plot basis function
 figure
-plot(evalpoints, basisfunction1,'r-');
 hold on
+plot(evalpoints, basisfunction1,'r-');
 plot(evalpoints, basisfunction2,'g-.');
 %plot(evalpoints, basisfunction3,'b--');
 %plot(evalpoints, basisfunction4,'c-');
 %plot(evalpoints, basisfunction5,'m:');
 set(gca,'Fontsize',14)
-% xlabel('x','FontSize',14);
-% ylabel('y','FontSize',14,'Rotation',0);
+xlabel('x','FontSize',14);
+ylabel('y','FontSize',14,'Rotation',0);
 %ylim([0 1])
 %legend('C^0','C^2', 'C^4', 'C^6') % Wendland
 %legend('C^0','C^2', 'C^4', 'C^6') % Wu
