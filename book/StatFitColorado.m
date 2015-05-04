@@ -70,14 +70,14 @@ waitbar(0,h_waitbar,'Finding optimal \mu=0 \epsilon');
 
 % Find the LOOCV minimizing epsilon and evaluate with it
 epopt = fminbnd(@(ep) cv(ep,0),1,2);
-seval = sf(ep,0,x,y,xeval);
+seval = sf(epopt,0,x,y,xeval);
 
 waitbar(0,h_waitbar,'Plotting optimal \mu=0 \epsilon surface');
 
 % Plot the results
 X1 = reshape(xeval(:,1),Neval,Neval);
 X2 = reshape(xeval(:,2),Neval,Neval);
-S = reshape(seval,Neval,Neval);
+S = reshape(real(seval),Neval,Neval);
 h = figure;
 surf(X1,X2,S,'edgealpha',.6);
 hold on
@@ -110,7 +110,7 @@ waitbar(1,h_waitbar,'Plotting two parameter CV surface');
 
 figure,h_cv2d = axes;
 [E,M] = meshgrid(epvec,muvec);
-C = cvmat;
+C = real(cvmat);
 h_emsurface = surf(E,M,C);
 set(h_cv2d,'xscale','log')
 set(h_cv2d,'yscale','log')

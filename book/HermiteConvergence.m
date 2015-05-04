@@ -78,7 +78,7 @@ loglog(hvec,errvecL,'linewidth',2)
 loglog(hvplot,10^p(2)*hvplot.^p(1),'--^k')
 loglog(hvplot,10^pL(2)*hvplot.^pL(1),'--k')
 hold off
-xlabel('number of data locations')
+xlabel('fill distance')
 ylabel('relative RMS 2-norm error')
 legend('Interpolant','Laplacian',...
        sprintf('O(h^{%2.1f})',p(1)),sprintf('O(h^{%2.1f})',pL(1)),...

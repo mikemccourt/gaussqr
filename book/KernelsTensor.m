@@ -35,7 +35,7 @@ K = cell2mat(cellfun(@(Kx,Ky)kron(Kx,Ky), ...
     num2cell(K1d{1},1),num2cell(K1d{2},1),'UniformOutput',0));
 
 % Define the C0 Matern radial kernel (same ep as before)
-rbf = @(e,r) exp(-(e*r).^2);
+rbf = @(e,r) exp(-(e*r));
 
 % Pick a center to compare for plotting purposes
 z = [-.6 -.5];
@@ -44,6 +44,7 @@ z = [-.6 -.5];
 N2d = 100;
 x2d = pick2Dpoints([-1 -1],[1 1],[N2d N2d]);
 
+ep = 2.5;
 % Evaluate the kernel
 Kradial = rbf(ep,DistanceMatrix(x2d,z));
 
