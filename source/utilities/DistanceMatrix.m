@@ -115,7 +115,8 @@ end
 %%% Allows for anisotropy
 %%% NOTE: Can produce negative values on the order of
 %%%       sqrt((machine precision)*(dimension))
-%%%       I may need to check for that eventually
+%%%       This is why the max(x,0) command is used here,
+%%%       to avoid for complex square roots
 %%% NOTE: In Matlab2015 and Windows 8.1, this is causing a crash
 %%%       with bsxfun sometimes.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -123,7 +124,7 @@ function DM = DistanceMatrix_COMPUTE(xe,ze)
 sxe2 = sum(xe.^2,2);
 sze2 = sum(ze.^2,2);
 
-DM = sqrt(bsxfun(@plus,sxe2,sze2') - 2*xe*ze');
+DM = sqrt(max(bsxfun(@plus,sxe2,sze2') - 2*xe*ze',0));
 
 end
 
