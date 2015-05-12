@@ -119,6 +119,9 @@ end
 %%%       to avoid for complex square roots
 %%% NOTE: In Matlab2015 and Windows 8.1, this is causing a crash
 %%%       with bsxfun sometimes.
+%%% NOTE: Is there any value in grouping 2*(x*x') to help
+%%%       guarantee the result will be symmetric?  To do so
+%%%       we would have to check if xe=ze ...
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function DM = DistanceMatrix_COMPUTE(xe,ze)
 sxe2 = sum(xe.^2,2);

@@ -44,8 +44,8 @@ z = [-.6 -.5];
 N2d = 100;
 x2d = pick2Dpoints([-1 -1],[1 1],[N2d N2d]);
 
-ep = 2.5;
 % Evaluate the kernel
+ep = 2;
 Kradial = rbf(ep,DistanceMatrix(x2d,z));
 
 % Reshape the data so it can be surface plotted
@@ -58,6 +58,8 @@ Kradial_surf = reshape(Kradial,N2d,N2d);
 % Plot the tensor product and radial kernels on the same axes
 surf(X2d,Y2d,Kradial_surf,'edgecolor','none')
 hold on
+colormap('jet')
 surf(X1d,Y1d,K_surf,'edgecolor','none')
+colormap('jet')
 hold off
 view([-1 1 1.5])

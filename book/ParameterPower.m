@@ -13,7 +13,7 @@ phifunc = @(n,x) sqrt(2)*cos(acos(x)*n);
 lambdafunc = @(b,n) (n==0)*.5 + (n>0).*(.5*(1-b)/b*b.^n);
 
 % Create some kernel centers
-N = 10;
+N = 11;
 x = pickpoints(-1,1,N,'cheb');
 Neval = 13;
 xeval = pickpoints(-1,1,Neval,'halt');
