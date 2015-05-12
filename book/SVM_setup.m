@@ -22,7 +22,7 @@ if ~isstruct(GAUSSQR_PARAMETERS)
 end
 statsOn = GAUSSQR_PARAMETERS.STATISTICS_TOOLBOX_AVAILABLE;
 if not(statsOn)
-    error('Sorry, but for the moment you need the stats package to run this')
+    error('Sorry, but for the moment you need the Statistics and Machine Learning Toolbox to run this')
 end
 
 if nargin==3

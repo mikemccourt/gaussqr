@@ -30,21 +30,21 @@ GAUSSQR_PARAMETERS.ERROR_STYLE = 2;
 GAUSSQR_PARAMETERS.NORM_TYPE = inf;
 
 % Define parameters of the PDE
-K = 1;
+E = 1;
 T = 1;
 B = .3;
 r = .05;
 
 % Define the payout, used as the initial condition
-payout = @(x) max(x-K,0);
+payout = @(x) max(x-E,0);
 
 % Define the boundary conditions (works for x=0 and x=4)
-bc = @(x,t) K*(4-exp(-r*t))*(x==4*K);
+bc = @(x,t) E*(4-exp(-r*t))*(x==4*E);
 
 % Define the true solution
-d1 = @(x,t) 1./(B*sqrt(t)).*(log(x/K)+(r+B^2/2)*t);
+d1 = @(x,t) 1./(B*sqrt(t)).*(log(x/E)+(r+B^2/2)*t);
 d2 = @(x,t) d1(x,t) - B*sqrt(t);
-Ptrue = @(x,t) normcdf(d1(x,t)).*x - K*normcdf(d2(x,t)).*exp(-r*t);
+Ptrue = @(x,t) normcdf(d1(x,t)).*x - E*normcdf(d2(x,t)).*exp(-r*t);
 
 % Define the possible kernels for this problem
 rbfM2 = @(e,r) (1+e*r).*exp(-e*r);
@@ -67,16 +67,15 @@ rbf = rbfM6;  rbfx = rbfM6x;  rbfxx = rbfM6xx;
 ep = 2;
 
 % Choose a range of point values to consider for this problem
-Nvec = ceil(logspace(1,2,12));Nvec = 12;
+Nvec = ceil(logspace(1,2,12));
 
 errvec = zeros(size(Nvec));
 k = 1;
 for N=Nvec
     % Create the points we want to work with
-    xall = pickpoints(0,4*K,N);
-    xall = unique([pickpoints(0,K,N,'cheb');pickpoints(K,4*K,3*N,'cheb')]);
-    xbc = xall(xall==0 | xall==4*K); Nbc = length(xbc);
-    xint = xall(xall~=0 & xall~=4*K); Nint = length(xint);
+    xall = pickpoints(0,4*E,N);
+    xbc = xall(xall==0 | xall==4*E); Nbc = length(xbc);
+    xint = xall(xall~=0 & xall~=4*E); Nint = length(xint);
     iint = 1:Nint;
     ibc = Nint+1:Nint+Nbc;
     x = [xint;xbc];

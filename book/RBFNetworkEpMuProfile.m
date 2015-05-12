@@ -26,13 +26,13 @@ yy = yf(xx);
 % Pick a range of shape and regularization parameters
 gqr_alpha = 1;
 N_ep = 50;
-N_lam = 55;
+N_mu = 55;
 epvec = logspace(-2,1,N_ep);
-lamvec = logspace(-10,5,N_lam);
+muvec = logspace(-10,5,N_mu);
 
-loomat = zeros(N_ep,N_lam);
-gcvmat = zeros(N_ep,N_lam);
-eigmat = zeros(N_ep,N_lam);
+loomat = zeros(N_ep,N_mu);
+gcvmat = zeros(N_ep,N_mu);
+eigmat = zeros(N_ep,N_mu);
 err_eig = Inf;
 gcv_min = Inf;
 loo_min = Inf;
@@ -46,30 +46,30 @@ for ep=epvec
     [U,S,V] = svd(Phi,0);Sv = diag(S);
     
     j = 1;
-    for lam=lamvec
+    for mu=muvec
         % Evaluate the projection matrix and residual for the CV calculations
-        P = eye(N) - U*diag(1./(1+lam./Sv.^2))*U';
+        P = eye(N) - U*diag(1./(1+mu./Sv.^2))*U';
         Py = P*y;
 
         % Evaluate the CV parameterization schemes
         loomat(k,j) = Py'*diag(1./diag(P).^2)*Py/N;
-        gcvmat(k,j) = N*Py'*Py/trace(P)^2;
+        gcvmat(k,j) = N*(Py'*Py)/trace(P)^2;
 
         % Evaluate predictions on the test/plotting points
         % Check the error
-        GQR.coef = V*((U'*y)./(Sv+lam./Sv));
+        GQR.coef = V*((U'*y)./(Sv+mu./Sv));
         yp = gqr_eval(GQR,xx);
         eigmat(k,j) = errcompute(yp,yy);
 
         % Record any optimal values that occur during the search
         if eigmat(k,j)<err_eig
-            err_eig = eigmat(k,j);ep_eig = ep;lam_eig = lam;y_eig = yp;
+            err_eig = eigmat(k,j);ep_eig = ep;mu_eig = mu;y_eig = yp;
         end
         if gcvmat(k,j)<gcv_min
-            gcv_min = gcvmat(k,j);ep_gcv = ep;lam_gcv = lam;y_gcv = yp;
+            gcv_min = gcvmat(k,j);ep_gcv = ep;mu_gcv = mu;y_gcv = yp;
         end
         if loomat(k,j)<loo_min
-            loo_min = loomat(k,j);ep_loo = ep;lam_loo = lam;y_loo = yp;
+            loo_min = loomat(k,j);ep_loo = ep;mu_loo = mu;y_loo = yp;
         end
         j = j + 1;
     end
@@ -81,7 +81,7 @@ waitbar(1,h_waitbar,'Plotting')
 
 % Plot the errors of the various solution strategies
 h_subplots = figure;
-[E,L] = meshgrid(epvec,lamvec);
+[E,L] = meshgrid(epvec,muvec);
 % This is the plot of the computed error
 subplot(1,3,1)
 h = surf(E,L,log10(eigmat'));
@@ -121,7 +121,7 @@ GQR.coef = Phi\y;
 yp = gqr_eval(GQR,xx);
 
 % Compute the necessary errors (not the mins of GCV, LOOCV)
-err_lamep0 = errcompute(yp,yy);
+err_muep0 = errcompute(yp,yy);
 err_gcv = errcompute(y_gcv,yy);
 err_loo = errcompute(y_loo,yy);
 
@@ -138,9 +138,9 @@ hold off
 ylim([-1,2])
 title(sprintf('N=%d,M=%d',N,M))
 legend('Data','True',...
-    sprintf('best lam=%2.2g ep=%2.2g err=%2.2g',lam_eig,ep_eig,err_eig),...
-    sprintf('LOO lam=%2.2g ep=%2.2g err=%2.2g', lam_loo,ep_loo,err_loo),...
-    sprintf('GCV lam=%2.2g ep=%2.2g err=%2.2g', lam_gcv,ep_gcv,err_gcv),...
-    sprintf('lam=ep=0 err=%2.2g',err_lamep0))
+    sprintf('best mu=%2.2g ep=%2.2g err=%2.2g',mu_eig,ep_eig,err_eig),...
+    sprintf('LOO mu=%2.2g ep=%2.2g err=%2.2g', mu_loo,ep_loo,err_loo),...
+    sprintf('GCV mu=%2.2g ep=%2.2g err=%2.2g', mu_gcv,ep_gcv,err_gcv),...
+    sprintf('mu=ep=0 err=%2.2g',err_muep0))
 
 close(h_waitbar)
