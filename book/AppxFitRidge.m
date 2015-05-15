@@ -31,7 +31,7 @@ rbfM4 = @(e,r) (1+e*r+(e*r).^2/3).*exp(-(e*r));
 rbfG = @(e,r) exp(-(e*r).^2);
 
 % Choose a kernel for the approximation
-rbf = rbfM4;
+rbf = rbfM2;
 
 % Create the interpolation matrix
 DM = DistanceMatrix(x,x);
@@ -92,7 +92,7 @@ title(sprintf('Interpolant to smoothed data, mu=%g',mu))
 
 % Consider the ridge regression over a variety of ep and mu parameters
 epvec = logspace(-3,1,30);
-muvec = logspace(-15,0,4);
+muvec = logspace(-15,0,20);
 [E,M] = meshgrid(epvec,muvec);
 emvec = num2cell([E(:),M(:)],2);
 errvecem = cellfun(@(em)errcompute(rbf(em(1),DMeval)*((rbf(em(1),DM)+em(2)*I)\y),yeval),emvec);
@@ -100,7 +100,7 @@ ERR = reshape(errvecem,length(muvec),length(epvec));
 h_surf = figure;
 surf(epvec,muvec,ERR)
 set(gca,'xscale','log','yscale','log','zscale','log')
-xlabel('\epsilon'),ylabel('\mu'),zlabel('2-norm error')
+xlabel('$\varepsilon$','interpreter','latex'),ylabel('\mu'),zlabel('2-norm error')
 set(gca,'xtick',[.01,1],'ytick',[1e-14,1e-7,1])
 colormap gray,colormap(flipud(colormap))
 view([-.8,-1.2,1])

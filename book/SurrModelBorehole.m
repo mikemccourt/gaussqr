@@ -14,7 +14,7 @@ if exist('haltonset','file')
     point_generator = haltonset(8,'Skip',1);
     haltpts8D = @(N) net(point_generator,N);
 else
-    haltpts8D = @(N) haltonseq(Ntot,8);
+    haltpts8D = @(N) haltonseq(N,8);
 end
 
 % Define the kernel for modeling, in its anisotropic form
@@ -61,7 +61,7 @@ xinterp = pick2Dpoints([0 0],[1 1],[Npx Npy]);
 varnames = {'r_w','r','T_u','H_u','T_\ell','H_\ell','L','K_w'};
 h_contour = figure;
 hmat = zeros(7);
-C = colormap('gray');
+C = colormap('gray');C = flipud(colormap('pink'));
 for i=1:7
     for j=i:7
         dims = [i,j+1];
