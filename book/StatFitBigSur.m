@@ -59,7 +59,8 @@ for ep=epvec
         lamvec2 = GQRp.eig(GQRp.Marr(:,N+1:end));
         Psi = Phi1 + GQRp.stored_phi2*GQRp.CbarT;
         logdetKp = log(abs(det(Phi1))) + sum(log(lamvec1)) + log(abs(det(Psi)));
-        poweval(j) = sqrt(exp(logdetKp - logdetK));
+        poweval(j) = sqrt(exp(logdetKp - logdetK)); 
+        j = j + 1;
     end
     pow = norm(poweval,'inf');
     
