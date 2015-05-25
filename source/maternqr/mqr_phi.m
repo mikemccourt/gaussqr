@@ -11,6 +11,9 @@ function p = mqr_phi(Marr,x,L,deriv)
 % Note: if you pass x values beyond [0,L], this will error out
 %
 % Note: minimum M value is 1
+%
+% We may want to reconsider the L value - since we primarily work with L=1
+% and nothing in the book uses L!=1
 
 [Mr Mc] = size(Marr);
 [n xc] = size(x);
