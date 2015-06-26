@@ -44,6 +44,9 @@ switch dim
             case 'qian'
                 fstr = 'y(x)=exp((x-1)^2) sin(exp((x-1)^2))';
                 yf = @(x) exp((x-1).^2).*sin(exp((x-1).^2));
+            case 'sinc'
+                fstr = 'y(x)=sinc((x+1)/2)';
+                yf = @(x) sinc((x+1)/2);
             otherwise
                 error('No such function %s exists in %d dimensions',fopt,dim)
         end
@@ -187,9 +190,10 @@ end
 function dim = check_regular_functions(fopt)
 
 % Define all the functions that have been registered
-registered_functions = {'piston','piston_scaled', ...
+registered_functions = {'kxy','ksa1','ksa2', ...
+                        'piston','piston_scaled', ...
                         'borehole','borehole_scaled'};
-dimensions = [7,7,8,8];
+dimensions = [2,2,2,7,7,8,8];
 
 regular_functions = containers.Map(registered_functions,dimensions);
 

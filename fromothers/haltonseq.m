@@ -1,4 +1,4 @@
-function H = haltonseq(NUMPTS,NDIMS);
+function H = haltonseq(NUMPTS,NDIMS)
 
 %HALTONSEQ(NUMPTS,NDIMS,) Generate a Halton sequence in NDIMS dimensional space 
 %   containing NUMPTS.  The output is between 0 and 1.  NUMPTS may be a vector
@@ -16,6 +16,9 @@ function H = haltonseq(NUMPTS,NDIMS);
 %	subplot(2,2,4); plot(H(:,1),H(:,2),'bo');
 %	title('points 1 to 1024');
 %
+%
+% This code is borrowed, with minor modifications, from
+%     Daniel Dougherty
 
 if (NDIMS < 12)
 	P = [2 3 5 7 11 13 17 19 23 29 31]; 
@@ -49,8 +52,10 @@ for i = 1:NDIMS %Generate the components for each dimension.
 	%V = V-'0'; %Converts string to a matrix of doubles with correct numeric 
 				   %values. 
 	V = fliplr(dec2bigbase(int_pts,P(i)));	
-	pows = -repmat([1:size(V,2)],size(V,1),1);
+	pows = -repmat(1:size(V,2),size(V,1),1);
 	H(:,i) = sum(V.*(P(i).^pows),2);
+end
+
 end
 
 function s = dec2bigbase(d,base,n)
@@ -71,15 +76,17 @@ function s = dec2bigbase(d,base,n)
 %   Eastman Kodak Company (on leave until 4 Jan 1999)
 %   schwarz@kodak.com, schwarz@servtech.com
 %   1 October 1998
+%
+%   Minor modifications for compatibility have been made
 
-error(nargchk(2,3,nargin));
+narginchk(2,3)
 
 if size(d,2) ~= 1, d = d(:); end
 
 base = floor(base);
 if base < 2, error('B must be greater than 1.'); end
 if base == 2,
-  [x,nreq] = log2(max(d));
+  [~,nreq] = log2(max(d));
 else
   nreq = ceil(log2(max(d) + 1)/log2(base)); 
 end
@@ -98,4 +105,6 @@ while n ~= last
     n = n - 1;
     d = floor(d/base);
     s(:,n) = rem(d,base);
+end
+
 end

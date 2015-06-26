@@ -8,6 +8,9 @@ function f = sinc(x)
 %
 % NOTE: As with any sin(x) evaluation, extreme values of x may produce
 % inaccurate results, though this is dampened by the 1/x term.
+%
+% This code was borrowed from
+%     Meshfree Approximation Methods in MATLAB by Greg Fasshauer
 
 f = ones(size(x));
 nz = find(x~=0);
