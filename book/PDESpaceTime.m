@@ -14,13 +14,13 @@ fic  = @(x) 4*x(:,1).*(1-x(:,1));
 fint = @(x) zeros(size(x,1),1);
 heat_const = .25;
 
-% We call xall both the time and space points
+% We call x both the time and space points
 Nx = 15;  Nt = 20;  tmax = 1;
 % Create halton points on the interior, uniform on boundary
 xint = pick2Dpoints([0 0],[1 tmax],[Nx-2,Nt-1],'halt');
 xbc = [kron([0;1],ones(Nt,1)),repmat(pickpoints(tmax/Nt,tmax,Nt),2,1)];
 xic = [pickpoints(0,1,Nx),zeros(Nx,1)];
-xall = [xbc;xic;xint];
+x = [xbc;xic;xint];
 
 % Come up with some evaluation points
 NNx = 50;
@@ -35,7 +35,7 @@ rbfM2dt = @(r,dt,ep_t) -ep_t*exp(-r).*(ep_t*dt);
 rbfM2dxx = @(r,dx,ep_x) ep_x^2*exp(-r).*((ep_x*dx).^2./(r+eps)-1);
 
 % Evaluate the collocation matrix
-Abc  = rbfM2(real(DistanceMatrix(xbc,x,epvec)));
+Abc  = rbfM2(DistanceMatrix(xbc,x,epvec));
 Aic  = rbfM2(DistanceMatrix(xic,x,epvec));
 Aint = rbfM2dt(DistanceMatrix(xint,x,epvec),DifferenceMatrix(xint(:,2),x(:,2)),epvec(2)) - ...
        heat_const*rbfM2dxx(DistanceMatrix(xint,x,epvec),DifferenceMatrix(xint(:,1),x(:,1)),epvec(1));
