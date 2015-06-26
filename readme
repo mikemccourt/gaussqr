@@ -1,27 +1,57 @@
-RBF-QR Matlab files v1.3
-  comments/questions: Mike McCourt <mccomic@iit.edu>
+GaussQR v2.0
+  comments/questions: Gregory Fasshauer <fasshauer@iit.edu>
+                      Mike McCourt <mccomic@iit.edu>
+  (previously referred to as RBF-QR 1.x in documentation)
+  
+********* NOTICE *********
+June 26, 2015
+With the release of the text "Kernel-Based Approximation
+Methods in MATLAB" in September 2015, the developers are
+releasing a new version of this software with content
+relevant to that book.
 
+To improve our documentation readability and search capability,
+we are also developing an XML version.  This file will remain
+as a basic reference, even after that is produced
+**************************
+
+**** Basic Library Structure
 Source code is kept in the source folder
 Examples are kept in the examples folder
-Files from other authors are kept in the fromothers folder
+Book content is kept in the book folder
+Files from external sources are kept in the fromothers folder
+Experimental data is kept in the data folder
 
+**** Basic Bootup Information
 To run an example, you first boot up Matlab
-Then run the setup:
->> rbfsetup
+Then, from the base gaussqr directory, run the setup:
+  >> rbfsetup
 This makes sure the necessary files are in the path
 
-You can use rbfsetup to set runtime parameters for RBF-QR.
-If you want you could instead use:
-  global GAUSSQR_PARAMETERS
+If you so choose, you can create a startup.m file somewhere
+on your base MATLAB directory which will be executed when
+MATLAB starts.  Including the commands
+   cd /path/to/gaussqr
+   rbfsetup
+will start your MATLAB with GaussQR ready each time.
+
+**** GaussQR Functionality Options
+rbfsetup must always be called to prepare the directories for GaussQR.
+You can use also use rbfsetup to set parameters for GaussQR; see the
+file for a full list of possible parameters and default values.
+After rbfsetup is called initially, you can manually access the
+GaussQR object with
+  >> global GAUSSQR_PARAMETERS
 and then set whatever parameter you'd like.  If you do that, don't call
 rbfsetup again or it will erase any changes you made.
 
-Now you can run examples, including
+**** Examples of GaussQR
+After calling rbfsetup, you can run examples, including
 >> ex1_gqr
-This shows that GaussQR works for a simple example
+This shows stable Gaussian interpolation in 1D
 You also can use
 >> ex2_mqr
-This shows that MaternQR can produce stable interpolants
+This shows the use of HS-SVD for iterated Brownian Bridge kernels
 
 List of examples:
 	GaussQR
