@@ -52,6 +52,7 @@ coef = A\rhs;
 
 % Evaluate at points in the domain
 ueval = rbfM2(DistanceMatrix(xeval,x,epvec))*coef;
+toc
 
 % Plot the results
 X = reshape(xeval(:,1),NNx,NNt);
@@ -67,6 +68,7 @@ zlim([-.002,1])
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Create a "true" solution that is based on finite differences
 % This must be at a significantly finer resolution to work
+tic
 FD_res = 100;
 Nxfd = FD_res*Nx;
 delta_x = 1/(Nxfd-1);
@@ -117,6 +119,7 @@ end
 %     uFD(:,k+1) = uFD(:,k) + delta_t*heat_const*FDmat*uFD(:,k);
 
 uFD_final = uFD(:,end);
+toc
 
 % Compare the solution from finite differences to the space-time
 % collocation solution
