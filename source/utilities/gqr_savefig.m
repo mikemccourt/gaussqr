@@ -52,11 +52,10 @@ end
 defaultDir = GAUSSQR_PARAMETERS.FIGURE_DIRECTORY;
 dirSlash = GAUSSQR_PARAMETERS.DIRECTORY_SLASH;
 alertuser = GAUSSQR_PARAMETERS.WARNINGS_ON;
+defaultFS = GAUSSQR_PARAMETERS.FIGURE_FONTSIZE;
 
 % So that you can pass newBaseDir once at the start of a session
 persistent baseDir
-
-defaultFS = 14;
 
 % This switch statement assigns the appropriate value to baseDir
 % Either the persistent value, the default value or the new value

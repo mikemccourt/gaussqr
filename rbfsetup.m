@@ -28,22 +28,12 @@ sourceDir = strcat(thisDir,dirslash,'source');
     mqrauxiliaryDir = strcat(maternqrDir,dirslash,'auxiliary');
 
 examplesDir = strcat(thisDir,dirslash,'examples');
-%   gqrexamplesDir = strcat(examplesDir,dirslash,'gaussqr');
-%   mqrexamplesDir = strcat(examplesDir,dirslash,'maternqr');
-%     testfunctionsDir = strcat(mqrexamplesDir,dirslash,'testfunctions');
-%   dipoleDir = strcat(examplesDir,dirslash,'dipole');
-%     dipolesourceDir = strcat(dipoleDir,dirslash,'source');
-%   approxeigsDir = strcat(examplesDir,dirslash,'approxeigs');
-% In the process of converting examples over
   intexamplesDir = strcat(examplesDir,dirslash,'interpolation');
   apxexamplesDir = strcat(examplesDir,dirslash,'approximation');
   funexamplesDir = strcat(examplesDir,dirslash,'functionality');
   bvpexamplesDir = strcat(examplesDir,dirslash,'bvps');
   fdfexamplesDir = strcat(examplesDir,dirslash,'finitedifferences');
   parexamplesDir = strcat(examplesDir,dirslash,'parameterization');
-%   gqrexamplesDir = strcat(examplesDir,dirslash,'gaussqr');
-%   mqrexamplesDir = strcat(examplesDir,dirslash,'maternqr');
-%     testfunctionsDir = strcat(mqrexamplesDir,dirslash,'testfunctions');
   dipoleDir = strcat(examplesDir,dirslash,'dipole');
     dipolesourceDir = strcat(dipoleDir,dirslash,'source');
   approxeigsDir = strcat(examplesDir,dirslash,'eig_appx');
@@ -51,7 +41,6 @@ otherDir = strcat(thisDir,dirslash,'fromothers');
 bookDir = strcat(thisDir,dirslash,'book');
 
 % Add the directories to the path
-% addpath(thisDir,sourceDir,gaussqrDir,gqrauxiliaryDir,mqrauxiliaryDir,utilitiesDir,otherDir,maternqrDir,intexamplesDir,apxexamplesDir,funexamplesDir,bvpexamplesDir,fdfexamplesDir,parexamplesDir,gqrexamplesDir,mqrexamplesDir,dipoleDir,approxeigsDir,testfunctionsDir,dipolesourceDir,bookDir,'-begin');
 addpath(thisDir,sourceDir,gaussqrDir,gqrauxiliaryDir,mqrauxiliaryDir,utilitiesDir,otherDir,maternqrDir,intexamplesDir,apxexamplesDir,funexamplesDir,bvpexamplesDir,fdfexamplesDir,parexamplesDir,dipoleDir,approxeigsDir,dipolesourceDir,bookDir,'-begin');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
