@@ -65,8 +65,11 @@ switch dim
                 fstr = 'f(x,y)=tanh(x+y)';
                 yf = @(x) tanh(x(:,1).^2+x(:,2).^2);
             case 'franke'
-                fstr = 'f(x,y) = Frankes function';
+                fstr = 'f(x,y) = Franke function';
                 yf = @(x) franke(x(:,1),x(:,2));
+            case 'franke_centered'
+                fstr = 'f(x,y) = Franke function on [-1,1]^2';
+                yf = @(x) franke((x(:,1)+1)/2,(x(:,2)+1)/2);
             case 'kxy' % for [-5,5]^2
                 fstr = 'f(x,y) = KXY';
                 yf = @(x) kxy(5*x);
@@ -155,7 +158,6 @@ function y = ksa2(x)
 end
 
 function f = franke(x,y)
-
 f = .75*exp(-.25*((9*x-2).^2+(9*y-2).^2))+ ...
                      .75*exp(-1/49*(9*x+1).^2-.1*(9*y+1).^2)+ ...
                      .5*exp(-.25*((9*x-7).^2+(9*y-3).^2))- ...
@@ -191,9 +193,10 @@ function dim = check_regular_functions(fopt)
 
 % Define all the functions that have been registered
 registered_functions = {'kxy','ksa1','ksa2', ...
+                        'franke','franke_centered', ...
                         'piston','piston_scaled', ...
                         'borehole','borehole_scaled'};
-dimensions = [2,2,2,7,7,8,8];
+dimensions = [2,2,2,2,2,7,7,8,8];
 
 regular_functions = containers.Map(registered_functions,dimensions);
 

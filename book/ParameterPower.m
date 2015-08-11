@@ -23,6 +23,8 @@ bvec = logspace(-3,-.1,10);
 nummat = zeros(length(Neval),length(bvec));
 denvec = zeros(size(bvec));
 
+warning('off','MATLAB:nearlySingularMatrix')
+
 % Loop through and compute the power function
 powvec = zeros(size(bvec));
 powvecH = zeros(size(bvec));
@@ -78,6 +80,8 @@ for b=bvec
     
     k = k + 1;
 end
+
+warning('on','MATLAB:nearlySingularMatrix')
 
 h_pow = figure;
 h(3) = loglog(bvec,powvecD,'linewidth',2);

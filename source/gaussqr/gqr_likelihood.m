@@ -1,8 +1,10 @@
 function Lhood = gqr_likelihood(x,y,ep,alpha,lamtrunc)
-% This function evaluates the likelihood function using the stable basis
+% This function evaluates the likelihood function using the stable basis.
 % Eventually I want this to be part of gqr_solveprep and gqr_solve, but for
-% right now it'll just be here
-% Also, for right now this only returns the log.  I'll fix it later
+% right now it'll just be here.
+% Also, for right now this only returns the log.
+%
+% Realistically, this function is still for only research purposes.
 global GAUSSQR_PARAMETERS
 if ~isstruct(GAUSSQR_PARAMETERS)
     error('GAUSSQR_PARAMETERS does not exist ... did you forget to call rbfsetup?')

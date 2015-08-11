@@ -6,8 +6,8 @@
 %     du/dt = Lu
 %     u(t,boundary) = bc(boundary)
 %     u(0,x) = payout(x)
-% on the domain 0<x<4K and 0<t<1
-% K is the strike price, which implies payout max(x-K,0)
+% on the domain 0<x<4E and 0<t<1
+% E is the strike price, which implies payout max(x-E,0)
 %
 % Our differential operator for this problem has 3 pieces:
 %      Lu = L1u + L2u + L3u
@@ -16,10 +16,10 @@
 % L3u = -r*u
 %
 % The exact solution is the formula for the value of a European call option
-%      C(x,t) = F_Z(d1)*u - F_Z(d2)*K*exp(-r*(T-t)) 
+%      C(x,t) = F_Z(d1)*u - F_Z(d2)*E*exp(-r*(T-t)) 
 % where
 %      F_Z(z) = P(Z<z) for Z~N(0,1)
-%      d1(x) = 1/(S*sqrt(T-t))*(log(x/K)+(r+S^2/2)*(T-t))
+%      d1(x) = 1/(S*sqrt(T-t))*(log(x/E)+(r+S^2/2)*(T-t))
 %      d2(x) = d1(x) - S*sqrt(T-t)
 % Our solution below uses t in place of T-t because we know the final value
 % and not the initial value.  This means that when solving the problem we
@@ -39,7 +39,7 @@ r = .05;
 payout = @(x) max(x-E,0);
 
 % Define the boundary conditions (works for x=0 and x=4)
-bc = @(x,t) E*(4-exp(-r*t))*(x==4*E);
+bc = @(x,t) (x-E*exp(-r*t)).*(x==4*E);
 
 % Define the true solution
 d1 = @(x,t) 1./(B*sqrt(t)).*(log(x/E)+(r+B^2/2)*t);
