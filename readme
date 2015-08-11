@@ -20,7 +20,7 @@ Source code is kept in the source folder
 Examples are kept in the examples folder
 Book content is kept in the book folder
 Files from external sources are kept in the fromothers folder
-Experimental data is kept in the data folder
+Experimental data is kept in the data folder (set in rbfsetup)
 
 **** Basic Bootup Information
 To run an example, you first boot up Matlab
@@ -47,54 +47,62 @@ rbfsetup again or it will erase any changes you made.
 
 **** Examples of GaussQR
 After calling rbfsetup, you can run examples, including
->> ex1_gqr
-This shows stable Gaussian interpolation in 1D
-You also can use
->> ex2_mqr
-This shows the use of HS-SVD for iterated Brownian Bridge kernels
+>> ex1
+
+The examples directory has 8 subdirectories
+    approximation - Approximate interpolation examples
+	bvps - Boundary value problem examples
+	dipole - MEG/EEG research
+	eig_appx - Approximate eigenfunction research
+	finitediff - Kernel-based finite difference examples
+	functionality - GaussQR function demonstrations
+	interpolation - Interpolation examples
+	parameterization - Parameterization (MLE,CV,etc) examples
+Examples have been indexed by numbers across the directories,
+but these numbers are not important and provide only a mechanism
+for calling examples from the command line.
+Examples with the same number and different letters are often
+related in content/context.
 
 List of examples:
-	GaussQR
-	  ex1_gqr   : Test of RBF-QR in 1D
-	  ex1a_gqr  : Test of RBF-QR on sinc in 1D
-	  ex2a_gqr  : Test of RBF-QRr in 1D
-	  ex2b_gqr  : Test of RBF-QRr in 2D
-	  ex2c_gqr  : Test of RBF-QRr on optics examples
-	  ex2d_gqr  : Test of RBF-QRr in 5D
-	  ex2e_gqr  : Test of RBF-QR in 2D
-	  ex3_gqr   : Test of HermiteAppx
-	  ex4_gqr   : Parameter study for epsilon and alpha
-	  ex5_gqr   : 2-pt collocation BVP example
-	  ex5b_gqr  : 2-pt BVP solver comparison
-	  ex5b2_gqr : 2-pt BVP solver error distribution study
-	  ex5b3_gqr : 2D BVP solver comparison
-	  ex5c_gqr  : Helmholtz solver comparison
-	  ex5d_gqr  : GaussQR collocation versus MFS
-	  ex6_gqr   : Regression for several M values
-	  ex7_gqr   : Parameter study for epsilon and M
-	  ex8_gqr   : Study of condition number for regression
-	  ex9_gqr   : Time test for interpolation in 1D and 2D
-	  ex10_gqr  : Orthonormality test for various eigenfunctions
-	  ex11_gqr  : (incomplete) Example of meshfree collocation
-	  ex12_gqr  : Ill-conditioning study on derivatives
-	  ex12b_gqr : Order of convergence for GaussQR derivatives
-	  ex12c_gqr : Ill-conditioning for Laplacian evaluation
-	  ex13_gqr  : Comparing GaussQR to MPS
-	  ex13b_gqr : Incorporating GaussQR into MPS (L-shaped domain)
-	  ex13c_gqr : 2D BVP MFS/MPS/FD solver comparison
-	  ex14_gqr  : Fast QR speed study
-	  ex15_gqr  : Nonlinear time-stepping BVP example
-	  ex16_gqr  : 2D BVP tensor product solver comparison
-	  ex16b_gqr : 2D BVP tensor product solver ep/alpha study
-	MaternQR
-	  ex1_mqr   : Basic demonstration of stable Matern elements
-	  ex2_mqr   : MaternQR ill-conditioning
-	  ex3_mqr   : Compact Matern series length study
-	  ex4_mqr   : 1D BVP solver for different epsilon
-	  ex4a_mqr  : 1D BVP solver convergence order
-	  ex5_mqr   : Summer 2012 work
-	  ex6_mqr   : Interpolation convergence order
-	  ex6a_mqr  : Interpolation avoiding ill-conditioning
+	interpolation
+	  ex1	: Basic interpolation example
+	  ex4	: Quality for different global parameters
+	  ex8	: Analysis of stability for different parameters
+	  ex9	: Computational cost demostration
+	  ex17	: Analysis of boundary contributions in IBB kernels
+	parameterization
+	  ex14	: Computation of cross-validation
+	  ex14b	: Computation of likelihood function
+	  ex14c : Attempt to draw from posterior distribution
+	functionality
+	  ex3	: Computation with asymptotic Hermite polynomials
+	  ex11	: Fast QR speed test (still in research)
+	  ex11b	: Eigenfunction recurrence presentation
+	  ex11c	: Analysis of accuracy and quality for fast QR
+	  ex16	: Demonstration of pivoting in HS-SVD basis
+	  ex18	: Demonstration of tensor product HS-SVD
+	finitedifferences
+	  ex15	: Solution of Poisson equation
+	  ex15b	: Helmholtz equation, L-shaped domain
+	  ex15c	: Studies stencil size impact on derivative quality
+	eig_appx
+	  research content only
+	dipole
+	  research content only
+	bvps
+	  ex5	: Basic 2-pt BVP solver with HS-SVD
+	  ex10	: Demonstration of kernel solver as an MPS component
+	  ex10b	: Kernel-MPS solver for L-shaped domain
+	  ex12	: Nonlinear diffusion equation
+	  ex12b	: Burgers equation, semi-linear time discretization
+	  ex13	: Tensor product collocation grid
+	  ex13b	: Tensor product collocation grid, parameter analysis
+	approximation
+	  ex2	: Basic study of eigenfunction series length quality
+	  ex2b	: 2D eigenfunction series quality study
+	  ex6	: Study of function complexity through series
+	  ex7	: Analysis of epsilon on series computation
 
 Function descriptions:
 	General Functions
