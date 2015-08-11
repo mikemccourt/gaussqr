@@ -2,6 +2,9 @@
 % This file puts the appropriate directories in your path
 % This is called a function because I don't want the user to
 %   see these internal variables after this is called
+%
+% DEVELOPER'S NOTE: We should have a separate file for people to introduce
+% locally relevant values.
 function rbfsetup
 thisDir = pwd;
 thisOS = system_dependent('getos');
@@ -12,6 +15,11 @@ else
 end
 
 % Define the necessary directories
+%
+% DEVELOPERS NOTE:
+% I should change this so that it can only be called from the GaussQR base
+% directory - I don't want someone accidentally changing the paths.  I'll
+% have to think about how to do this.
 sourceDir = strcat(thisDir,dirslash,'source');
   gaussqrDir = strcat(sourceDir,dirslash,'gaussqr');
     gqrauxiliaryDir = strcat(gaussqrDir,dirslash,'auxiliary');
@@ -20,17 +28,31 @@ sourceDir = strcat(thisDir,dirslash,'source');
     mqrauxiliaryDir = strcat(maternqrDir,dirslash,'auxiliary');
 
 examplesDir = strcat(thisDir,dirslash,'examples');
-  gqrexamplesDir = strcat(examplesDir,dirslash,'gaussqr');
-  mqrexamplesDir = strcat(examplesDir,dirslash,'maternqr');
-    testfunctionsDir = strcat(mqrexamplesDir,dirslash,'testfunctions');
+%   gqrexamplesDir = strcat(examplesDir,dirslash,'gaussqr');
+%   mqrexamplesDir = strcat(examplesDir,dirslash,'maternqr');
+%     testfunctionsDir = strcat(mqrexamplesDir,dirslash,'testfunctions');
+%   dipoleDir = strcat(examplesDir,dirslash,'dipole');
+%     dipolesourceDir = strcat(dipoleDir,dirslash,'source');
+%   approxeigsDir = strcat(examplesDir,dirslash,'approxeigs');
+% In the process of converting examples over
+  intexamplesDir = strcat(examplesDir,dirslash,'interpolation');
+  apxexamplesDir = strcat(examplesDir,dirslash,'approximation');
+  funexamplesDir = strcat(examplesDir,dirslash,'functionality');
+  bvpexamplesDir = strcat(examplesDir,dirslash,'bvps');
+  fdfexamplesDir = strcat(examplesDir,dirslash,'finitedifferences');
+  parexamplesDir = strcat(examplesDir,dirslash,'parameterization');
+%   gqrexamplesDir = strcat(examplesDir,dirslash,'gaussqr');
+%   mqrexamplesDir = strcat(examplesDir,dirslash,'maternqr');
+%     testfunctionsDir = strcat(mqrexamplesDir,dirslash,'testfunctions');
   dipoleDir = strcat(examplesDir,dirslash,'dipole');
     dipolesourceDir = strcat(dipoleDir,dirslash,'source');
-  approxeigsDir = strcat(examplesDir,dirslash,'approxeigs');
+  approxeigsDir = strcat(examplesDir,dirslash,'eig_appx');
 otherDir = strcat(thisDir,dirslash,'fromothers');
 bookDir = strcat(thisDir,dirslash,'book');
 
 % Add the directories to the path
-addpath(thisDir,sourceDir,gaussqrDir,gqrauxiliaryDir,mqrauxiliaryDir,utilitiesDir,otherDir,maternqrDir,gqrexamplesDir,mqrexamplesDir,dipoleDir,approxeigsDir,testfunctionsDir,dipolesourceDir,bookDir,'-begin');
+% addpath(thisDir,sourceDir,gaussqrDir,gqrauxiliaryDir,mqrauxiliaryDir,utilitiesDir,otherDir,maternqrDir,intexamplesDir,apxexamplesDir,funexamplesDir,bvpexamplesDir,fdfexamplesDir,parexamplesDir,gqrexamplesDir,mqrexamplesDir,dipoleDir,approxeigsDir,testfunctionsDir,dipolesourceDir,bookDir,'-begin');
+addpath(thisDir,sourceDir,gaussqrDir,gqrauxiliaryDir,mqrauxiliaryDir,utilitiesDir,otherDir,maternqrDir,intexamplesDir,apxexamplesDir,funexamplesDir,bvpexamplesDir,fdfexamplesDir,parexamplesDir,dipoleDir,approxeigsDir,dipolesourceDir,bookDir,'-begin');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Setup global constants and parameters
@@ -58,6 +80,7 @@ GAUSSQR_PARAMETERS.AVAILABLE_DATA = {'sphereMDpts_data.mat',...
 
 % Allow for random number reset based on what the right call is
 % I'm not sure this is correct ... I feel like rng is builtin
+% Also, eventually rand('state') will not work any longer
 if exist('rng','file')
     GAUSSQR_PARAMETERS.RANDOM_SEED = @(rseed) rng(rseed);
 else
@@ -86,6 +109,8 @@ if not(exist(GAUSSQR_PARAMETERS.FIGURE_DIRECTORY,'dir'))
     end
     GAUSSQR_PARAMETERS.FIGURE_DIRECTORY = GAUSSQR_PARAMETERS.BASE_DIRECTORY;
 end
+% This value is for gqr_savefig, but has not been tested sufficiently
+GAUSSQR_PARAMETERS.FIGURE_FONTSIZE = 14;
 
 % Set this value to '/my/data/directory' so that data that needs to be
 % downloaded from GaussQR (or elsewhere) can be stored uniformly
