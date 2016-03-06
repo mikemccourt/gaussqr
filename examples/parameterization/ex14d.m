@@ -50,6 +50,7 @@ for ep=epvec
     Keval = rbf(ep,DM_EVAL);
     pvals = 1 - sum((Keval/K).*Keval,2);
 	PF = sum(abs(pvals)); % 1-norm of vector of values of power function squared
+    %PF = max(pvals); % 1-norm of vector of values of power function squared
     dirMPLEvec(k) = N*log(Mdist) + logdetK;
     dirKVvec(k) = N*(log(Mdist) + log(PF)); % multiply by N to have same scale
     dirDETvec(k) = N*(dirMPLEvec(k) + dirKVvec(k))/(N+1); % multiply by N/(N+1) to have same scale
@@ -86,6 +87,7 @@ for ep=epvec
     Psieval = Phieval*[eye(N);Rbar];
     pvals = 1 - sum((Psieval/Psi).*Keval,2);
     PF = sum(abs(pvals)); % 1-norm of vector of values of power function squared
+    %PF = max(pvals); % 1-norm of vector of values of power function squared
 
     gqrMPLEvec(k) = N*log(mahaldist) + logdetK;
     gqrKVvec(k) = N*(log(mahaldist) + log(PF)); % multiply by N to have same scale
@@ -111,10 +113,12 @@ for ep=epvec
     end
     logpvals = nummat(:,k) - denvec(k);
     PF = sum(exp(logpvals)); % 1-norm of vector of values of power function squared
+    %PF = max(exp(logpvals)); % 1-norm of vector of values of power function squared
 
     gqrKVdetvec(k) = N*(log(mahaldist) + log(PF)); % multiply by N to have same scale
     gqrDETvec(k) = N*(gqrMPLEvec(k) + gqrKVdetvec(k))/(N+1); % multiply by N/(N+1) to have same scale
-    gqrDETdetvec(k) = N*((N+1)*log(mahaldist) + sum(abs(nummat(:,k))))/(N+1);
+    gqrDETdetvec(k) = N*((N+1)*log(mahaldist) + sum(exp(nummat(:,k))))/(N+1); % multiply by N/(N+1) to have same scale
+    %gqrDETdetvec(k) = N*((N+1)*log(mahaldist) + max(exp(nummat(:,k))))/(N+1); % multiply by N/(N+1) to have same scale
     
     progress = floor(100*k/length(epvec))/100;
     waitbar(progress,h_waitbar,sprintf('Computing, ep=%g',ep))
@@ -126,9 +130,22 @@ h_mle = figure;
 [AX,H1,H2] = plotyy(epvec,[dirMPLEvec;gqrMPLEvec;dirKVvec;gqrKVvec;gqrKVdetvec;dirDETvec;gqrDETvec;gqrDETdetvec],epvec,errvec,'semilogx','loglog');
 set(H1,'linewidth',3)
 c = get(AX(1),'Children');
-set(c(1),'color',[1 0 0])
-set(c(1),'linestyle','--')
-set(c(2),'color',[0 0 1])
+set(c(1),'color',[0.9290 0.6940 0.1250])
+set(c(1),'linestyle',':')
+set(c(2),'color',[0.9290 0.6940 0.1250])
+set(c(2),'linestyle','-')
+set(c(3),'color',[0.9290 0.6940 0.1250])
+set(c(3),'linestyle','--')
+set(c(4),'color',[0.8500 0.3250 0.0980])
+set(c(4),'linestyle','-')
+set(c(5),'color',[0.8500 0.3250 0.0980])
+set(c(5),'linestyle',':')
+set(c(6),'color',[0.8500 0.3250 0.0980])
+set(c(6),'linestyle','--')
+set(c(7),'color',[0 0.4470 0.7410])
+set(c(7),'linestyle','-')
+set(c(8),'color',[0 0.4470 0.7410])
+set(c(8),'linestyle','--')
 set(H2,'linewidth',2)
 set(H2,'color','k')
 set(AX,{'ycolor'},{[.5 0 .5];[0 0 0]}) % Set axis color
