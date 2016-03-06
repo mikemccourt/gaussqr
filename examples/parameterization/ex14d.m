@@ -27,9 +27,12 @@ DM_EVAL = DistanceMatrix(xx,x);
 
 dirMPLEvec = zeros(size(epvec));
 dirKVvec = zeros(size(epvec));
+dirDETvec = zeros(size(epvec));
 gqrMPLEvec = zeros(size(epvec));
 gqrKVvec = zeros(size(epvec));
 gqrKVdetvec = zeros(size(epvec));
+gqrDETvec = zeros(size(epvec));
+gqrDETdetvec = zeros(size(epvec));
 errvec = zeros(size(epvec));
 boundvec = zeros(size(epvec));
 correctionvec = zeros(size(epvec));
@@ -49,6 +52,7 @@ for ep=epvec
 	PF = sum(abs(pvals)); % 1-norm of vector of values of power function squared
     dirMPLEvec(k) = N*log(Mdist) + logdetK;
     dirKVvec(k) = N*(log(Mdist) + log(PF)); % multiply by N to have same scale
+    dirDETvec(k) = N*(dirMPLEvec(k) + dirKVvec(k))/(N+1); % multiply by N/(N+1) to have same scale
     
     % Solve the problem with HS-SVD
     GQR = gqr_solve(x,y,ep,alpha);
@@ -109,6 +113,8 @@ for ep=epvec
     PF = sum(exp(logpvals)); % 1-norm of vector of values of power function squared
 
     gqrKVdetvec(k) = N*(log(mahaldist) + log(PF)); % multiply by N to have same scale
+    gqrDETvec(k) = N*(gqrMPLEvec(k) + gqrKVdetvec(k))/(N+1); % multiply by N/(N+1) to have same scale
+    gqrDETdetvec(k) = N*((N+1)*log(mahaldist) + sum(abs(nummat(:,k))))/(N+1);
     
     progress = floor(100*k/length(epvec))/100;
     waitbar(progress,h_waitbar,sprintf('Computing, ep=%g',ep))
@@ -117,7 +123,7 @@ end
 
 waitbar(100,h_waitbar,sprintf('Plotting'))
 h_mle = figure;
-[AX,H1,H2] = plotyy(epvec,[dirMPLEvec;gqrMPLEvec;dirKVvec;gqrKVvec;gqrKVdetvec],epvec,errvec,'semilogx','loglog');
+[AX,H1,H2] = plotyy(epvec,[dirMPLEvec;gqrMPLEvec;dirKVvec;gqrKVvec;gqrKVdetvec;dirDETvec;gqrDETvec;gqrDETdetvec],epvec,errvec,'semilogx','loglog');
 set(H1,'linewidth',3)
 c = get(AX(1),'Children');
 set(c(1),'color',[1 0 0])
@@ -126,12 +132,12 @@ set(c(2),'color',[0 0 1])
 set(H2,'linewidth',2)
 set(H2,'color','k')
 set(AX,{'ycolor'},{[.5 0 .5];[0 0 0]}) % Set axis color
-set(AX(1),'ylim',[-900,1500])
+set(AX(1),'ylim',[-1000,1500])
 set(AX(2),'ylim',[1e-18,1e-2])
 set(AX(2),'ytick',[1e-9,1e-6,1e-3])
-legend([H1;H2],'MLE direct','MLE HS-SVD','KV direct (x N)','KV HS-SVD (x N)','KV HS-SVDdet (x N)','Error','location','north')
+legend([H1;H2],'MLE direct','MLE HS-SVD','KV direct (x N)','KV HS-SVD (x N)','KV HS-SVDdet (x N)','DET direct','DET HS-SVD','DET HS-SVDdet','Error','location','north')
 xlabel('\epsilon')
-set(get(AX(1),'xlabel'),'Position',[2,-960,0])
+set(get(AX(1),'xlabel'),'Position',[2,-1060,0])
 ylabel('Likelihood function')
 set(get(AX(1),'ylabel'),'Position',[.07,500,17])
 set(get(AX(2),'ylabel'),'String','Relative error')
