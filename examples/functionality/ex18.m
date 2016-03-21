@@ -61,6 +61,8 @@ lamvec_test = lamvec1_test.*lamvec2_test;
 [lamsort,i] = sort(lamvec_test,'descend');
 
 % Isolate the necessary indices
+% This has the effect of the P matrix from section 3.2 of the Stable
+% Likelihood Computation for Gaussian Random Fields paper.
 Marr = Marr_test(:,i(1:M));
 lamvec = lamsort(1:M);
 lamvec1 = lamvec(1:N);
