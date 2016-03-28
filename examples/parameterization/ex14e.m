@@ -9,15 +9,15 @@ GAUSSQR_PARAMETERS.NORM_TYPE = 2;
 a = 0.4;
 epvec = logspace(-1,-.01,80);
 %yf = @(x) cos(3*pi*x);
-yf = @(x) 4*sin(3*x)./exp(3*x/2);
-%yf = @(x) x.*log(1+x.^2);
+yf = @(x) 4*sin(4*pi*x)./exp(3*x/2);
+% yf = @(x) x.*log(1+x.^2);
 
 N = 24;
 %x = pickpoints(-1,1,N);
 x = pickpoints(-1,1,N,'cheb');
 y = yf(x);
 
-NN = 100;
+NN = 50;
 xx = pickpoints(-1,1,NN);
 yy = yf(xx);
 
@@ -39,6 +39,9 @@ correctionvec = zeros(size(epvec));
 denvec = zeros(size(epvec));
 nummat = zeros(length(NN),length(epvec));
 
+% Decide if we want to use the max-norm or 1-norm
+KV_max_norm = 1;
+
 k = 1;
 h_waitbar = waitbar(0,'Initializing');
 for ep=epvec
@@ -49,19 +52,22 @@ for ep=epvec
     Phi = [ones(N,1) phifunc(n,x)];
     % First solve in the standard basis
     K = Phi*Lambda*Phi';
-    c = K\y;
     [U,S,V] = svd(K);
     Mdist = y'*(V*diag(0*(diag(S)<1e-14)+(1./diag(S)).*(diag(S)>1e-14))*U'*y);
     logdetK = sum(log(diag(S)+eps));
     Phi_eval = [ones(NN,1) phifunc(n,xx)];
     Keval = Phi_eval*Lambda*Phi';
-    %y_eval = Keval*c;
     Kx0 = diag(Phi_eval*Lambda*Phi_eval');
+    warning off
     pvals = Kx0 - sum((Keval/K).*Keval,2);
-	PF = sum(abs(pvals)); % 1-norm of vector of values of power function squared
-    %PF = max(pvals); % 1-norm of vector of values of power function squared
+    warning on
+    if KV_max_norm
+        PF = max(pvals);
+    else
+        PF = sum(abs(pvals));
+    end
     dirMPLEvec(k) = N*log(Mdist) + logdetK;
-    dirKVvec(k) = N*(log(Mdist) + log(PF)); % multiply by N to have same scale
+    dirKVvec(k) = log(Mdist) + log(PF);
     dirDETvec(k) = N*(dirMPLEvec(k) + dirKVvec(k))/(N+1); % multiply by N/(N+1) to have same scale
 
     % Now solve with the HS-SVD technique
@@ -69,7 +75,8 @@ for ep=epvec
     R1 = R(:,1:N); R2 = R(:,N+1:end);
     Rhat = R1\R2;
     Lambda1 = Lambda(1:N,1:N); Lambda2 = Lambda(N+1:end,N+1:end);
-    Rbar = Lambda2*Rhat'/Lambda1;
+    lamvec1 = diag(Lambda1); lamvec2 = diag(Lambda2);
+    Rbar = Rhat'.*bsxfun(@rdivide,lamvec2,lamvec1');
     Psi = Phi*[eye(N);Rbar];
     b = Psi\y;
     Psi_eval = Phi_eval*[eye(N);Rbar]; 
@@ -98,11 +105,14 @@ for ep=epvec
 
     % power function
     pvals = Kx0 - sum((Psi_eval/Psi).*Keval,2);
-    PF = sum(abs(pvals)); % 1-norm of vector of values of power function squared
-    %PF = max(pvals); % 1-norm of vector of values of power function squared
+    if KV_max_norm
+        PF = max(pvals);
+    else
+        PF = sum(abs(pvals));
+    end
 
     gqrMPLEvec(k) = N*log(mahaldist) + logdetK;
-    gqrKVvec(k) = N*(log(mahaldist) + log(PF)); % multiply by N to have same scale
+    gqrKVvec(k) = log(mahaldist) + log(PF);
 
     % Using determinant identity to compute power function without cancelation
     % First the denominator
@@ -121,7 +131,8 @@ for ep=epvec
         R1 = R(:,1:Np); R2 = R(:,Np+1:end);
         Rhat = R1\R2;
         Lambda1 = Lambda(1:Np,1:Np); Lambda2 = Lambda(Np+1:end,Np+1:end);
-        Rbar = Lambda2*Rhat'/Lambda1;
+        lamvec1 = diag(Lambda1); lamvec2 = diag(Lambda2);
+        Rbar = Rhat'.*bsxfun(@rdivide,lamvec2,lamvec1');
         S = svd(Phi1);
         logdetPhi = sum(log(S));
         Psi = Phi1 + Phi2*Rbar;
@@ -131,13 +142,17 @@ for ep=epvec
         nummat(m,k) = logdetPsi + logdetPhi + sum(log(Lambda1vec));
     end
     logpvals = nummat(:,k) - denvec(k);
-    PF = sum(exp(logpvals)); % 1-norm of vector of values of power function squared
-    %PF = max(exp(logpvals)); % 1-norm of vector of values of power function squared
+    if KV_max_norm
+        norm_log_Pf = max(logpvals);
+        norm_log_det_Ktilde = max(nummat(:,k));
+    else
+        norm_log_Pf = log(sum(exp(logpvals))); % 1-norm of vector of values of power function squared
+        norm_log_det_Ktilde = log(sum(exp(nummat(:,k))));
+    end
 
-    gqrKVdetvec(k) = N*(log(mahaldist) + log(PF)); % multiply by N to have same scale
+    gqrKVdetvec(k) = log(mahaldist) + norm_log_Pf; % multiply by N to have same scale
     gqrDETvec(k) = N*(gqrMPLEvec(k) + gqrKVdetvec(k))/(N+1); % multiply by N/(N+1) to have same scale
-    gqrDETdetvec(k) = N*((N+1)*log(mahaldist) + sum(exp(nummat(:,k))))/(N+1); % multiply by N/(N+1) to have same scale
-    %gqrDETdetvec(k) = N*((N+1)*log(mahaldist) + max(exp(nummat(:,k))))/(N+1); % multiply by N/(N+1) to have same scale
+    gqrDETdetvec(k) = N*((N+1)*log(mahaldist) + norm_log_det_Ktilde)/(N+1); % multiply by N/(N+1) to have same scale
     
     progress = floor(100*k/length(epvec))/100;
     waitbar(progress,h_waitbar,sprintf('Computing, ep=%g',ep))
@@ -146,7 +161,7 @@ end
 
 waitbar(100,h_waitbar,sprintf('Plotting'))
 h_mle = figure;
-[AX,H1,H2] = plotyy(epvec,[dirMPLEvec;gqrMPLEvec;dirKVvec;gqrKVvec;gqrKVdetvec;dirDETvec;gqrDETvec;gqrDETdetvec],epvec,errvec,'semilogx','loglog');
+[AX,H1,H2] = plotyy(epvec,[dirMPLEvec;gqrMPLEvec;N*dirKVvec;N*gqrKVvec;N*gqrKVdetvec;dirDETvec;gqrDETvec;gqrDETdetvec],epvec,errvec,'semilogx','loglog');
 %[AX,H1,H2] = plotyy(epvec,[dirMPLEvec;gqrMPLEvec;dirKVvec;gqrKVvec;gqrKVdetvec;dirDETvec;gqrDETvec;gqrDETdetvec],epvec,errvec,'semilogx','loglog');
 set(H1,'linewidth',3)
 c = get(AX(1),'Children');
