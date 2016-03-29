@@ -18,26 +18,28 @@ y = yf(x);
 NN = 10;
 xx = pick2Dpoints(-1,1,NN);
 yy = yf(xx);
+X = reshape(xx(:,1),[NN,NN]);
+Y = reshape(xx(:,2),[NN,NN]);
 
 % Parameters for the individual dimensions
 % alpha is of little to no significance in interpolation
-alpha = .5;
+alpha = .1;
 epvec = logspace(-4,-.3,25);
 
 % The closed form of the Chebyshev kernel
-K1d = @(e,x,z) alpha + (1-e)* ...
+K1d = @(e,x,z) 1 - alpha + 2*alpha*(1-e)* ...
          (e*(1-e^2) - 2*e*bsxfun(@plus,x.^2,z.^2') + (1+3*e^2)*x*z')./ ...
          ((1-e^2)^2 + 4*e*(e*bsxfun(@plus,x.^2,z.^2')-(1+e^2)*x*z'));
 
 % The Chebyshev kernel eigenfunctions and eigenvalues
-phifunc = @(n,x) sqrt(2)*cos(acos(x)*n);
+phifunc = @(n,x) bsxfun(@times,sqrt(2 - (n==0)),cos(acos(x)*n));
 lambdafunc = @(e,n) (n==0).*(1-alpha) + (n>0).*(alpha*(1-e)/e*e.^n);
 
 % Choose the eigenfunction buffer
 % The actual value is irrelevant, just enough to create a Psi matrix
 M = N + 50;
-n1_test = 1:floor(M/5);
-n2_test = 1:floor(M/5);
+n1_test = 0:floor(M/5);
+n2_test = 0:floor(M/5);
 Marr_test = [kron(ones(size(n2_test)),n1_test);kron(n2_test,ones(size(n1_test)))];
 
 errmat = zeros(length(epvec),length(epvec));
@@ -59,7 +61,6 @@ for ep1=epvec
         lamvec = lamsort(1:M);
         lamvec1 = lamvec(1:N);
         lamvec2 = lamvec(N+1:M);
-        Lambda1 = diag(lamvec1);
         Phi_K1 = phifunc(Marr(1,:),x(:,1));
         Phi_K2 = phifunc(Marr(2,:),x(:,2));
         Phi = Phi_K1.*Phi_K2;
@@ -67,6 +68,7 @@ for ep1=epvec
         Phi2 = Phi(:,N+1:end);
         CbarT = (Phi2'/Phi1').*bsxfun(@rdivide,lamvec2',lamvec1);
         Psi = Phi1 + Phi2*CbarT;
+        K_hssvd = Psi * diag(lamvec1) * Phi1';
         
         % Evaluate the interpolant at the relevant locations
         Phieval_K1 = phifunc(Marr(1,:),xx(:,1));
@@ -75,12 +77,24 @@ for ep1=epvec
         Psieval = Phieval*[eye(N);CbarT];
         b = Psi\y;
         yeval = Psieval*b;
+        Z = reshape(yeval,[NN,NN]);
+        surf(X,Y,Z);
+        hold on
+        plot3(x(:,1),x(:,2),y,'or');
+        hold off
         
         % Evaluate in that standard basis
         K = K1d(ep1,x(:,1),x(:,1)).*K1d(ep2,x(:,2),x(:,2));
         Keval = K1d(ep1,xx(:,1),x(:,1)).*K1d(ep2,xx(:,2),x(:,2));
+        warning('off','MATLAB:nearlySingularMatrix');
         c = K\y;
+        warning('on','MATLAB:nearlySingularMatrix');
         ydir = Keval*c;
+%         Z = reshape(ydir,[NN,NN]);
+%         surf(X,Y,Z);
+%         hold on
+%         plot3(x(:,1),x(:,2),y,'or');
+%         hold off
         
         errmat(k1,k2) = errcompute(yeval,yy);
         dirmat(k1,k2) = errcompute(ydir,yy);
@@ -92,10 +106,10 @@ for ep1=epvec
         logdetPhi = sum(log(S));
         logdetLam = sum(log(lamvec1));
         logdetK = logdetPsi + logdetPhi + logdetLam;
-        L2P2P1L1invb = (lamvec2'.^-.5).*(CbarT*b);
         boundvec = b'*(b./lamvec1');
+        L2P2P1L1invb = (lamvec2'.^-.5).*(CbarT*b);
         correctionvec = L2P2P1L1invb'*L2P2P1L1invb;
-        mahaldist = boundvec + correctionvec;
+        mahaldist = boundvec;% + correctionvec;
         likmat(k1,k2) = length(b)*log(mahaldist) + logdetK;
         
         % Compute profile likelihood in standard basis
@@ -109,9 +123,9 @@ for ep1=epvec
         mahaldist = abs(c'*y);
         logdetK = sum(log(diag(S)));
         dlimat(k1,k2) = length(c)*log(mahaldist) + logdetK;
-        fprintf('%6.5f, %6.5f, %e, %e, %e\n',ep1, ep2, cond(K), likmat(k1,k2), dlimat(k1,k2))
+        fprintf('%6.5f, %6.5f, %e, %e, %e, %e\n',ep1, ep2, errcompute(K_hssvd,K), cond(K), likmat(k1,k2), dlimat(k1,k2))
         k2 = k2 + 1;
-%         pause
+        pause
     end
     k1 = k1 + 1;
 end

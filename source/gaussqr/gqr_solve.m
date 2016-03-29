@@ -90,6 +90,7 @@ end
 % Create eigenfunction basis, or recall from previous comptuations
 if storephi
     A = GQR.stored_phi1 + GQR.stored_phi2*GQR.CbarT;
+    GQR.stored_psi = A;
 else
     A = gqr_phi(GQR,x)*[eye(N);GQR.CbarT];
 end
