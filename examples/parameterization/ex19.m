@@ -10,8 +10,9 @@
 yf = @(x) cos(sqrt(sum(bsxfun(@times,x,[1,4]).^2,2)));
 
 % Set up some data points at which to sample
-N = 7;
-x = pick2Dpoints(-1,1,N,'halton');
+N1d = 7;
+x = pick2Dpoints(-1,1,N1d,'halton');
+N = size(x,1);
 y = yf(x);
 
 % Set up some evaluation points
@@ -24,7 +25,7 @@ Y = reshape(xx(:,2),[NN,NN]);
 % Parameters for the individual dimensions
 % alpha is of little to no significance in interpolation
 alpha = .1;
-epvec = logspace(-4,-.3,25);
+epvec = logspace(-3,-.3,25);
 
 % The closed form of the Chebyshev kernel
 K1d = @(e,x,z) 1 - alpha + 2*alpha*(1-e)* ...
@@ -37,7 +38,7 @@ lambdafunc = @(e,n) (n==0).*(1-alpha) + (n>0).*(alpha*(1-e)/e*e.^n);
 
 % Choose the eigenfunction buffer
 % The actual value is irrelevant, just enough to create a Psi matrix
-M = N + 50;
+M = N + 30;
 n1_test = 0:floor(M/5);
 n2_test = 0:floor(M/5);
 Marr_test = [kron(ones(size(n2_test)),n1_test);kron(n2_test,ones(size(n1_test)))];
@@ -77,24 +78,14 @@ for ep1=epvec
         Psieval = Phieval*[eye(N);CbarT];
         b = Psi\y;
         yeval = Psieval*b;
-        Z = reshape(yeval,[NN,NN]);
-        surf(X,Y,Z);
-        hold on
-        plot3(x(:,1),x(:,2),y,'or');
-        hold off
         
-        % Evaluate in that standard basis
+        % Evaluate in the standard basis
         K = K1d(ep1,x(:,1),x(:,1)).*K1d(ep2,x(:,2),x(:,2));
         Keval = K1d(ep1,xx(:,1),x(:,1)).*K1d(ep2,xx(:,2),x(:,2));
         warning('off','MATLAB:nearlySingularMatrix');
         c = K\y;
         warning('on','MATLAB:nearlySingularMatrix');
         ydir = Keval*c;
-%         Z = reshape(ydir,[NN,NN]);
-%         surf(X,Y,Z);
-%         hold on
-%         plot3(x(:,1),x(:,2),y,'or');
-%         hold off
         
         errmat(k1,k2) = errcompute(yeval,yy);
         dirmat(k1,k2) = errcompute(ydir,yy);
@@ -109,39 +100,32 @@ for ep1=epvec
         boundvec = b'*(b./lamvec1');
         L2P2P1L1invb = (lamvec2'.^-.5).*(CbarT*b);
         correctionvec = L2P2P1L1invb'*L2P2P1L1invb;
-        mahaldist = boundvec;% + correctionvec;
-        likmat(k1,k2) = length(b)*log(mahaldist) + logdetK;
+        mahaldist = boundvec + correctionvec;
+        likmat(k1,k2) = N*log(mahaldist) + logdetK;
         
         % Compute profile likelihood in standard basis
-        [U,S,V] = svd(K);
-%         iii = find(abs(sum(U'*V-eye(length(U))))<1e-4);
-%         Um = U(:,iii);
-%         cm = c(iii);
-%         Sm = S(iii,iii);
-%         Spinv = [[inv(Sm),zeros(length(iii),length(S)-length(iii))];zeros(length(S)-length(iii),length(S))];
-%         mahaldist = cm'*Um'*Spinv*Um*cm;
         mahaldist = abs(c'*y);
-        logdetK = sum(log(diag(S)));
-        dlimat(k1,k2) = length(c)*log(mahaldist) + logdetK;
-        fprintf('%6.5f, %6.5f, %e, %e, %e, %e\n',ep1, ep2, errcompute(K_hssvd,K), cond(K), likmat(k1,k2), dlimat(k1,k2))
+        dlimat(k1,k2) = N*log(mahaldist) + sum(log(svd(K)));
+        
+%         fprintf('%6.5f, %6.5f, %e, %e, %e, %e\n',ep1, ep2, errcompute(K_hssvd,K), cond(K), likmat(k1,k2), dlimat(k1,k2))
+%         pause
         k2 = k2 + 1;
-        pause
     end
     k1 = k1 + 1;
 end
 
 f1 = figure;
 [E1, E2] = meshgrid(epvec,epvec);
-h = surf(E1, E2, errmat);
+h = surf(E1, E2, log10(errmat));
 set(get(h,'parent'),'xscale','log');
 set(get(h,'parent'),'yscale','log');
-title('error in HS-SVD basis')
+title('log error in HS-SVD basis')
 
 f2 = figure;
-h = surf(E1, E2, dirmat);
+h = surf(E1, E2, log10(dirmat));
 set(get(h,'parent'),'xscale','log');
 set(get(h,'parent'),'yscale','log');
-title('error in standard basis')
+title('log error in standard basis')
 
 f3 = figure;
 h = surf(E1, E2, likmat);
