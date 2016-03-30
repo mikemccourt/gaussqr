@@ -87,23 +87,54 @@ for ep=epvec
     k = k + 1;
 end
 
-h_err = figure;
-loglog(epvec,errvec,'r','linewidth',3)
-hold on
-loglog(epvec,dirvec,'b','linewidth',2)
-hold off
-title('error')
+% h_err = figure;
+% loglog(epvec,errvec,'r','linewidth',3)
+% hold on
+% loglog(epvec,dirvec,'b','linewidth',2)
+% hold off
+% title('error')
+% 
+% h_par = figure;
+% semilogx(epvec,likvec,'r','linewidth',3)
+% hold on
+% semilogx(epvec,dlivec,'b','linewidth',2)
+% hold off
+% title('profile likelihood')
+% 
+% h_j = figure;
+% semilogx(epvec,jvec,'r','linewidth',3)
+% hold on
+% semilogx(epvec,djvec,'b','linewidth',2)
+% hold off
+% title('joint metric')
 
-h_par = figure;
-semilogx(epvec,likvec,'r','linewidth',3)
-hold on
-semilogx(epvec,dlivec,'b','linewidth',2)
-hold off
-title('profile likelihood')
-
-h_j = figure;
-semilogx(epvec,jvec,'r','linewidth',3)
-hold on
-semilogx(epvec,djvec,'b','linewidth',2)
-hold off
-title('joint metric')
+h_full = figure;
+[AX,H1,H2] = plotyy(epvec,[dlivec';likvec';djvec';jvec'],epvec,[dirvec';errvec'],'semilogx','loglog');
+set(H1,'linewidth',3)
+c = get(AX(1),'Children');
+set(c(1),'color',[0.8500 0.3250 0.0980])
+%set(c(1),'color',[0.9290 0.6940 0.1250])
+set(c(1),'linestyle','-')
+set(c(2),'color',[0.8500 0.3250 0.0980])
+set(c(2),'linestyle',':')
+set(c(3),'color',[0 0.4470 0.7410])
+set(c(3),'linestyle','-')
+set(c(4),'color',[0 0.4470 0.7410])
+set(c(4),'linestyle',':')
+set(H2,'linewidth',2)
+c = get(AX(2),'Children');
+set(c(1),'color','k')
+set(c(1),'linestyle','-')
+set(c(2),'color','k')
+set(c(2),'linestyle',':')
+set(AX,{'ycolor'},{[.5 0 .5];[0 0 0]}) % Set axis color
+set(AX(1),'ylim',[-2500,500])
+set(AX(2),'ylim',[1e-14,1e0])
+set(AX(2),'ytick',[1e-12,1e-9,1e-6,1e-3])
+legend([H1;H2],'MLE direct','MLE HS-SVD','DET direct','DET HS-SVD','Error direct','Error HS-SVD','location','north')
+xlabel('\epsilon')
+%set(get(AX(1),'xlabel'),'Position',[0.3,-1560,0])
+ylabel('Likelihood function')
+set(get(AX(1),'ylabel'),'Position',[.005,-1000,17])
+set(get(AX(2),'ylabel'),'String','Relative error')
+set(get(AX(2),'ylabel'),'Position',[16 3e-07 0])

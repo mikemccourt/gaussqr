@@ -7,10 +7,11 @@ GAUSSQR_PARAMETERS.ERROR_STYLE = 4;
 GAUSSQR_PARAMETERS.NORM_TYPE = 2;
 
 a = 0.4;
-epvec = logspace(-1,-.01,80);
+%epvec = logspace(-2,-.01,80);
+epvec = [logspace(-2,-.5,20),logspace(-.5,-.01,60)];
 %yf = @(x) cos(3*pi*x);
-yf = @(x) 4*sin(4*pi*x)./exp(3*x/2);
-% yf = @(x) x.*log(1+x.^2);
+%yf = @(x) 4*sin(4*pi*x)./exp(3*x/2);
+yf = @(x) x.*log(1+x.^2);
 
 N = 24;
 %x = pickpoints(-1,1,N);
@@ -162,7 +163,6 @@ end
 waitbar(100,h_waitbar,sprintf('Plotting'))
 h_mle = figure;
 [AX,H1,H2] = plotyy(epvec,[dirMPLEvec;gqrMPLEvec;N*dirKVvec;N*gqrKVvec;N*gqrKVdetvec;dirDETvec;gqrDETvec;gqrDETdetvec],epvec,errvec,'semilogx','loglog');
-%[AX,H1,H2] = plotyy(epvec,[dirMPLEvec;gqrMPLEvec;dirKVvec;gqrKVvec;gqrKVdetvec;dirDETvec;gqrDETvec;gqrDETdetvec],epvec,errvec,'semilogx','loglog');
 set(H1,'linewidth',3)
 c = get(AX(1),'Children');
 set(c(1),'color',[0.9290 0.6940 0.1250])
