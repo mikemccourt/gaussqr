@@ -15,7 +15,7 @@ GAUSSQR_PARAMETERS.NORM_TYPE = 2;
 % I may move this to rbfsetup at some point
 %
 % As a disclaimer, these points were taken directly from Rob Wommersley's
-% page on Maximal Determinant point
+% page on Maximal Determinant points
 %   http://web.maths.unsw.edu.au/~rsw/Sphere/Extremal/New/extremal1.html
 % We thank Dr. Wommersley for his many contributions to math
 gqr_downloaddata('sphereMDpts_data.mat')
@@ -44,11 +44,12 @@ xeval = zeros(NN,3);
 yy = yf(xeval);
 DPeval = xeval*x';
 
-% The actual RBF in use here is
-%     1/sqrt(1+gamma^2 - 2*gamma*x^Tz)
-% But I am rewriting it in terms of r, the Euclidean distance
-% Note that in this formulation, epsilon is restricted to be within 0 and
-% 1, although you can recover the standard IMQ with any such values
+% The original IMQ 1/sqrt(1+(ep*r)^2) is related to the zonal IMQ
+% To use the zonal IMQ you can solve the equation
+%     gamma/(1-gamma)^2 = ep^2
+% with gamma = fzero(@(gamma) gamma./(1-gamma).^2 - ep^2,.5)
+% There will always be a gamma in [0,1) for any ep in [0,inf)
+% Recall: dp is the dot-product, not the distance
 zbf = @(g,dp) 1./sqrt(1+g^2-2*g*dp);
 
 % Choose a range of shape parameters to test
@@ -82,7 +83,7 @@ Phieval1 = Phieval(:,1:N);
 Phieval2 = Phieval(:,N+1:Neig);
 Phi2TinvPhi1 = Phi2'/Phi1';
 
-% Perform the interpolation with the range of ep and record the values
+% Perform the interpolation with the range of gamma and record the values
 k = 1;
 errvec = zeros(size(gammavec));
 errvechs = zeros(size(gammavec));
@@ -94,7 +95,7 @@ for g=gammavec
     yeval = Keval*(K\y);
     warning('on','MATLAB:nearlySingularMatrix')
     
-    % Eigs are the eigenvalues of the kernel, here stored as a vector since
+    % lamvec is the eigenvalues of the kernel, stored as a vector since
     % storing them as a diagonal matrix seems unnecessary.
     % Also, I realize the 4pi is eliminated automatically, but I am leaving
     % it here for completeness
@@ -102,9 +103,9 @@ for g=gammavec
     % multiplying on the left by Lam_2 and on the right by inv(Lam_1)
     lamvec = 4*pi*g.^larr./(2*larr+1);
     LamFull = bsxfun(@rdivide,lamvec(N+1:Neig)',lamvec(1:N));
-    Rbar = LamFull.*Phi2TinvPhi1;
-    Psi = Phi1 + Phi2*Rbar;
-    Psieval = Phieval1 + Phieval2*Rbar;
+    CbarT = LamFull.*Phi2TinvPhi1;
+    Psi = Phi1 + Phi2*CbarT;
+    Psieval = Phieval1 + Phieval2*CbarT;
     yevalhs = Psieval*(Psi\y);
     
     errvechs(k) = errcompute(yevalhs,yy);
