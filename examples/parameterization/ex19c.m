@@ -4,7 +4,8 @@
 gqr_downloaddata('sphereMDpts_data.mat')
 load sphereMDpts_data
 
-yf = @(x) (1 + 10*x(:,1).*x(:,2).*x(:,3) + x(:,1).^8 + exp(2*x(:,2).^3) + exp(2*x(:,3).^2))/14 - 3*cos(7*x(:,1)-2*x(:,3)) + 2*exp(-2*x(:,2).^2);
+% yf = @(x) (1 + 10*x(:,1).*x(:,2).*x(:,3) + x(:,1).^8 + exp(2*x(:,2).^3) + exp(2*x(:,3).^2))/14 - 3*cos(7*x(:,1)-2*x(:,3)) + 2*exp(-2*x(:,2).^2);
+yf = @(x)  - 3*cos(7*x(:,1)-2*x(:,3)) + 2*exp(-2*x(:,2).^2);
 
 x = sphereMDpts{3};
 N = size(x,1);
@@ -85,21 +86,24 @@ end
 % Plot the results
 h_joint = figure;
 
-yyaxis left
-loglog(gammavec,errvechs,'linewidth',3)
+yyaxis right
+h_errhs = loglog(gammavec,errvechs,'linewidth',3);
 hold on
-loglog(gammavec,errvec,'--','linewidth',2)
+h_err = loglog(gammavec,errvec,'--','linewidth',2);
 hold off
 xlabel('\gamma','fontsize',14)
-ylabel('pointwise error','fontsize',14)
+ylabel('max pointwise error','fontsize',14)
 ax = gca;
 ax.YTick = [1e-5, 1, 1e4];
 
-yyaxis right
-semilogx(gammavec,mlevechs,'linewidth',3)
+yyaxis left
+h_mlehs = semilogx(gammavec,mlevechs,'linewidth',3);
 hold on
-semilogx(gammavec,mlevec,'--','linewidth',2)
+h_mle = semilogx(gammavec,mlevec,'--','linewidth',2);
 hold off
 ylabel('likelihood','fontsize',14)
 ax = gca;
 ax.YTick = [-2000, 0, 4000];
+ax.FontSize = 14;
+
+legend([h_err,h_errhs,h_mle,h_mlehs],{'Error direct','Error HS-SVD','MLE direct','MLE HS-SVD'})
