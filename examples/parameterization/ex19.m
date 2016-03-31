@@ -116,8 +116,8 @@ h = surf(E1, E2, log10(errmat));
 set(get(h,'parent'),'xscale','log');
 set(get(h,'parent'),'yscale','log');
 %title('log error in HS-SVD basis')
-xlabel('\epsilon_1')
-ylabel('\epsilon_2')
+xlabel('b_1')
+ylabel('b_2')
 zlabel('log error')
 
 f2 = figure;
@@ -125,8 +125,8 @@ h = surf(E1, E2, log10(dirmat));
 set(get(h,'parent'),'xscale','log');
 set(get(h,'parent'),'yscale','log');
 %title('log error in standard basis')
-xlabel('\epsilon_1')
-ylabel('\epsilon_2')
+xlabel('b_1')
+ylabel('b_2')
 zlabel('log error')
 
 f3 = figure;
@@ -134,8 +134,8 @@ h = surf(E1, E2, likmat);
 set(get(h,'parent'),'xscale','log');
 set(get(h,'parent'),'yscale','log');
 %title('likelihood in HS-SVD basis')
-xlabel('\epsilon_1')
-ylabel('\epsilon_2')
+xlabel('b_1')
+ylabel('b_2')
 zlabel('likelihood')
 
 f4 = figure;
@@ -143,6 +143,6 @@ h = surf(E1, E2, dlimat);
 set(get(h,'parent'),'xscale','log');
 set(get(h,'parent'),'yscale','log');
 %title('likelihood in standard basis')
-xlabel('\epsilon_1')
-ylabel('\epsilon_2')
+xlabel('b_1')
+ylabel('b_2')
 zlabel('likelihood')
