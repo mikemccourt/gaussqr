@@ -1,4 +1,4 @@
-% ex20b - the NETNA example (for real this time)
+% ex20 - the NETNA example (for real this time)
 % This poses the appropriate PDE in the sphere and then solves the needed
 % interpolation problem on the boundary.
 
@@ -99,7 +99,7 @@ for k=1:N
     less_cv = yv + (1/Avv)*Atv*yt;
     base_cv = cv/Avv;
     
-    fprintf('\t%f\t%f\t%f\t%f\n',true_cv,test_cv,less_cv,base_cv);
+%     fprintf('\t%f\t%f\t%f\t%f\n',true_cv,test_cv,less_cv,base_cv);
     
     this_cv = abs(yv - Kvt*(Ktt\yt));
     fprintf('%d\t%f\n',k,this_cv)

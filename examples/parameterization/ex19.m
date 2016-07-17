@@ -25,7 +25,8 @@ Y = reshape(xx(:,2),[NN,NN]);
 % Parameters for the individual dimensions
 % alpha is of little to no significance in interpolation
 alpha = .1;
-epvec = logspace(-4,-.3,25);
+Ne = 55;
+epvec = logspace(-4,-.3,Ne);
 
 % The closed form of the Chebyshev kernel
 K1d = @(e,x,z) 1 - alpha + 2*alpha*(1-e)* ...
@@ -48,6 +49,7 @@ dirmat = zeros(length(epvec),length(epvec));
 likmat = zeros(length(epvec),length(epvec));
 dlimat = zeros(length(epvec),length(epvec));
 k1 = 1;
+h_waitbar = waitbar(0,'Initializing');
 for ep1=epvec
     k2 = 1;
     for ep2=epvec
@@ -103,12 +105,16 @@ for ep1=epvec
         likmat(k1,k2) = N*log(mahaldist) + logdetK;
         dlimat(k1,k2) = N*log(abs(c'*y)) + sum(log(svd(K)));
         
-        fprintf('%6.5f, %6.5f, %e, %e\n',ep1, ep2, likmat(k1,k2), dlimat(k1,k2))
-%         pause
+%         fprintf('%6.5f, %6.5f, %e, %e\n',ep1, ep2, likmat(k1,k2), dlimat(k1,k2))
+        progress = floor(100*(k1*(Ne-1)+k2)/Ne^2)/100;
+        waitbar(progress,h_waitbar,sprintf('Computing, ep1=%g, ep2=%g',ep1,ep2))
         k2 = k2 + 1;
     end
     k1 = k1 + 1;
 end
+
+waitbar(100,h_waitbar,sprintf('Plotting'))
+fs = 18;
 
 f1 = figure;
 [E1, E2] = meshgrid(epvec,epvec);
@@ -116,33 +122,51 @@ h = surf(E1, E2, log10(errmat));
 set(get(h,'parent'),'xscale','log');
 set(get(h,'parent'),'yscale','log');
 %title('log error in HS-SVD basis')
-xlabel('b_1')
-ylabel('b_2')
-zlabel('log error')
+xlabel('b_1','fontsize',fs)
+ylabel('b_2','fontsize',fs)
+zlabel('log error','fontsize',fs)
+ax = gca;
+ax.FontSize = fs;
+set(get(ax,'children'),'EdgeAlpha',.5)
+view([-42.5,50])
 
 f2 = figure;
 h = surf(E1, E2, log10(dirmat));
 set(get(h,'parent'),'xscale','log');
 set(get(h,'parent'),'yscale','log');
 %title('log error in standard basis')
-xlabel('b_1')
-ylabel('b_2')
-zlabel('log error')
+xlabel('b_1','fontsize',fs)
+ylabel('b_2','fontsize',fs)
+zlabel('log error','fontsize',fs)
+ax = gca;
+ax.FontSize = fs;
+set(get(ax,'children'),'EdgeAlpha',.5)
+view([-42.5,50])
 
 f3 = figure;
 h = surf(E1, E2, likmat);
 set(get(h,'parent'),'xscale','log');
 set(get(h,'parent'),'yscale','log');
 %title('likelihood in HS-SVD basis')
-xlabel('b_1')
-ylabel('b_2')
-zlabel('likelihood')
+xlabel('b_1','fontsize',fs)
+ylabel('b_2','fontsize',fs)
+zlabel('likelihood','fontsize',fs)
+ax = gca;
+ax.FontSize = fs;
+set(get(ax,'children'),'EdgeAlpha',.5)
+view([-42.5,50])
 
 f4 = figure;
 h = surf(E1, E2, dlimat);
 set(get(h,'parent'),'xscale','log');
 set(get(h,'parent'),'yscale','log');
 %title('likelihood in standard basis')
-xlabel('b_1')
-ylabel('b_2')
-zlabel('likelihood')
+xlabel('b_1','fontsize',fs)
+ylabel('b_2','fontsize',fs)
+zlabel('likelihood','fontsize',fs)
+ax = gca;
+ax.FontSize = fs;
+set(get(ax,'children'),'EdgeAlpha',.5)
+view([-42.5,50])
+
+close(h_waitbar)

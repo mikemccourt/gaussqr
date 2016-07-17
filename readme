@@ -75,6 +75,10 @@ List of examples:
 	  ex14	: Computation of cross-validation
 	  ex14b	: Computation of likelihood function
 	  ex14c : Attempt to draw from posterior distribution
+          ex19  : 2D tensor product likelihood computation
+          ex19b : 2D comparison of likelihood/joint metric
+          ex19c : Stable parameterization on the sphere
+          ex19d : 4D comparison of likelihood/joint metric
 	functionality
 	  ex3	: Computation with asymptotic Hermite polynomials
 	  ex11	: Fast QR speed test (still in research)
@@ -98,6 +102,8 @@ List of examples:
 	  ex12b	: Burgers equation, semi-linear time discretization
 	  ex13	: Tensor product collocation grid
 	  ex13b	: Tensor product collocation grid, parameter analysis
+          ex20  : Confirmation of components of low rank cheap LOOCV
+          ex20b : Comparison of cheap LOOCV to true LOOCV
 	approximation
 	  ex2	: Basic study of eigenfunction series length quality
 	  ex2b	: 2D eigenfunction series quality study

@@ -1,7 +1,7 @@
 % ex19b
-% This is a 2D example for stable parametrization using both the MLE and
+% This is a 4D example for stable parametrization using both the MLE and
 % the joint metric.
-% We use the Gaussian in 2D and try to optimize for a single ep value.
+% We use the Gaussian in 4D and try to optimize for a single ep value.
 
 d = 4;
 yf = @(x) cos(sqrt(sum(bsxfun(@times,x,2.^(-(0:d-1)+1)).^2,2)));
@@ -68,9 +68,9 @@ yyaxis right
 h_err = loglog(epvec,dirvec,'linewidth',2);
 xlabel('\gamma','fontsize',14)
 ylabel('max pointwise error','fontsize',14)
-ylim([1e-2,1e1])
+% ylim([1e-2,1e1])
 ax = gca;
-ax.YTick = [1e-1, 1, 1e1];
+% ax.YTick = [1e-1, 1, 1e1];
 
 yyaxis left
 h_mle = semilogx(epvec,dlivec,'linewidth',3);
