@@ -1,18 +1,22 @@
-GaussQR v2.0
-  comments/questions: Gregory Fasshauer <fasshauer@iit.edu>
-                      Mike McCourt <mccomic@iit.edu>
+GaussQR v2.1
+  comments/questions: Gregory Fasshauer <fasshauer@mines.edu>
+                      Mike McCourt <mccourt@sigopt.com>
   (previously referred to as RBF-QR 1.x in documentation)
   
-********* NOTICE *********
+********* NEWS *********
+June 6, 2017
+A LOT has happened since the last real push in this repository.
+Both Greg and Mike have new jobs which has pushed up in new
+and exciting directions.  We now, however, have a desire to
+start contributing new content, along with colleagues.  To move
+this project to a more portable location it will now primarily
+be hosted on GitHub.
+
 June 26, 2015
 With the release of the text "Kernel-Based Approximation
 Methods in MATLAB" in September 2015, the developers are
 releasing a new version of this software with content
 relevant to that book.
-
-To improve our documentation readability and search capability,
-we are also developing an XML version.  This file will remain
-as a basic reference, even after that is produced
 **************************
 
 **** Basic Library Structure
