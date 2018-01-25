@@ -10,3 +10,6 @@
 *.DS_Store
 examples/dipole/source/regu/*
 examples/dipole/source/BEM/*
+
+# backup files
+*.m~

@@ -8,7 +8,7 @@
 function rbfsetup
 thisDir = pwd;
 thisOS = system_dependent('getos');
-if(strfind(thisOS,'Windows')>0)
+if(strfind(thisOS,'Windows')>0)  % Consider replacing with pathsep
     dirslash = '\';
 else
     dirslash = '/';
@@ -39,9 +39,14 @@ examplesDir = strcat(thisDir,dirslash,'examples');
   approxeigsDir = strcat(examplesDir,dirslash,'eig_appx');
 otherDir = strcat(thisDir,dirslash,'fromothers');
 bookDir = strcat(thisDir,dirslash,'book');
+researchDir = genpath(strcat(thisDir,dirslash,'research'));
 
 % Add the directories to the path
-addpath(thisDir,sourceDir,gaussqrDir,gqrauxiliaryDir,mqrauxiliaryDir,utilitiesDir,otherDir,maternqrDir,intexamplesDir,apxexamplesDir,funexamplesDir,bvpexamplesDir,fdfexamplesDir,parexamplesDir,dipoleDir,approxeigsDir,dipolesourceDir,bookDir,'-begin');
+addpath(thisDir,sourceDir,gaussqrDir,gqrauxiliaryDir,mqrauxiliaryDir, ...
+    utilitiesDir,otherDir,maternqrDir,intexamplesDir,apxexamplesDir, ...
+    funexamplesDir,bvpexamplesDir,fdfexamplesDir,parexamplesDir, ...
+    dipoleDir,approxeigsDir,dipolesourceDir,bookDir,researchDir, ...
+    '-begin');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Setup global constants and parameters
