@@ -30,15 +30,22 @@ a = (param(1:M) < puradius);
 b = (param(1:M) > h * puradius);
 c = (param(M+1:2*M) < 0);
 
+penalty_a = exp(sum(max(param(1:M) - puradius, 0)));
+penalty_b = exp(sum(max(h * puradius - param(1:M), 0)));
+penalty_c = exp(sum(max(param(M+1:2*M), 0)));
+
+% fprintf('\t\t%g %g %g\n', penalty_a, penalty_b, penalty_c)
+
+error = Cost_function(rbf, param, puradius, idx_ds, index, q, M, puctrs, dsites, rhs);
+error = error * penalty_a * penalty_b * penalty_c;
+
 % !!!!!!!!!!!!!!! What does this max do??
-if max(a + b + c) > 0
-    fprintf('\t\t%g %g %g %g %g %g\n', a, b, c)
+% if max(a + b + c) > 0
 %     error = 1e40;
-    error = Cost_function(rbf, param, puradius, idx_ds, index, q, M, puctrs, dsites, rhs);
-else
-    % Evaluate the error
-    error = Cost_function(rbf, param, puradius, idx_ds, index, q, M, puctrs, dsites, rhs);
-end
+% else
+%     % Evaluate the error
+%     error = Cost_function(rbf, param, puradius, idx_ds, index, q, M, puctrs, dsites, rhs);
+% end
 
 if isnan(error) || isinf(error)
     error = 1e50;

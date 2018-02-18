@@ -44,13 +44,11 @@ function [epoints, Pf, radii, epsilon] = PU_op(M, dsites, neval, npu, rbf, f, rh
 
 % Create neval^M equally spaced evaluation points
 epoints = MakeSDGrid(M, neval);
-rbfctrs = dsites; % Define the RBF centres
 
 % Initialization
 puradius = ones(1, M) * (1 ./ npu);
 npu_M = size(puctrs, 1);
 neval_M = size(epoints, 1);
-Pf = zeros(neval_M, 1);
 
 % Parameter for integer-based partitioning structure
 q = ceil(1 ./ puradius(1, 1));
@@ -72,16 +70,26 @@ for j = 1:npu_M
     % Find the optimal semi-axes and shape parameters
     
     % MIKE - I have changed the internals here
+    options.MaxIter = 100;
+    options.Display = 'off';
     search_timer = tic;
-    [minval, fminval, flag, output] = fminsearch( ...
-        @(param2M) Cost_function_con(rbf, param2M, puradius, idx_ds, index, q, M, puctrs(j, :), dsites, rhs, h), ...
-        param ...
-    );
-    search_only = search_only + toc(search_timer);
+
+    fun = @(param2M) Cost_function(rbf, param2M, puradius, idx_ds, index, q, M, puctrs(j, :), dsites, rhs);
+    bounds = [[.05, .2]; [.05, .2]; [1, 900]; [1, 900]];
+    opts = struct('logspace', true, 'num_points', 105);
+%     [minval, fminval, flag, output] = fminsearch( ...
+%         @(param2M) Cost_function_con(rbf, param2M, puradius, idx_ds, index, q, M, puctrs(j, :), dsites, rhs, h), ...
+%         param, ...
+%         options ...
+%     );
+    minval = param; fminval=2; % For just using the initial guess to do the computation
+%     [minval, fminval, x_hist, f_hist] = fminrnd(fun, bounds, opts);
+%     search_only = search_only + toc(search_timer);
+
     radii(j,:) = minval(1:M)'; % The optimal semi-axes
     epsilon(j,:) = minval(M + 1:2 * M)'; % The optimal shape parameters
-    fprintf('%d %g %g %g %g\n', j, radii(j,1), radii(j,2), epsilon(j,1), epsilon(j,2))
-    minval
+    fprintf('%d %g %g %g %g %g\n', j, radii(j,1), radii(j,2), epsilon(j,1), epsilon(j,2), fminval)
+%     minval
 %     fminval
 %     flag
 %     output
@@ -114,35 +122,39 @@ this_time = toc(loop_timer);
 fprintf('First loop time %g, Search component %g\n', this_time, search_only)
 
 % Define the pu weight
-epu = PuweightAniso(epoints,elocpts,puctrs,radii);
+epu = PuweightAniso(epoints, elocpts, puctrs, radii);
+
+% Initialize the prediction vector
+Pf = zeros(neval_M, 1);
+
 loop_timer = tic;
 for j = 1:npu_M
-    centers = rbfctrs(locpts(j).ind, :);
-    data_sites = dsites(locpts(j).ind, :);
-    ep = epsilon(j, :);
     eval_points = epoints(elocpts(j).ind, :);
     
     if (~isempty(eval_points))
-        % Compute the distance matrix
-        DM_data = DistanceMatrixAniso(data_sites, centers, ep);
+        centers = dsites(locpts(j).ind, :);
+        ep = epsilon(j, :);
         
         % Compute the interpolation matrix
-        IM = rbf(DM_data);
+        IM = rbf(DistanceMatrixAniso(centers, centers, ep));
         
-        % Compute local evaluation matrix and the local RBF interpolant
-        DM_eval = DistanceMatrixAniso(eval_points, centers, ep);
-        EM = rbf(DM_eval);
+        % Compute local evaluation matrix
+        EM = rbf(DistanceMatrixAniso(eval_points, centers, ep));
+        
+        fprintf('j=%g, local N-%g\n', j, length(IM));
+        
+        % Compute the local interpolant
         localfit = EM * (IM \ rhs(locpts(j).ind));
         
-        % Accumulate global fit
+        % Accumulate the local interpolant into the global fit
         Pf(elocpts(j).ind) = Pf(elocpts(j).ind) + localfit .* epu(j).w;
     end
 end
 this_time = toc(loop_timer);
 fprintf('Second loop time %g\n', this_time)
-exact = f(epoints);
 
 % Compute errors on evaluation grid
+exact = f(epoints);
 maxerr = norm(Pf - exact, inf);
 rms_err = norm(Pf - exact) / sqrt(neval_M);
 fprintf('RMS error:       %e\n', rms_err);

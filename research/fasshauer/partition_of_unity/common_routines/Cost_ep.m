@@ -24,7 +24,14 @@
 % be better restricted to a region in which there is no ill-conditioning.
 %
 %-------------------------------------------------------------------------%
-function error = Cost_ep(rbf,param,idx_ds,dsites,rhs)
+function error = Cost_ep(rbf, param, idx_ds, dsites, rhs)
+
+% Prevent ourselves from considering situations with insufficiently many points in the patch
+if length(idx_ds) < 5
+    error = 1e60;
+    return
+end
+
 K = real(rbf(DistanceMatrixAniso(dsites(idx_ds, :), dsites(idx_ds, :), param)));
 
 % Check if the K matrix is even symmetric PD
@@ -45,19 +52,35 @@ end
 % It's possible we're wasting juice because we're not reusing this Cholesky
 % factorization later on when we actually need to do predictions (I assume
 % we just invert the matrix again).  That's another possible optimization.
-rhs_and_I = [rhs(idx_ds), eye(size(K,1))];
+% rhs_and_I = [rhs(idx_ds), eye(size(K,1))];
+% opts.UT = false;
+% opts.LT = true;
+% opts.TRANSA = true;
+% temp = linsolve(R, rhs_and_I, opts);
+% 
+% opts.UT = true;
+% opts.LT = false;
+% opts.TRANSA = false;
+% sol_and_Kinv = linsolve(R, temp, opts);
+% error = norm(sol_and_Kinv(:, 1) ./ diag(sol_and_Kinv(:, 2:end)), inf);
+
+% This is the MLE instead of the LOOCV
+% Not sure if it is better but it should be considered
+N = length(K);
+y = rhs(idx_ds);
 opts.UT = false;
 opts.LT = true;
 opts.TRANSA = true;
-temp = linsolve(R, rhs_and_I, opts);
+temp = linsolve(R, y, opts);
 
 opts.UT = true;
 opts.LT = false;
 opts.TRANSA = false;
-sol_and_Kinv = linsolve(R, temp, opts);
-error = norm(sol_and_Kinv(:, 1) ./ diag(sol_and_Kinv(:, 2:end)), inf);
+K_inv_y = linsolve(R, temp, opts);
+error = N * log(y' * K_inv_y) + sum(log(diag(R)));
 
-% This was the previous implementation
+
+% This was the previous implementation of the LOOCV
 % EF = (K\rhs(idx_ds))./diag(K\eye(size(K,1)));
 % error = norm(EF(:),inf);
 % if isnan(error) ||  isinf(error)

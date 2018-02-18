@@ -1,6 +1,6 @@
 % Test comparing the PUM method to a global method
-addpath('common_routines')
-addpath('codes_op')
+% addpath('common_routines')
+% addpath('codes_op')
 
 % The test function
 yf = @(x) franke(x(:, 1), x(:, 2));
@@ -8,16 +8,16 @@ yf = @(x) franke(x(:, 1), x(:, 2));
 M = 2;                                  % space dimension 
 n = 25;                                 % number of tracks
 m = 80;                                 % number of points on tracks
-[N, dsites, yy] = TrackData2D(n,m);       % generate N = n*m track data in 2D
+[N, dsites, yy] = TrackData2D(n, m);       % generate N = n*m track data in 2D
 neval = 30;                             % parameter for evaluation points
-npu = floor(((N)/(4))^(1/M));          % parameter for PU centres
-xx = linspace(0,1,n);                   % subdomains in one direction
-[X, Y] = meshgrid(xx,yy);                % patches centered at tracks
+npu = floor((N / 4) ^ (1 / M));          % parameter for PU centres
+xx = linspace(0, 1, n);                   % subdomains in one direction
+[X, Y] = meshgrid(xx, yy);                % patches centered at tracks
 puctrs = [X(:) Y(:)];                   % define the PU centres
-rbf_aniso = @(r) 1./sqrt(1+r.^2);       % define the RBF
+rbf_aniso = @(r) 1 ./ sqrt(1 + r .^ 2);       % define the RBF
 rhs = yf(dsites);                        % function values
 h = 2;                                  % upper bound for the radius
-param = [2/npu 1/npu 3 3];             % initial values for the parameters 
+param = [2/npu, 1/npu, 3, 3];             % initial values for the parameters 
                                        % to be optimized
           
 global time1 time2 time3
