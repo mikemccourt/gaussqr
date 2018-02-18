@@ -32,7 +32,7 @@ if length(idx_ds) < 5
     return
 end
 
-K = real(rbf(DistanceMatrixAniso(dsites(idx_ds, :), dsites(idx_ds, :), param)));
+K = rbf(real(DistanceMatrixAniso(dsites(idx_ds, :), dsites(idx_ds, :), param)));
 
 % Check if the K matrix is even symmetric PD
 % If it is not, crash out of this function and return a lousy value
