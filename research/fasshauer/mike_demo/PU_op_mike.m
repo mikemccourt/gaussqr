@@ -1,6 +1,6 @@
 %-------------------------------------------------------------------------%
 %
-% File: PU_op_mike(M,dsites,neval,npu,rbf,wf,f,rhs,h,param);
+% File: PU_op_mike(M,dsites,neval,npu,rbf,wf,f,rhs,puctrs,isotropic,strat,tikhonov);
 %
 % Goal: script that performs partition of unity with variable patches
 %       and shape parameters
@@ -13,8 +13,10 @@
 %             wf:         weight function
 %             f:          test function
 %             rhs:        function values
-%             h:          upper bound for the radius
-%             param:      guess for parameters (radii and shape parameters)
+%             puctrs:     the locations of the PU centers
+%             isotropic:  true/false
+%             strat:      what parametrization strategy to use
+%             tikhonov:   a Tikhonov regularization parameter
 %
 % Outputs:    epoints:    evaluation points
 %             Pf:         interpolant computed at the evaluation points
@@ -40,7 +42,7 @@
 %             derivative-free optimization
 %
 %-------------------------------------------------------------------------%
-function [epoints, Pf, radii, epsilon] = PU_op_mike(M, dsites, neval, npu, rbf, f, rhs, h, param, puctrs)
+function [epoints, Pf, radii, epsilon] = PU_op_mike(M, dsites, neval, npu, rbf, f, rhs, puctrs, isotropic, strat, tikhonov, verbose)
 
 % Create neval^M equally spaced evaluation points
 epoints = MakeSDGrid(M, neval);
@@ -68,30 +70,32 @@ for j = 1:npu_M
     % Find the block containing the j-th subdomain centre
     index = IntegerBased_MD_ContainingQuery(puctrs(j, :), q, puradius(1, 1), M);
     
+    % Determine the optimal parameters (through a random search)
     search_timer = tic;
-    fun = @(param2M) Cost_function(rbf, param2M, puradius, idx_ds, index, q, M, puctrs(j, :), dsites, rhs);
-%     bounds = [[.1, .3]; [.1, .3]; [1, 900]; [1, 900]];
-    bounds = [[.05, .45]; [10, 1000]];
-    opts = struct('logspace', false, 'num_points', 205);
-%     [minval, fminval, flag, output] = fminsearch( ...
-%         @(param2M) Cost_function_con(rbf, param2M, puradius, idx_ds, index, q, M, puctrs(j, :), dsites, rhs, h), ...
-%         param, ...
-%         options ...
-%     );
-%     minval = param; fminval=2; % For just using the initial guess to do the computation
-    [minval, fminval, x_hist, f_hist] = fminrnd(fun, bounds, opts);
-    minval = [minval(1), minval(1), minval(2), minval(2)];
+    fun = @(param2M) Cost_function_mixed( ...
+        rbf, param2M, puradius, idx_ds, index, q, M, ...
+        puctrs(j, :), dsites, rhs, strat, tikhonov);
+    opts = struct('logspace', false, 'num_points', 125);
+    bounds = [[.1, .3]; [.1, .3]; [1, 900]; [1, 900]];
+    if strcmp(strat, 'no_opt')
+        minval = [2 / npu, 1 / npu, 3, 3];  % Used as initial guess in earlier versions of this
+    else
+        if isotropic
+            bounds = [bounds(1, :); bounds(3, :)];
+        end
+        [minval, fminval, ~, ~] = fminrnd(fun, bounds, opts);
+        if isotropic
+            minval = [minval(1), minval(1), minval(2), minval(2)];
+        end
+    end
     search_only = search_only + toc(search_timer);
 
+    % Store the results from the optimization
     radii(j,:) = minval(1:M)'; % The optimal semi-axes
     epsilon(j,:) = minval(M + 1:2 * M)'; % The optimal shape parameters
-    fprintf('%d %g %g %g %g %g\n', j, radii(j,1), radii(j,2), epsilon(j,1), epsilon(j,2), fminval)
-%     minval
-%     fminval
-%     flag
-%     output
-%     Cost_function_con(rbf, param, puradius, idx_ds, index, q, M, puctrs(j, :), dsites, rhs, h)
-%     break
+    if verbose
+        fprintf('%d %g %g %g %g %g\n', j, radii(j,1), radii(j,2), epsilon(j,1), epsilon(j,2), fminval)
+    end
     
     % Find the mumber of blocks to search for the points on the patches
     n = 1;
@@ -131,12 +135,14 @@ for j = 1:npu_M
         ep = epsilon(j, :);
         
         % Compute the interpolation matrix
-        IM = rbf(DistanceMatrixAniso(centers, centers, ep));
+        IM = rbf(DistanceMatrixAniso(centers, centers, ep)) + tikhonov * eye(length(centers));
         
         % Compute local evaluation matrix
         EM = rbf(DistanceMatrixAniso(eval_points, centers, ep));
         
-        fprintf('j=%g, local N-%g\n', j, length(IM));
+        if verbose
+            fprintf('j=%g, local N-%g\n', j, length(IM));
+        end
         
         % Compute the local interpolant
         localfit = EM * (IM \ rhs(locpts(j).ind));

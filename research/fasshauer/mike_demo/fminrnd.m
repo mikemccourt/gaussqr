@@ -17,7 +17,7 @@ end
 
 dim = length(bounds);
 p = haltonset(dim);
-unscaled_points = net(p, num_points);
+unscaled_points = mod(bsxfun(@plus, net(p, num_points), rand(1, dim)), 1);
 
 x_width = bounds(:, 2) - bounds(:, 1);
 x_min = bounds(:, 1);
