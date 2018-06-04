@@ -90,8 +90,9 @@ ylabel('normalized RMSE', 'fontsize', fontsize)
 xticks([1e1, 1e2, 1e3, 1e4])
 yticks([1e-10, 1e-5, 1e0])
 set(gca, 'fontsize', fontsize)
-legend([hbase, hfill1, hfill2], {'$\tau=0$ ($\varepsilon=\log(N)$)', '$\tau=1.1$', '$\tau=\sqrt{10}$'}, 'location', 'southwest', 'fontsize', fontsize, 'interpreter', 'latex')
+legend([hbase, hfill1, hfill2], {'$\tau=1$ ($\varepsilon=\log(N)$)', '$\tau=1.1$', '$\tau=\sqrt{10}$'}, 'location', 'southwest', 'fontsize', fontsize, 'interpreter', 'latex')
 hold off
 
-savefig('examples_2d_random')
-saveas(gcf, 'examples_2d_random', 'png')
+filename = 'examples_2d_random';
+savefig(filename)
+saveas(gcf, filename, 'png')

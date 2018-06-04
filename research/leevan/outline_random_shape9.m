@@ -8,12 +8,12 @@ clf reset
 fontsize = 14;
 Nvec = floor(logspace(1, 4, 23));
 Neval = 400;
-tau1 = 1.1;
-tau2 = sqrt(10);
+tau1 = 1.2;
+tau2 = sqrt(20);
 rbf = @(r) exp(-r.^2);
 num_runs = 30;
 
-yf = @(x) sin(6 * (x(:, 1) .^ 2 + x(:, 2) .^ 2));
+yf = @(x) (x(:, 1) .* x(:, 2) .^ 2) + 2 ./ (1 + 20 * (2 * (x(:, 1) + .3) .^ 2 + .6 * (x(:, 2) - .2) .^ 2));
 results = zeros([1, length(Nvec)]);
 results1 = zeros([num_runs, length(Nvec)]);
 results2 = zeros([num_runs, length(Nvec)]);
@@ -38,9 +38,9 @@ for N=Nvec
         A1 = pickpoints(-pi, pi, N, 'rand');
         for col=1:N
             V = [[cos(A1(col)), -sin(A1(col))]; [sin(A1(col)), cos(A1(col))]];
-            sdv = sqrt(Dvals(col, :));
-            DM(:, col) = sum(bsxfun(@times, bsxfun(@minus, x, x(col, :)) * V, sdv) .^ 2, 2);
-            DMeval(:, col) = sum(bsxfun(@times, bsxfun(@minus, xeval, x(col, :)) * V, sdv) .^ 2, 2);
+            dv = Dvals(col, :);
+            DM(:, col) = sqrt(sum(bsxfun(@times, bsxfun(@minus, x, x(col, :)) * V, dv) .^ 2, 2));
+            DMeval(:, col) = sqrt(sum(bsxfun(@times, bsxfun(@minus, xeval, x(col, :)) * V, dv) .^ 2, 2));
         end
         ypred = rbf(DMeval) * (rbf(DM) \ y);
         results1(tcount, Ncount) = errcompute(ypred, yeval);
@@ -49,9 +49,9 @@ for N=Nvec
         A1 = pickpoints(-pi, pi, N, 'rand');
         for col=1:N
             V = [[cos(A1(col)), -sin(A1(col))]; [sin(A1(col)), cos(A1(col))]];
-            sdv = sqrt(Dvals(col, :));
-            DM(:, col) = sum(bsxfun(@times, bsxfun(@minus, x, x(col, :)) * V, sdv) .^ 2, 2);
-            DMeval(:, col) = sum(bsxfun(@times, bsxfun(@minus, xeval, x(col, :)) * V, sdv) .^ 2, 2);
+            dv = Dvals(col, :);
+            DM(:, col) = sqrt(sum(bsxfun(@times, bsxfun(@minus, x, x(col, :)) * V, dv) .^ 2, 2));
+            DMeval(:, col) = sqrt(sum(bsxfun(@times, bsxfun(@minus, xeval, x(col, :)) * V, dv) .^ 2, 2));
         end
         ypred = rbf(DMeval) * (rbf(DM) \ y);
         results2(tcount, Ncount) = errcompute(ypred, yeval);
@@ -94,14 +94,16 @@ hbase = plot(Nvec, results, '--k', 'linewidth', 3);
 set(gca, 'xscale', 'log')
 set(gca, 'yscale', 'log')
 xlim([1e1, 1e4])
-ylim([1e-14, 1e0])
+ylim([1e-12, 1e0])
 xlabel('N - number of points sampled', 'fontsize', fontsize, 'interpreter', 'tex')
 ylabel('normalized RMSE', 'fontsize', fontsize)
 xticks([1e1, 1e2, 1e3, 1e4])
 yticks([1e-10, 1e-5, 1e0])
 set(gca, 'fontsize', fontsize)
-legend([hbase, hfill1, hfill2], {'$\tau=0$ ($\varepsilon=\log(N)$)', '$\tau=1.1$', '$\tau=\sqrt{10}$'}, 'location', 'southwest', 'fontsize', fontsize, 'interpreter', 'latex')
+legend([hbase, hfill1, hfill2], {'$\tau=1$ ($\varepsilon=\log(N)$)', '$\tau=1.2$', '$\tau=\sqrt{20}$'}, ...
+    'location', 'southwest', 'fontsize', fontsize, 'interpreter', 'latex')
 hold off
 
-savefig('examples_2d_rotated')
-saveas(gcf, 'examples_2d_rotated', 'png')
+filename = 'examples_2d_rotated';
+savefig(filename)
+saveas(gcf, filename, 'png')
