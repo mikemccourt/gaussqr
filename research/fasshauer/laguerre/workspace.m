@@ -65,7 +65,7 @@ end
 x = linspace(0, 16, 200);
 a = .3;
 d = .22;
-t = .48;
+o = .48;
 nvec = 0:20;
 figure
 clf reset
@@ -80,11 +80,11 @@ for z=zvec
     for xx=x
         phix = arrayfun(@(n)phi(n,xx,a,d), nvec);
         phiz = arrayfun(@(n)phi(n,z,a,d), nvec);
-        lamvec = (1 - t) * t .^ nvec;
+        lamvec = (1 - o) * o .^ nvec;
         Kvals(Kc) = phix * (lamvec .* phiz)';
         Kc = Kc + 1;
     end
-    K_closed = laguerre_kernel(x, z, a, d, t);
+    K_closed = laguerre_kernel(x, z, a, d, o);
     h(zc) = plot(x, Kvals, 'linewidth', 3);
     hl{zc} = sprintf('z=%g', z);
     hc = plot(x, K_closed, '--k', 'linewidth', 3);
@@ -92,7 +92,7 @@ for z=zvec
     zc = zc + 1;
 end
 hold off
-title(sprintf('a=%g, d=%g, t=%g', a, d, t))
+title(sprintf('a=%g, d=%g, o=%g', a, d, o))
 legend(h, hl, 'location', 'northeast')
 
 % So, I think that we can conclude that the closed form is okay
@@ -112,9 +112,9 @@ y = yf(xx, xt);
 % Maybe try a little log-likelihood while we're trying stuff ??
 opts.logspace = false;opts.num_points = 1000;
 bounds = [[-.9, .9]; [.01, .49]; [.01, .99]; [.8, 5]];
-kernel_eval = @(a, d, t, e) rbf(xx, xx, e) .* laguerre_kernel(xt, xt, a, d, t);
+kernel_eval = @(a, d, o, e) rbf(xx, xx, e) .* laguerre_kernel(xt, xt, a, d, o);
 opt_adte = fminrnd(@(v) kernel_mle(kernel_eval(v(1), v(2), v(3), v(4)), y), bounds, opts);
-a = opt_adte(1);d = opt_adte(2);t = opt_adte(3);e = opt_adte(4);
+a = opt_adte(1);d = opt_adte(2);o = opt_adte(3);e = opt_adte(4);
 
 x1d = linspace(0, 1, 60);
 t1d = linspace(0, 5, 61);
@@ -124,10 +124,10 @@ xxeval = XX(:);
 xteval = TT(:);
 
 Kint_x = rbf(xx, xx, e);
-Kint_t = laguerre_kernel(xt, xt, a, d, t);
+Kint_t = laguerre_kernel(xt, xt, a, d, o);
 K = Kint_x .* Kint_t;
 Keval_x = rbf(xxeval, xx, e);
-Keval_t = laguerre_kernel(xteval, xt, a, d, t);
+Keval_t = laguerre_kernel(xteval, xt, a, d, o);
 Keval = Keval_x .* Keval_t;
 ypred = Keval * (K \ y);
 YP = reshape(ypred, length(t1d), length(x1d));
@@ -148,7 +148,7 @@ c.Label.String = 'log_{10}-error';
 hold on
 plot(xx, xt, 'ok', 'markersize', 6, 'MarkerFaceColor', 'k')
 hold off
-title(sprintf('a=%g, d=%g, t=%g; e=%g', a, d, t, e))
+title(sprintf('a=%g, d=%g, o=%g; e=%g', a, d, o, e))
 
 % That error plot is kinda cool, right?  Like the data isn't talking in a
 % purely isotropic fashion.  The error "ridges", so to speak, have a

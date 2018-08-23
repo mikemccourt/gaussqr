@@ -1,12 +1,12 @@
 % This is going to assume that x and z are column vectors
 % This uses automatic broadcasting ... no bsxfun required?
-function kernel = laguerre_kernel(x, z, a, d, t)
-xzt = x * z' * t + 1e-200;
-b = 2 * sqrt(xzt) / (1 - t);
+function kernel = laguerre_kernel(x, z, a, d, o)
+xzo = x * z' * o + 1e-200;
+b = 2 * sqrt(xzo) / (1 - o);
 log_kernel = ( ...
     gammaln(a + 1) - (a + 1) * log(1 - 2 * d) + ...
     b + log(besseli(a, b, 1)) + ...
-    -(x + z') * (d + t / (1 - t)) - a / 2 * log(xzt)...
+    -(x + z') * (d + o / (1 - o)) - a / 2 * log(xzo)...
 );
 kernel = exp(log_kernel);
 end
