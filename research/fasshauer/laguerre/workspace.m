@@ -111,7 +111,7 @@ y = yf(xx, xt);
 
 % Maybe try a little log-likelihood while we're trying stuff ??
 opts.logspace = false;opts.num_points = 1000;
-bounds = [[-.9, .9]; [.01, .24]; [.01, .99]; [.8, 5]];
+bounds = [[-.9, .9]; [.01, .49]; [.01, .99]; [.8, 5]];
 kernel_eval = @(a, d, t, e) rbf(xx, xx, e) .* laguerre_kernel(xt, xt, a, d, t);
 opt_adte = fminrnd(@(v) kernel_mle(kernel_eval(v(1), v(2), v(3), v(4)), y), bounds, opts);
 a = opt_adte(1);d = opt_adte(2);t = opt_adte(3);e = opt_adte(4);
