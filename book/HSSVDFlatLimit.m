@@ -24,7 +24,6 @@ yeval = yf(xeval);
 % Create the kernel content (for the direct method only)
 phifunc = @(n,x) sqrt(2)*sin(pi*x*n);
 lamfunc = @(b,e,n) ((pi*n).^2+e^2).^(-b);
-M = ceil(1/pi*sqrt(eps^(-1/beta)*(N^2*pi^2+ep^2)-ep^2));
 
 % Compute the error on the N values under consideration
 k = 1;
@@ -37,6 +36,7 @@ for N=Nvec
     
     j = 1;
     for ep=epvec
+        M = ceil(1/pi*sqrt(eps^(-1/beta)*(N^2*pi^2+ep^2)-ep^2));
         Phi = phifunc(1:M,x);
         Phieval = phifunc(1:M,xeval);
         lamvec = lamfunc(beta,ep,1:M);
