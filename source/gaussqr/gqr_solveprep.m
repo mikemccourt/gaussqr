@@ -185,8 +185,10 @@ switch reg
         end
 
         MarrN = gqr_formMarr(zeros(d,1),[],N);
-        Mlim = ceil(N+log(eps)/log(lam));
-
+        %Mlim = ceil(N+log(eps)/log(lam));
+        K = max(sum(MarrN-1, 1));
+        Mlim = ceil(K+log(eps)/log(lam));
+        
         % This needs to get better
         % Specifically it needs to handle people passing weird stuff
         if not(exist('M','var'))
