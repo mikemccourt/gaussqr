@@ -14,6 +14,9 @@ rbf = @(r) exp(-r.^2);
 num_runs = 30;
 
 yf = @(x) (x(:, 1) .* x(:, 2) .^ 2) + 2 ./ (1 + 20 * (2 * (x(:, 1) + .3) .^ 2 + .6 * (x(:, 2) - .2) .^ 2));
+
+yf = @(x) peaks(x(:, 1)/3,x(:, 2)/3);
+
 results = zeros([1, length(Nvec)]);
 results1 = zeros([num_runs, length(Nvec)]);
 results2 = zeros([num_runs, length(Nvec)]);
