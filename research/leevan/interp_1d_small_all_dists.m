@@ -1,5 +1,18 @@
 % Numerical results for different distributions on a small problem
 
+% These are standard colors I plot with now (SigOpt brand colors)
+sigopt_medium_blue = [0, 71, 187] / 255;
+sigopt_aqua = [0, 134, 191] / 255;
+sigopt_blue = [27, 54, 93] / 255;
+sigopt_purple = [135, 24, 157] / 255;
+sigopt_magenta = [187, 41, 187] / 255;
+sigopt_orange = [255, 130, 0] / 255;
+sigopt_yellow = [253, 218, 36] / 255;
+sigopt_light_green = [151, 215, 0] / 255;
+sigopt_green = [0, 177, 64] / 255;
+sigopt_teal = [0, 164, 153] / 255;
+sigopt_dark_gray = [83, 86, 90] / 255;
+
 % This is a function that helps for plotting confidence intervals
 fill_between_lines = @(X,Y1,Y2,C) fill( [X fliplr(X)],  [Y1 fliplr(Y2)], C);
 
@@ -36,7 +49,6 @@ for k=1:length(stuff)
     t_med_ga = zeros(1, length(vvec));
     t_bot_ga = zeros(1, length(vvec));
     t_top_ga = zeros(1, length(vvec));
-    j = 1;
     
     y = yf(x);
     yeval = yf(xeval);
@@ -81,6 +93,7 @@ for k=1:length(stuff)
             ypred_rnd = rbf(bsxfun(@times, DMeval, epvec)) * random_svd_solve(rbf(bsxfun(@times, DM, epvec)), y);
             results_ga(m) = errcompute(ypred_rnd, yeval);
         end
+        
         t_bot_lu(vcount) = prctile(results_uniform, 25);
         t_med_lu(vcount) = prctile(results_uniform, 50);
         t_top_lu(vcount) = prctile(results_uniform, 75);
@@ -97,38 +110,63 @@ for k=1:length(stuff)
     end
     
     subplot(1, length(stuff), k)
-    hfill = fill_between_lines(vvec, t_bot_lu, t_top_lu, 'r');
+    hfill_lu = fill_between_lines(vvec, t_bot_lu, t_top_lu, sigopt_medium_blue);
     hold on
-    set(hfill, 'linestyle', 'none')
-    set(hfill, 'facealpha', .2)
-    plot(vvec, t_med_lu, 'r', 'linewidth', 3)
-    plot(vvec, t_bot_lu, ':r', 'linewidth', 2)
-    plot(vvec, t_top_lu, ':r', 'linewidth', 2)
-    plot(vvec, t_med_ln, 'b', 'linewidth', 3)
-    plot(vvec, t_bot_ln, ':b', 'linewidth', 2)
-    plot(vvec, t_top_ln, ':b', 'linewidth', 2)
-    plot(vvec, t_med_c2, 'g', 'linewidth', 3)
-    plot(vvec, t_bot_c2, ':g', 'linewidth', 2)
-    plot(vvec, t_top_c2, ':g', 'linewidth', 2)
-    plot(vvec, t_med_ga, 'm', 'linewidth', 3)
-    plot(vvec, t_bot_ga, ':m', 'linewidth', 2)
-    plot(vvec, t_top_ga, ':m', 'linewidth', 2)
+    set(hfill_lu, 'linestyle', 'none')
+    set(hfill_lu, 'facealpha', .2)
+    hfill_ln = fill_between_lines(vvec, t_bot_ln, t_top_ln, sigopt_magenta);
+    set(hfill_ln, 'linestyle', 'none')
+    set(hfill_ln, 'facealpha', .2)
+    hfill_c2 = fill_between_lines(vvec, t_bot_c2, t_top_c2, sigopt_orange);
+    set(hfill_c2, 'linestyle', 'none')
+    set(hfill_c2, 'facealpha', .2)
+    hfill_ga = fill_between_lines(vvec, t_bot_ga, t_top_ga, sigopt_green);
+    set(hfill_ga, 'linestyle', 'none')
+    set(hfill_ga, 'facealpha', .2)
+    plot(vvec, t_med_lu, 'color', sigopt_medium_blue, 'linewidth', 3)
+    plot(vvec, t_med_ln, 'color', sigopt_magenta, 'linewidth', 3)
+    plot(vvec, t_med_c2, 'color', sigopt_orange, 'linewidth', 3)
+    plot(vvec, t_med_ga, 'color', sigopt_green, 'linewidth', 3)
     hsol = plot(vvec, base_acc * ones(1, length(vvec)), '--k', 'linewidth', 3);
     set(gca, 'xscale', 'log')
     set(gca, 'yscale', 'log')
-%     xlim([1, 10])
-%     ylim([1e-9, 1e0])
-    xlabel('$\tau$', 'fontsize', fontsize, 'interpreter', 'latex')
+    xlim([.1, 100])
+    ylim([1e-10, 1e0])
+    xlabel('variance', 'fontsize', fontsize)
     ylabel('RMSE', 'fontsize', fontsize)
-    xticks([1, 10])
-    yticks([1e-8, 1e-4, 1e0])
+    xticks([.1, 1, 10, 100])
+    yticks([1e-10, 1e-5, 1e0])
     set(gca, 'fontsize', fontsize)
-    legend([hsol, hfill], {sprintf('$\\varepsilon=%3.2f$', ep), 'random'}, ...
+    legend([hsol, hfill_lu, hfill_ln, hfill_c2, hfill_ga], ...
+        {  sprintf('$\\varepsilon=%3.2f$', ep), ...
+           'log-uniform', ...
+           'log-normal', ...
+           'chi-square', ...
+           'gamma', ...
+        }, ...
         'location', 'northwest', 'interpreter', 'latex', 'fontsize', fontsize)
     hold off
     
-    j = j + 1;
+    fig = gcf;
+    ax = gca;
+    outerpos = ax.OuterPosition;
+    ti = ax.TightInset; 
+    left = outerpos(1) + ti(1);
+    bottom = outerpos(2) + ti(2);
+    ax_width = outerpos(3) - ti(1) - ti(3);
+    ax_height = outerpos(4) - ti(2) - ti(4);
+    ax_width = .26;
+    if k == 1
+        left = .06;
+    elseif k == 2
+        left = .06 + .07 + ax_width;
+    elseif k == 3
+        left = .06 + 2 * .07 + 2 * ax_width;
+        legend('location', 'southwest')
+    end
+    ax.Position = [left bottom ax_width ax_height];
+    fig.Position = [560         528        1080         420];
 end
 
-% savefig('examples_1d_TINY')
-% saveas(gcf, 'examples_1d_TINY', 'png')
+savefig('examples_1d_interp_TINY')
+saveas(gcf, 'examples_1d_interp_TINY', 'png')
