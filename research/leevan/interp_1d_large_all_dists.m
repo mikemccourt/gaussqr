@@ -18,7 +18,7 @@ fill_between_lines = @(X,Y1,Y2,C) fill( [X fliplr(X)],  [Y1 fliplr(Y2)], C);
 
 clf reset
 fontsize = 14;
-N = 31;
+N = 131;
 vvec = logspace(0, 2, 20) - 1 + .1;
 x = pickpoints(-1, 1, N);
 xeval = pickpoints(-1, 1, 100);
@@ -94,6 +94,7 @@ for k=1:length(stuff)
             results_ga(m) = errcompute(ypred_rnd, yeval);
         end
         
+        fprintf('%d\n', vcount)
         t_bot_lu(vcount) = prctile(results_uniform, 25);
         t_med_lu(vcount) = prctile(results_uniform, 50);
         t_top_lu(vcount) = prctile(results_uniform, 75);
@@ -131,11 +132,11 @@ for k=1:length(stuff)
     set(gca, 'xscale', 'log')
     set(gca, 'yscale', 'log')
     xlim([.1, 100])
-    ylim([1e-10, 1e0])
+    ylim([1e-15, 1e-5])
     xlabel('variance', 'fontsize', fontsize)
     ylabel('RMSE', 'fontsize', fontsize)
     xticks([.1, 1, 10, 100])
-    yticks([1e-10, 1e-5, 1e0])
+    yticks([1e-15, 1e-10, 1e-5])
     set(gca, 'fontsize', fontsize)
     legend([hsol, hfill_lu, hfill_ln, hfill_c2, hfill_ga], ...
         {  sprintf('$\\varepsilon=%3.2f$', ep), ...
@@ -154,15 +155,17 @@ for k=1:length(stuff)
     ax_width = .26;
     if k == 1
         left = .06;
+        legend('location', 'northeast')
     elseif k == 2
         left = .06 + .07 + ax_width;
+        legend('location', 'southwest')
     elseif k == 3
         left = .06 + 2 * .07 + 2 * ax_width;
-        legend('location', 'southwest')
+        legend('location', 'north')
     end
     ax.Position = [left bottom ax_width ax_height];
     fig.Position = [560         528        1080         320];
 end
 
-savefig('examples_1d_interp_TINY')
-saveas(gcf, 'examples_1d_interp_TINY', 'png')
+savefig('examples_1d_interp_LARGE')
+saveas(gcf, 'examples_1d_interp_LARGE', 'png')
