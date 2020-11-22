@@ -8,6 +8,7 @@ GAUSSQR_PARAMETERS.NORM_TYPE = 2;
 
 % Define the troublesome Runge function
 yf = @(x) 1./(1+25*x.^2);
+rbf = @(e,r) exp(-(e*r).^2);
 
 % Define some points on which to interpolate
 N = 15;
